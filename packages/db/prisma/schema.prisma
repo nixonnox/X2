@@ -1,0 +1,2059 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ============================================
+// Auth.js Models
+// ============================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts         Account[]
+  sessions         Session[]
+  workspaceMembers WorkspaceMember[]
+  insightReports   InsightReport[]
+  notifications    Notification[]
+
+  @@map("users")
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ============================================
+// Multi-tenancy: Workspace / Members / Projects
+// ============================================
+
+model Workspace {
+  id           String        @id @default(cuid())
+  name         String
+  slug         String        @unique
+  plan         Plan          @default(FREE)
+  planTier     PlanTier      @default(STANDARD)
+  industryType IndustryType?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  // Plan Limits (플랜별 역량 — Subscription과 동기화)
+  maxChannels         Int     @default(3)
+  maxContentsPerMonth Int     @default(500)
+  maxCommentsPerMonth Int     @default(1000)
+  maxAiTokensPerDay   Int     @default(5000)
+  maxMembers          Int     @default(1)
+  maxReportsPerMonth  Int     @default(3)
+  canExportData       Boolean @default(false)
+  canAccessApi        Boolean @default(false)
+  maxVerticalPacks    Int     @default(0)
+
+  // Feature Flags (기능 활성화 — planTier/플랜 변경 시 동기화)
+  geoAeoEnabled              Boolean @default(false)
+  influencerExecutionEnabled Boolean @default(false)
+  evidenceReportingEnabled   Boolean @default(true)
+
+  // Automation Feature Flags (Phase 9)
+  automationEnabled           Boolean @default(false)
+  maxAutomationRulesPerMonth  Int     @default(0)
+  maxReportAutomationsPerMonth Int    @default(0)
+  alertAutomationEnabled      Boolean @default(false)
+  webhookIntegrationEnabled   Boolean @default(false)
+
+  members       WorkspaceMember[]
+  projects      Project[]
+  subscriptions Subscription[]
+  usageMetrics  UsageMetric[]
+  scheduledJobs ScheduledJob[]
+  verticalPacks WorkspaceVerticalPack[]
+  automationRules AutomationRule[]
+
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id       String        @id @default(cuid())
+  role     WorkspaceRole @default(MEMBER)
+  joinedAt DateTime      @default(now())
+
+  userId      String
+  workspaceId String
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+  @@map("workspace_members")
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  channels           Channel[]
+  competitorChannels CompetitorChannel[]
+  keywords           Keyword[]
+  insightReports     InsightReport[]
+  intentQueries      IntentQuery[]
+  aeoKeywords        AeoKeyword[]
+  campaigns          Campaign[]
+  trendAnalytics     TrendKeywordAnalytics[]
+  rawMentions        RawSocialMention[]
+  savedFilters       SavedFilter[]
+  dataExportJobs     DataExportJob[]
+  citationSources    CitationReadyReportSource[]
+  faqCandidates      FAQCandidate[]
+  riskSignals        RiskSignal[]
+
+  @@map("projects")
+}
+
+// ============================================
+// Platforms & Channels
+// ============================================
+
+model Platform {
+  id         String         @id @default(cuid())
+  type       SocialPlatform @unique
+  name       String
+  iconUrl    String?
+  apiBaseUrl String?
+  isActive   Boolean        @default(true)
+
+  @@map("platforms")
+}
+
+model Channel {
+  id                String         @id @default(cuid())
+  platform          SocialPlatform
+  platformChannelId String
+  name              String
+  url               String
+  description       String?
+  thumbnailUrl      String?
+  subscriberCount   Int            @default(0)
+  contentCount      Int            @default(0)
+  connectionType    ConnectionType @default(BASIC)
+  status            ChannelStatus  @default(ACTIVE)
+  channelType       ChannelType    @default(OWNED)
+  lastSyncedAt      DateTime?
+  lastSyncStatus    SyncStatus?
+  syncErrorMessage  String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  deletedAt         DateTime?
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  connections       ChannelConnection[]
+  snapshots         ChannelSnapshot[]
+  contents          Content[]
+  influencerProfile InfluencerProfile?
+  campaignCreators  CampaignCreator[]
+
+  @@unique([projectId, platform, platformChannelId])
+  @@index([platform])
+  @@index([channelType])
+  @@index([status])
+  @@map("channels")
+}
+
+model ChannelConnection {
+  id           String           @id @default(cuid())
+  accessToken  String
+  refreshToken String?
+  tokenExpiry  DateTime?
+  scopes       String[]
+  status       ConnectionStatus @default(ACTIVE)
+  connectedAt  DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  channelId String
+  channel   Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@index([channelId])
+  @@map("channel_connections")
+}
+
+model ChannelSnapshot {
+  id                 String   @id @default(cuid())
+  date               DateTime @db.Date
+  subscriberCount    Int      @default(0)
+  contentCount       Int      @default(0)
+  totalViews         BigInt   @default(0)
+  avgEngagement      Float    @default(0)
+  avgViewsPerContent Int?
+  followerGrowth     Int?
+  followerGrowthRate Float?
+  estimatedReach     Int?
+  rawMetrics         Json?
+  createdAt          DateTime @default(now())
+
+  channelId String
+  channel   Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@unique([channelId, date])
+  @@index([channelId, date(sort: Desc)])
+  @@map("channel_snapshots")
+}
+
+// ============================================
+// Contents & Metrics
+// ============================================
+
+model Content {
+  id                String         @id @default(cuid())
+  platform          SocialPlatform
+  platformContentId String
+  type              ContentType
+  title             String
+  description       String?
+  thumbnailUrl      String?
+  url               String
+  publishedAt       DateTime?
+  duration          Int?
+  viewCount         BigInt         @default(0)
+  likeCount         Int            @default(0)
+  commentCount      Int            @default(0)
+  shareCount        Int            @default(0)
+  engagementRate    Float          @default(0)
+  status            ContentStatus  @default(ACTIVE)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  channelId String
+  channel   Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  metrics  ContentMetricDaily[]
+  comments Comment[]
+
+  @@unique([channelId, platformContentId])
+  @@index([platform])
+  @@index([publishedAt])
+  @@index([channelId, publishedAt(sort: Desc)])
+  @@map("contents")
+}
+
+model ContentMetricDaily {
+  id             String   @id @default(cuid())
+  date           DateTime @db.Date
+  viewCount      BigInt   @default(0)
+  likeCount      Int      @default(0)
+  commentCount   Int      @default(0)
+  shareCount     Int      @default(0)
+  engagementRate Float    @default(0)
+  createdAt      DateTime @default(now())
+
+  contentId String
+  content   Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@unique([contentId, date])
+  @@index([date])
+  @@map("content_metrics_daily")
+}
+
+// ============================================
+// Comments & Analysis
+// ============================================
+
+model Comment {
+  id                String         @id @default(cuid())
+  platform          SocialPlatform
+  platformCommentId String
+  authorName        String
+  authorProfileUrl  String?
+  text              String
+  likeCount         Int            @default(0)
+  replyCount        Int            @default(0)
+  publishedAt       DateTime
+  isReply           Boolean        @default(false)
+  parentCommentId   String?
+  createdAt         DateTime       @default(now())
+
+  contentId String
+  content   Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  parent  Comment?  @relation("CommentReplies", fields: [parentCommentId], references: [id], onDelete: SetNull)
+  replies Comment[] @relation("CommentReplies")
+
+  analysis CommentAnalysis?
+
+  @@unique([contentId, platformCommentId])
+  @@index([contentId, publishedAt(sort: Desc)])
+  @@index([publishedAt])
+  @@map("comments")
+}
+
+model CommentAnalysis {
+  id              String        @id @default(cuid())
+  sentiment       SentimentType
+  sentimentScore  Float
+  sentimentReason String?
+  topics          String[]
+  topicConfidence Float?
+  language        String?
+  isSpam          Boolean       @default(false)
+  isQuestion      Boolean       @default(false)
+  questionType    String?
+  isRisk          Boolean       @default(false)
+  riskLevel       RiskLevel?
+  suggestedReply  String?
+  analyzerModel   String?
+  analyzedAt      DateTime      @default(now())
+
+  commentId String  @unique
+  comment   Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@index([isRisk])
+  @@index([isQuestion])
+  @@index([sentiment])
+  @@index([sentiment, isRisk])
+  @@map("comment_analysis")
+}
+
+// ============================================
+// Keywords & Trends
+// ============================================
+
+model Keyword {
+  id        String        @id @default(cuid())
+  keyword   String
+  category  String?
+  status    KeywordStatus @default(ACTIVE)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  metrics KeywordMetricDaily[]
+
+  @@unique([projectId, keyword])
+  @@map("keywords")
+}
+
+model KeywordMetricDaily {
+  id           String       @id @default(cuid())
+  date         DateTime     @db.Date
+  volume       Int          @default(0)
+  trend        KeywordTrend @default(STABLE)
+  changeRate   Float        @default(0)
+  relatedTerms String[]
+  createdAt    DateTime     @default(now())
+
+  keywordId String
+  keyword   Keyword @relation(fields: [keywordId], references: [id], onDelete: Cascade)
+
+  @@unique([keywordId, date])
+  @@index([date])
+  @@map("keyword_metrics_daily")
+}
+
+// ============================================
+// Competitor Channels (Legacy — ChannelType으로 전환 예정)
+// ============================================
+
+model CompetitorChannel {
+  id                String         @id @default(cuid())
+  platform          SocialPlatform
+  platformChannelId String
+  name              String
+  url               String
+  thumbnailUrl      String?
+  subscriberCount   Int            @default(0)
+  contentCount      Int            @default(0)
+  engagementRate    Float          @default(0)
+  lastSyncedAt      DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, platform, platformChannelId])
+  @@map("competitor_channels")
+}
+
+// ============================================
+// AI Insights & Reports
+// ============================================
+
+model InsightReport {
+  id         String       @id @default(cuid())
+  type       InsightType
+  title      String
+  summary    String
+  content    Json
+  period     String?
+  confidence Float        @default(0)
+  status     ReportStatus @default(DRAFT)
+  shareToken String?      @unique
+  templateId String?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  projectId   String
+  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  generatedBy String?
+  user        User?   @relation(fields: [generatedBy], references: [id], onDelete: SetNull)
+
+  actions  InsightAction[]
+  sections ReportSection[]
+
+  @@index([type])
+  @@index([createdAt])
+  @@map("insight_reports")
+}
+
+model InsightAction {
+  id          String             @id @default(cuid())
+  title       String
+  description String
+  actionType  InsightActionType?
+  priority    ActionPriority     @default(MEDIUM)
+  status      ActionStatus       @default(PENDING)
+  dueDate     DateTime?
+  completedAt DateTime?
+  assigneeId  String?
+
+  // 출처 추적
+  sourceModule   SourceModule?
+  sourceEntityId String?
+  sourceReason   String?
+
+  // 실행 결과
+  outcome      String?
+  impactMetric Json?
+
+  // 캠페인 연결
+  campaignId String?
+  campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reportId String?
+  report   InsightReport? @relation(fields: [reportId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([priority, status])
+  @@index([sourceModule])
+  @@map("insight_actions")
+}
+
+// ============================================
+// Scheduled Jobs (Data Pipeline)
+// ============================================
+
+model ScheduledJob {
+  id         String    @id @default(cuid())
+  type       JobType
+  cronExpr   String
+  payload    Json?
+  status     JobStatus @default(ACTIVE)
+  lastRunAt  DateTime?
+  nextRunAt  DateTime?
+  lastError  String?
+  retryCount Int       @default(0)
+  durationMs Int?
+  jobGroup   String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([status, nextRunAt])
+  @@index([jobGroup])
+  @@map("scheduled_jobs")
+}
+
+// ============================================
+// Billing: Subscriptions & Usage
+// ============================================
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  plan                 Plan               @default(FREE)
+  status               SubscriptionStatus @default(ACTIVE)
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  stripePriceId        String?
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean            @default(false)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([stripeCustomerId])
+  @@index([stripeSubscriptionId])
+  @@map("subscriptions")
+}
+
+model UsageMetric {
+  id           String   @id @default(cuid())
+  date         DateTime @db.Date
+  channelCount Int      @default(0)
+  contentCount Int      @default(0)
+  commentCount Int      @default(0)
+  apiCallCount Int      @default(0)
+  aiTokensUsed Int      @default(0)
+  aiCostUsd    Float    @default(0)
+  reportCount  Int      @default(0)
+  exportCount  Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, date])
+  @@index([date])
+  @@map("usage_metrics")
+}
+
+// ============================================
+// Search Intent (Phase 3)
+// ============================================
+
+model IntentQuery {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  seedKeyword   String
+  locale        String            @default("ko")
+  maxDepth      Int               @default(2)
+  maxKeywords   Int               @default(150)
+  status        AnalysisJobStatus @default(QUEUED)
+  progress      Int               @default(0)
+  statusMessage String?
+
+  resultSummary    Json?
+  resultGraph      Json?
+  startedAt        DateTime?
+  completedAt      DateTime?
+  durationMs       Int?
+  tokenUsage       Int?
+  estimatedCostUsd Float?
+
+  createdAt DateTime @default(now())
+
+  keywords IntentKeywordResult[]
+
+  // Listening Mind relations
+  searchPaths     SearchPath[]
+  personas        Persona[]
+  clusterResults  KeywordClusterResult[]
+  brandJourneys   BrandJourney[]
+
+  @@index([projectId, createdAt(sort: Desc)])
+  @@map("intent_queries")
+}
+
+model IntentKeywordResult {
+  id      String      @id @default(cuid())
+  queryId String
+  query   IntentQuery @relation(fields: [queryId], references: [id], onDelete: Cascade)
+
+  keyword         String
+  searchVolume    Int?
+  socialVolume    Int?
+  trend           KeywordTrend?
+  intentCategory  IntentCategory
+  subIntent       String?
+  confidence      Float          @default(0)
+  gapScore        Float?
+  gapType         GapType?
+  monthlyVolumes  Json?
+  socialBreakdown Json?
+
+  @@unique([queryId, keyword])
+  @@index([queryId])
+  @@map("intent_keyword_results")
+}
+
+// ============================================
+// Trend Analytics (Phase 3)
+// ============================================
+
+/// KeywordMetricDaily의 상위 집계. 키워드 간 관계 + 소셜 연계.
+model TrendKeywordAnalytics {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  keyword String
+  locale  String @default("ko")
+  period  String // "2026-03" (월별) 또는 "2026-W10" (주별)
+
+  // 검색 지표
+  avgSearchVolume  Int?
+  peakSearchVolume Int?
+  searchTrend      KeywordTrend @default(STABLE)
+  seasonalityScore Float?
+
+  // 소셜 연계
+  socialContentCount  Int    @default(0)
+  socialAvgViews      Int?
+  socialAvgEngagement Float?
+  gapScore            Float?
+
+  // 관련 키워드
+  relatedKeywords Json?
+  topContents     Json?
+
+  createdAt DateTime @default(now())
+
+  @@unique([projectId, keyword, locale, period])
+  @@index([projectId, period])
+  @@map("trend_keyword_analytics")
+}
+
+// ============================================
+// Raw Social Mentions (Phase 2 — 소머즈형 Data Explorer)
+// ============================================
+
+/// 키워드/브랜드 멘션 원시 데이터. Data Explorer의 핵심 데이터 소스.
+model RawSocialMention {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  platform        SocialPlatform
+  platformPostId  String
+  postUrl         String?
+  authorName      String?
+  authorHandle    String?
+  authorFollowers Int?
+
+  text        String
+  mediaType   MentionMediaType?
+  publishedAt DateTime
+
+  // 지표
+  viewCount      Int   @default(0)
+  likeCount      Int   @default(0)
+  commentCount   Int   @default(0)
+  shareCount     Int   @default(0)
+  engagementRate Float @default(0)
+
+  // 매칭 정보
+  matchedKeyword String
+  matchType      MentionMatchType
+
+  // AI 분석 (수집 후 enrichment)
+  sentiment SentimentType?
+  topics    String[]
+  isSpam    Boolean        @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@unique([projectId, platform, platformPostId])
+  @@index([projectId, publishedAt(sort: Desc)])
+  @@index([matchedKeyword])
+  @@index([platform])
+  @@index([sentiment])
+  @@map("raw_social_mentions")
+}
+
+// ============================================
+// Influencer Profiles (Phase 6 — 피처링형)
+// ============================================
+
+/// Channel과 1:1. 인플루언서 탐색/캠페인용 확장 프로필.
+model InfluencerProfile {
+  id        String  @id @default(cuid())
+  channelId String  @unique
+  channel   Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  // 분류
+  categories     String[]
+  tierLevel      InfluencerTier
+  contentStyle   String[]
+  targetAudience String?
+  country        String?
+
+  // 계산 지표 (ChannelSnapshot에서 집계)
+  avgViewsRecent      Int?
+  avgEngagementRecent Float?
+  estimatedReach      Int?
+  growthRate30d       Float?
+
+  // 점수
+  overallScore   Float?
+  scoreBreakdown Json?
+
+  // 협업 이력
+  totalCampaigns Int    @default(0)
+  avgCampaignRoi Float?
+
+  // 연락처 (에이전시용)
+  contactEmail      String?
+  contactNote       String?
+  managementCompany String?
+
+  lastEvaluatedAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  campaignCreators CampaignCreator[]
+
+  @@index([tierLevel])
+  @@index([overallScore(sort: Desc)])
+  @@map("influencer_profiles")
+}
+
+// ============================================
+// Campaigns (Phase 6 — 피처링형)
+// ============================================
+
+model Campaign {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  name         String
+  objective    String?
+  campaignType CampaignType
+  status       CampaignStatus @default(DRAFT)
+
+  startDate   DateTime?
+  endDate     DateTime?
+  totalBudget Float?
+  spentBudget Float     @default(0)
+  currency    String    @default("KRW")
+
+  kpiTargets Json?
+
+  // 출처
+  sourceInsightId String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  creators        CampaignCreator[]
+  contents        CampaignContent[]
+  metrics         CampaignMetric[]
+  actions         InsightAction[]
+  roiCalculations RoiCalculation[]
+
+  @@index([projectId, status])
+  @@index([startDate, endDate])
+  @@map("campaigns")
+}
+
+/// 캠페인 × 인플루언서 매핑
+model CampaignCreator {
+  id         String   @id @default(cuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  // 인플루언서 연결 (둘 중 하나 이상)
+  channelId           String?
+  channel             Channel?           @relation(fields: [channelId], references: [id], onDelete: SetNull)
+  influencerProfileId String?
+  influencerProfile   InfluencerProfile? @relation(fields: [influencerProfileId], references: [id], onDelete: SetNull)
+
+  outreachStatus OutreachStatus @default(PROPOSED)
+
+  // 보상
+  compensationType   CompensationType?
+  compensationAmount Float?
+  compensationNote   String?
+
+  // 요구사항
+  deliverables Json?
+  contactLog   Json?
+  contractUrl  String?
+
+  // 성과 요약 (Measure에서 채움)
+  performanceSummary Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  contents CampaignContent[]
+
+  @@unique([campaignId, channelId])
+  @@map("campaign_creators")
+}
+
+model CampaignContent {
+  id                String           @id @default(cuid())
+  campaignId        String
+  campaign          Campaign         @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  campaignCreatorId String?
+  campaignCreator   CampaignCreator? @relation(fields: [campaignCreatorId], references: [id], onDelete: SetNull)
+
+  // 실제 콘텐츠 연결 (수집 후)
+  contentId          String?
+  platformContentUrl String?
+  platform           SocialPlatform?
+
+  status            CampaignContentStatus @default(PLANNED)
+  publishedAt       DateTime?
+  trackingStartedAt DateTime?
+  trackingEndedAt   DateTime?
+
+  contentRequirements Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  measurements PostMeasurement[]
+
+  @@index([campaignId])
+  @@index([campaignCreatorId])
+  @@index([status])
+  @@map("campaign_contents")
+}
+
+// ============================================
+// Campaign Metrics & Measurement (Phase 7)
+// ============================================
+
+model CampaignMetric {
+  id         String   @id @default(cuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  date       DateTime @db.Date
+
+  totalReach        Int   @default(0)
+  totalEngagement   Int   @default(0)
+  totalNewFollowers Int   @default(0)
+  spentBudget       Float @default(0)
+
+  contentMetrics Json?
+  derivedMetrics Json?
+
+  collectedAt DateTime @default(now())
+
+  @@unique([campaignId, date])
+  @@index([campaignId, date(sort: Desc)])
+  @@map("campaign_metrics")
+}
+
+model PostMeasurement {
+  id                String          @id @default(cuid())
+  campaignContentId String
+  campaignContent   CampaignContent @relation(fields: [campaignContentId], references: [id], onDelete: Cascade)
+  date              DateTime        @db.Date
+
+  viewCount         Int   @default(0)
+  likeCount         Int   @default(0)
+  commentCount      Int   @default(0)
+  shareCount        Int   @default(0)
+  engagementRate    Float @default(0)
+  estimatedReach    Int?
+  brandMentionCount Int?
+  sentimentSummary  Json?
+
+  createdAt DateTime @default(now())
+
+  @@unique([campaignContentId, date])
+  @@map("post_measurements")
+}
+
+model RoiCalculation {
+  id         String   @id @default(cuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  calculatedAt DateTime @default(now())
+
+  // 투자
+  totalCost     Float
+  costBreakdown Json?
+  currency      String @default("KRW")
+
+  // 성과
+  totalReach          Int
+  totalEngagement     Int
+  estimatedMediaValue Float?
+  newFollowers        Int    @default(0)
+  conversions         Int    @default(0)
+
+  // 비율
+  roi             Float?
+  roas            Float?
+  cpm             Float?
+  cpv             Float?
+  cpe             Float?
+  costPerFollower Float?
+
+  benchmarkComparison Json?
+  aiSummary           String?
+
+  @@index([campaignId])
+  @@map("roi_calculations")
+}
+
+// ============================================
+// GEO/AEO Citation Tracking (Phase 4)
+// ============================================
+
+model AeoKeyword {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  keyword          String
+  locale           String        @default("ko")
+  targetBrand      String?
+  competitorBrands String[]
+  status           KeywordStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  snapshots AeoSnapshot[]
+
+  @@unique([projectId, keyword, locale])
+  @@map("aeo_keywords")
+}
+
+model AeoSnapshot {
+  id        String     @id @default(cuid())
+  keywordId String
+  keyword   AeoKeyword @relation(fields: [keywordId], references: [id], onDelete: Cascade)
+  date      DateTime   @db.Date
+
+  engine             AeoEngine
+  aiResponse         String?
+  citedSources       Json?
+  brandMentioned     Boolean   @default(false)
+  brandCitedRank     Int?
+  competitorMentions Json?
+  visibilityScore    Float?
+
+  createdAt DateTime @default(now())
+
+  @@unique([keywordId, date, engine])
+  @@index([keywordId, date(sort: Desc)])
+  @@map("aeo_snapshots")
+}
+
+/// 우리 콘텐츠 중 AI 검색엔진에 인용되기 원하는 소스 관리.
+model CitationReadyReportSource {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // 소스 정보
+  url            String
+  title          String
+  domain         String
+  sourceType     CitationSourceType
+  contentSummary String?
+
+  // 타겟 키워드 매핑
+  targetKeywords String[]
+  primaryTopic   String?
+
+  // 현재 인용 상태 (AeoSnapshot에서 집계)
+  currentCitationCount Int        @default(0)
+  lastCitedDate        DateTime?
+  lastCitedEngine      AeoEngine?
+  citationHistory      Json?
+
+  // 최적화 상태
+  geoOptimized      Boolean   @default(false)
+  lastOptimizedAt   DateTime?
+  optimizationNotes String?
+
+  // 우선순위
+  priority Int     @default(0)
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, url])
+  @@index([projectId, isActive])
+  @@index([currentCitationCount(sort: Desc)])
+  @@map("citation_ready_sources")
+}
+
+// ============================================
+// Vertical Packs (Phase 8)
+// ============================================
+
+model VerticalPack {
+  id          String       @id @default(cuid())
+  slug        String       @unique
+  name        String
+  description String?
+  industry    IndustryType
+  isActive    Boolean      @default(true)
+
+  // 사전 정의 데이터 (DB에서 관리, 하드코딩 금지)
+  seedKeywords      Json?
+  benchmarkBaseline Json?
+  topicTaxonomy     Json?
+  competitorPresets Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  workspaces      WorkspaceVerticalPack[]
+  reportTemplates ReportTemplate[]
+
+  @@map("vertical_packs")
+}
+
+/// M:N 조인 테이블
+model WorkspaceVerticalPack {
+  id             String       @id @default(cuid())
+  workspaceId    String
+  workspace      Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  verticalPackId String
+  verticalPack   VerticalPack @relation(fields: [verticalPackId], references: [id], onDelete: Cascade)
+  activatedAt    DateTime     @default(now())
+
+  @@unique([workspaceId, verticalPackId])
+  @@map("workspace_vertical_packs")
+}
+
+// ============================================
+// Report Builder (Phase 5 — 썸트렌드형)
+// ============================================
+
+model ReportSection {
+  id       String        @id @default(cuid())
+  reportId String
+  report   InsightReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  title           String
+  order           Int     @default(0)
+  narrative       String?
+  isAutoGenerated Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  evidenceAssets EvidenceAsset[]
+
+  @@index([reportId, order])
+  @@map("report_sections")
+}
+
+/// 리포트 내 근거 블록. 차트/테이블/수치/인용 등.
+model EvidenceAsset {
+  id        String        @id @default(cuid())
+  sectionId String
+  section   ReportSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  type      EvidenceType
+  order     Int          @default(0)
+  title     String?
+  narrative String?
+
+  // 데이터 연결 (Mock 금지 — 반드시 실데이터 참조)
+  dataSourceType DataSourceType
+  dataEntityIds  String[]
+  dataQuery      Json?
+  snapshotDate   DateTime?
+
+  // 시각화
+  visualization Json?
+  isEditable    Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  @@index([sectionId, order])
+  @@map("evidence_assets")
+}
+
+model ReportTemplate {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String  @unique
+  description String?
+
+  sectionDefinitions Json
+  isSystem           Boolean @default(false)
+
+  verticalPackId String?
+  verticalPack   VerticalPack? @relation(fields: [verticalPackId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([verticalPackId])
+  @@map("report_templates")
+}
+
+// ============================================
+// Data Explorer (Phase 2 — 소머즈형)
+// ============================================
+
+model SavedFilter {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy String
+
+  name         String
+  dataType     ExplorerDataType
+  filterConfig Json
+  isShared     Boolean          @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([createdBy])
+  @@map("saved_filters")
+}
+
+model DataExportJob {
+  id          String  @id @default(cuid())
+  projectId   String
+  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  requestedBy String
+
+  dataType     ExplorerDataType
+  filterConfig Json
+  format       ExportFormat
+  status       ExportJobStatus  @default(QUEUED)
+  rowCount     Int?
+  fileUrl      String?
+  expiresAt    DateTime?
+  errorMessage String?
+
+  createdAt DateTime @default(now())
+
+  @@index([projectId, status])
+  @@map("data_export_jobs")
+}
+
+// ============================================
+// FAQ Intelligence (Phase 2 — 댓글 시작형 Path 3 핵심)
+// ============================================
+
+/// 반복 질문 집계. CommentAnalysis.isQuestion=true에서 클러스터링.
+model FAQCandidate {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // FAQ 질문 그룹
+  question         String
+  questionVariants String[]
+  category         String?
+
+  // 출처 추적 (polymorphic — Comment ID 목록)
+  sourceCommentIds String[]
+  mentionCount     Int      @default(0)
+  firstSeenAt      DateTime
+  lastSeenAt       DateTime
+
+  // 현재 대응 상태
+  hasAnswer       Boolean @default(false)
+  answerUrl       String?
+  answerContentId String?
+
+  // AI 분석
+  urgencyScore    Float?
+  businessImpact  String?
+  suggestedAction String?
+
+  // 상태
+  status     FAQStatus @default(DETECTED)
+  resolvedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, question])
+  @@index([projectId, status])
+  @@index([mentionCount(sort: Desc)])
+  @@map("faq_candidates")
+}
+
+// ============================================
+// Risk Intelligence (Phase 2 — 리스크 감지/에스컬레이션)
+// ============================================
+
+/// 부정 감성/위험 댓글 급증 시 리스크 이벤트 단위 관리.
+model RiskSignal {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // 리스크 정보
+  title       String
+  description String?
+  riskType    String
+  severity    RiskLevel // 기존 enum 재사용
+
+  // 근거 (polymorphic — Comment/Mention ID 목록)
+  sourceCommentIds String[]
+  sourceMentionIds String[]
+  sampleTexts      String[]
+  signalCount      Int      @default(0)
+
+  // 시간 범위
+  detectedAt      DateTime
+  firstOccurrence DateTime
+  lastOccurrence  DateTime
+
+  // 상태 관리
+  status       RiskSignalStatus @default(ACTIVE)
+  assigneeId   String?
+  responseNote String?
+  resolvedAt   DateTime?
+
+  // AI 분석
+  rootCauseAnalysis String?
+  recommendedAction String?
+  estimatedImpact   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId, status])
+  @@index([severity])
+  @@index([detectedAt(sort: Desc)])
+  @@map("risk_signals")
+}
+
+// ============================================
+// Notifications (Phase 2 — 운영 알림)
+// ============================================
+
+/// 시스템 알림. 수집 실패, 리스크 급증, 토큰 한도 등.
+model Notification {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  workspaceId String?
+
+  // 알림 내용
+  type     NotificationType
+  title    String
+  message  String
+  priority NotificationPriority @default(NORMAL)
+
+  // 출처 (polymorphic — 관련 엔티티 참조)
+  sourceType String?
+  sourceId   String?
+  actionUrl  String?
+
+  // 상태
+  isRead Boolean   @default(false)
+  readAt DateTime?
+
+  // 발송 채널
+  channels    String[]
+  emailSentAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([workspaceId, createdAt(sort: Desc)])
+  @@map("notifications")
+}
+
+// ============================================
+// Automation Rules & Execution (Phase 9)
+// ============================================
+
+/// 자동화 규칙 정의. 트리거 + 조건 + 액션을 하나로 묶는다.
+model AutomationRule {
+  id          String  @id @default(cuid())
+  workspaceId String
+
+  name        String
+  description String?
+
+  // 트리거 유형
+  triggerType AutomationTriggerType
+
+  // 트리거 조건 (JSON — field, operator, value, description)
+  triggerCondition Json
+
+  // 스케줄 (시간 기반 트리거에만 사용)
+  cronExpr    String?
+  timezone    String  @default("Asia/Seoul")
+
+  // 실행할 액션
+  actionType  AutomationActionType
+  actionConfig Json   // 액션별 설정 (recipients, template, format 등)
+
+  // 제어
+  isEnabled   Boolean @default(true)
+  priority    Int     @default(0)
+
+  // 플랜/역할 제한
+  requiredPlan Plan?
+  allowedRoles String[]
+
+  // 중복 실행 방지
+  cooldownMinutes Int @default(60)
+  lastTriggeredAt DateTime?
+
+  // 통계
+  totalExecutions    Int @default(0)
+  successfulExecutions Int @default(0)
+  failedExecutions   Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  workspace  Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  executions AutomationExecution[]
+
+  @@index([workspaceId, isEnabled])
+  @@index([triggerType])
+  @@map("automation_rules")
+}
+
+/// 자동화 실행 기록. 모든 자동화 실행은 이 테이블에 기록된다.
+model AutomationExecution {
+  id     String @id @default(cuid())
+  ruleId String
+  rule   AutomationRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  workspaceId String
+
+  // 실행 상태
+  status     AutomationExecutionStatus @default(PENDING)
+
+  // 멱등성 키 (중복 실행 방지)
+  idempotencyKey String @unique
+
+  // 트리거 정보
+  triggerType    AutomationTriggerType
+  triggerPayload Json?
+
+  // 실행 결과
+  actionType     AutomationActionType
+  actionResult   Json?
+  errorMessage   String?
+
+  // 타이밍
+  scheduledAt DateTime?
+  startedAt   DateTime?
+  completedAt DateTime?
+  durationMs  Int?
+
+  // 재시도
+  retryCount    Int @default(0)
+  maxRetries    Int @default(3)
+  nextRetryAt   DateTime?
+
+  createdAt DateTime @default(now())
+
+  deliveries DeliveryLog[]
+
+  @@index([workspaceId, status])
+  @@index([ruleId, createdAt(sort: Desc)])
+  @@index([status, nextRetryAt])
+  @@index([idempotencyKey])
+  @@map("automation_executions")
+}
+
+/// 발송 기록. 리포트/알림/이메일 등 외부 전달 추적.
+model DeliveryLog {
+  id          String @id @default(cuid())
+  executionId String
+  execution   AutomationExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+
+  // 발송 대상
+  channel     DeliveryChannel
+  recipientId String?
+  recipientEmail String?
+
+  // 상태
+  status      DeliveryStatus @default(PENDING)
+
+  // 결과
+  sentAt      DateTime?
+  deliveredAt DateTime?
+  failedAt    DateTime?
+  errorMessage String?
+
+  // 재시도
+  retryCount  Int @default(0)
+  nextRetryAt DateTime?
+
+  // 참조
+  sourceType  String?
+  sourceId    String?
+
+  createdAt DateTime @default(now())
+
+  @@index([executionId])
+  @@index([status, nextRetryAt])
+  @@index([channel, status])
+  @@map("delivery_logs")
+}
+
+// ============================================
+// Enums — 기존
+// ============================================
+
+enum Plan {
+  FREE
+  PRO
+  BUSINESS
+}
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum SocialPlatform {
+  YOUTUBE
+  INSTAGRAM
+  TIKTOK
+  X
+}
+
+enum ConnectionType {
+  BASIC
+  CONNECTED
+}
+
+enum ChannelStatus {
+  PENDING
+  ACTIVE
+  SYNCING
+  ERROR
+  PAUSED
+  ARCHIVED
+}
+
+enum ConnectionStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+}
+
+enum ContentType {
+  VIDEO
+  SHORT
+  REEL
+  POST
+  STORY
+  LIVE
+}
+
+enum ContentStatus {
+  ACTIVE
+  DELETED
+  PRIVATE
+}
+
+enum SentimentType {
+  POSITIVE
+  NEUTRAL
+  NEGATIVE
+}
+
+enum KeywordStatus {
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum KeywordTrend {
+  RISING
+  STABLE
+  DECLINING
+}
+
+enum InsightType {
+  SHORT_TERM
+  MID_TERM
+  LONG_TERM
+  WEEKLY_REPORT
+  MONTHLY_REPORT
+  CAMPAIGN_REPORT
+  COMPETITOR_REPORT
+  INTENT_REPORT
+  AEO_REPORT
+  FAQ_EXTRACTION
+  RISK_REPORT
+  FAQ_REPORT
+}
+
+enum ReportStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ActionPriority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum ActionStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  DISMISSED
+}
+
+enum JobType {
+  CHANNEL_SYNC
+  CONTENT_SYNC
+  COMMENT_SYNC
+  KEYWORD_TRACK
+  COMPETITOR_SYNC
+  INSIGHT_GENERATE
+  USAGE_AGGREGATE
+  COMMENT_ANALYZE
+  AEO_CRAWL
+  INTENT_ANALYZE
+  CAMPAIGN_METRIC_SYNC
+  DATA_EXPORT
+  REPORT_GENERATE
+  FAQ_EXTRACT
+  RISK_DETECT
+  NOTIFICATION_SEND
+}
+
+enum JobStatus {
+  ACTIVE
+  PAUSED
+  FAILED
+  COMPLETED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  TRIALING
+}
+
+// ============================================
+// Enums — 신규 (v2.1)
+// ============================================
+
+enum PlanTier {
+  STANDARD
+  VERTICAL
+  ENTERPRISE
+}
+
+enum IndustryType {
+  BEAUTY
+  FOOD_BEVERAGE
+  FASHION
+  TECH_SAAS
+  TRAVEL
+  FINANCE
+  GAMING
+  EDUCATION
+  HEALTHCARE
+  OTHER
+}
+
+enum ChannelType {
+  OWNED
+  COMPETITOR
+  MONITORING
+  INFLUENCER
+}
+
+enum SyncStatus {
+  SUCCESS
+  PARTIAL
+  FAILED
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum InsightActionType {
+  CONTENT_CREATE
+  CONTENT_OPTIMIZE
+  SEO_UPDATE
+  COMMENT_REPLY
+  COMPETITOR_WATCH
+  KEYWORD_TARGET
+  STRATEGY_ADJUST
+  RISK_MITIGATE
+  INFLUENCER_OUTREACH
+  CAMPAIGN_LAUNCH
+}
+
+enum SourceModule {
+  SEARCH_INTENT
+  SOCIAL_INTELLIGENCE
+  COMMENT_INTELLIGENCE
+  GEO_AEO
+  CAMPAIGN_MEASURE
+  MANUAL
+  FAQ_ENGINE
+  RISK_ENGINE
+}
+
+enum AnalysisJobStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum IntentCategory {
+  DISCOVERY
+  COMPARISON
+  ACTION
+  TROUBLESHOOTING
+  NAVIGATION
+  UNKNOWN
+}
+
+enum GapType {
+  BLUE_OCEAN
+  OPPORTUNITY
+  COMPETITIVE
+  SATURATED
+}
+
+enum MentionMediaType {
+  TEXT
+  IMAGE
+  VIDEO
+  CAROUSEL
+  LIVE
+}
+
+enum MentionMatchType {
+  EXACT
+  HASHTAG
+  CONTEXT
+}
+
+enum InfluencerTier {
+  NANO
+  MICRO
+  MID
+  MACRO
+  MEGA
+}
+
+enum CampaignType {
+  INFLUENCER
+  CONTENT
+  PAID
+  ORGANIC
+  HYBRID
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ARCHIVED
+  CANCELLED
+}
+
+enum OutreachStatus {
+  PROPOSED
+  NEGOTIATING
+  CONTRACTED
+  CREATING
+  PUBLISHED
+  COMPLETED
+  DECLINED
+}
+
+enum CompensationType {
+  FIXED
+  REVENUE_SHARE
+  PRODUCT_GIFTING
+  HYBRID
+}
+
+enum CampaignContentStatus {
+  PLANNED
+  DRAFT_REVIEW
+  PUBLISHED
+  TRACKING
+  COMPLETED
+}
+
+enum AeoEngine {
+  GOOGLE_AI_OVERVIEW
+  PERPLEXITY
+  BING_COPILOT
+  CHATGPT_SEARCH
+}
+
+enum CitationSourceType {
+  BLOG_POST
+  LANDING_PAGE
+  PRODUCT_PAGE
+  FAQ_PAGE
+  VIDEO
+  RESEARCH_REPORT
+  PRESS_RELEASE
+  SOCIAL_POST
+}
+
+enum EvidenceType {
+  METRIC
+  CHART
+  TABLE
+  QUOTE
+  COMPARISON
+  RANKING
+  HEATMAP
+  DISTRIBUTION
+}
+
+enum DataSourceType {
+  CHANNEL_SNAPSHOT
+  CONTENT_METRIC
+  COMMENT_ANALYSIS
+  INTENT_RESULT
+  AEO_SNAPSHOT
+  CAMPAIGN_METRIC
+  KEYWORD_METRIC
+  RAW_MENTION
+  FAQ_CANDIDATE
+  RISK_SIGNAL
+}
+
+enum ExplorerDataType {
+  CONTENT
+  COMMENT
+  CHANNEL_METRIC
+  KEYWORD_METRIC
+  INTENT_RESULT
+  AEO_SNAPSHOT
+  RAW_MENTION
+  CAMPAIGN_METRIC
+  FAQ
+  RISK_SIGNAL
+}
+
+enum ExportFormat {
+  CSV
+  EXCEL
+  JSON
+}
+
+enum ExportJobStatus {
+  QUEUED
+  PROCESSING
+  READY
+  EXPIRED
+  FAILED
+}
+
+// ============================================
+// Enums — 신규 (v3 — FAQ/Risk/Notification)
+// ============================================
+
+enum FAQStatus {
+  DETECTED
+  REVIEWING
+  ANSWERED
+  DISMISSED
+}
+
+enum RiskSignalStatus {
+  ACTIVE
+  INVESTIGATING
+  RESPONDING
+  RESOLVED
+  DISMISSED
+}
+
+enum NotificationType {
+  SYNC_FAILURE
+  TOKEN_LIMIT_WARNING
+  RISK_DETECTED
+  OAUTH_EXPIRED
+  REPORT_READY
+  CAMPAIGN_UPDATE
+  PLAN_LIMIT_WARNING
+  SENTIMENT_SPIKE
+  CITATION_CHANGE
+  SYSTEM_ALERT
+}
+
+enum NotificationPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+// ============================================
+// Enums — Phase 9 (Automation)
+// ============================================
+
+enum AutomationTriggerType {
+  // Time-based
+  SCHEDULED_CRON
+  // Event-based
+  RISK_SPIKE
+  SENTIMENT_SPIKE
+  FAQ_SURGE
+  KEYWORD_TREND_CHANGE
+  CAMPAIGN_ANOMALY
+  GEO_SCORE_CHANGE
+  COLLECTION_FAILURE
+  REPORT_READY
+  ACTION_CREATED
+  // State-based
+  COLLECTION_COMPLETE
+  ANALYSIS_COMPLETE
+  CAMPAIGN_ENDED
+}
+
+enum AutomationActionType {
+  GENERATE_REPORT
+  DELIVER_REPORT
+  SEND_ALERT
+  CREATE_ACTION
+  ESCALATE_RISK
+  UPDATE_FAQ_QUEUE
+  RECOMMEND_GEO_FIX
+  CAMPAIGN_FOLLOWUP
+  NOTIFY_TEAM
+  PAUSE_COLLECTION
+}
+
+enum AutomationExecutionStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  SKIPPED
+  CANCELLED
+}
+
+enum DeliveryChannel {
+  IN_APP
+  EMAIL
+  SLACK_WEBHOOK
+  CUSTOM_WEBHOOK
+}
+
+enum DeliveryStatus {
+  PENDING
+  SENT
+  DELIVERED
+  FAILED
+  BOUNCED
+}
+
+// ============================================
+// Listening Mind: Search Path (Pathfinder)
+// ============================================
+
+/// 검색 경로 — 특정 시드 키워드에서 파생된 검색 흐름 기록
+model SearchPath {
+  id      String      @id @default(cuid())
+  queryId String
+  query   IntentQuery @relation(fields: [queryId], references: [id], onDelete: Cascade)
+
+  fromKeyword String
+  toKeyword   String
+  strength    Float          @default(0) // 0.0~1.0
+  phase       TemporalPhase
+  intent      IntentCategory
+  pathType    SearchPathType @default(DIRECT)
+
+  createdAt DateTime @default(now())
+
+  @@unique([queryId, fromKeyword, toKeyword])
+  @@index([queryId])
+  @@map("search_paths")
+}
+
+// ============================================
+// Listening Mind: Persona
+// ============================================
+
+/// 검색 의도 기반 자동 생성된 페르소나
+model Persona {
+  id      String      @id @default(cuid())
+  queryId String
+  query   IntentQuery @relation(fields: [queryId], references: [id], onDelete: Cascade)
+
+  label           String
+  description     String
+  dominantIntent  IntentCategory
+  dominantPhase   TemporalPhase
+  percentage      Float          @default(0)
+  traits          Json? // 레이더 차트 데이터
+  topQuestions    String[]
+  contentStrategy String?
+
+  keywords PersonaKeyword[]
+
+  createdAt DateTime @default(now())
+
+  @@index([queryId])
+  @@map("personas")
+}
+
+/// 페르소나에 연결된 키워드
+model PersonaKeyword {
+  id        String  @id @default(cuid())
+  personaId String
+  persona   Persona @relation(fields: [personaId], references: [id], onDelete: Cascade)
+
+  keyword String
+  weight  Float @default(1)
+
+  @@unique([personaId, keyword])
+  @@map("persona_keywords")
+}
+
+// ============================================
+// Listening Mind: Keyword Cluster Result
+// ============================================
+
+/// 클러스터 분석 결과 — 영속 저장
+model KeywordClusterResult {
+  id      String      @id @default(cuid())
+  queryId String
+  query   IntentQuery @relation(fields: [queryId], references: [id], onDelete: Cascade)
+
+  clusterIndex   Int
+  name           String
+  centroid       String
+  dominantIntent IntentCategory
+  dominantPhase  TemporalPhase
+  avgGapScore    Float        @default(0)
+  avgVolume      Float        @default(0)
+  size           Int          @default(0)
+  keywords       String[]
+  gptAnalysis    Json? // GPT 종합 분석 결과 캐시
+
+  createdAt DateTime @default(now())
+
+  @@index([queryId])
+  @@map("keyword_cluster_results")
+}
+
+// ============================================
+// Listening Mind: Brand Journey (Road View)
+// ============================================
+
+/// 브랜드 검색 여정 — 브랜드 간 검색 흐름 추적
+model BrandJourney {
+  id      String      @id @default(cuid())
+  queryId String
+  query   IntentQuery @relation(fields: [queryId], references: [id], onDelete: Cascade)
+
+  fromBrand String
+  toBrand   String
+  weight    Int            @default(0)
+  phase     TemporalPhase
+  intent    IntentCategory
+  context   BrandContext   @default(RELATED)
+
+  createdAt DateTime @default(now())
+
+  @@unique([queryId, fromBrand, toBrand])
+  @@index([queryId])
+  @@map("brand_journeys")
+}
+
+// ── New Enums ──
+
+enum TemporalPhase {
+  BEFORE
+  CURRENT
+  AFTER
+}
+
+enum SearchPathType {
+  DIRECT       // 직접 연결
+  AUTOCOMPLETE // 자동완성 파생
+  RELATED      // 연관 검색어
+  TEMPORAL     // 시간적 전환
+  CO_SEARCH    // 함께 검색
+}
+
+enum BrandContext {
+  DIRECT      // 직접 검색
+  COMPARISON  // 비교 검색
+  ALTERNATIVE // 대안 탐색
+  RELATED     // 관련 검색
+}

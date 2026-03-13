@@ -1,0 +1,15 @@
+{
+  "name": "@x2/analyzer",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@x2/tsconfig": "workspace:*",
+    "tsx": "^4.0.0",
+    "typescript": "^5.7.0"
+  }
+}

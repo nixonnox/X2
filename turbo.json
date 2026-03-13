@@ -1,0 +1,33 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  // TUI(Terminal UI) 모드로 각 패키지 로그를 구분하여 표시
+  "ui": "tui",
+  "tasks": {
+    // 개발 서버: 캐시 불필요, 프로세스가 지속 실행됨
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    // 프로덕션 빌드: 의존 패키지 먼저 빌드 (^build)
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+    },
+    // 린트: 의존 패키지 빌드 후 실행 (타입 정보 필요)
+    "lint": {
+      "dependsOn": ["^build"]
+    },
+    // 타입 검사: 의존 패키지 빌드 후 실행
+    "typecheck": {
+      "dependsOn": ["^build"]
+    },
+    // 테스트: 항상 재실행
+    "test": {
+      "cache": false
+    },
+    // 정리: 캐시 불필요
+    "clean": {
+      "cache": false
+    }
+  }
+}

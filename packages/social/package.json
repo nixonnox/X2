@@ -1,0 +1,19 @@
+{
+  "name": "@x2/social",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@x2/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@x2/tsconfig": "workspace:*",
+    "typescript": "^5.7.0"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "@x2/types",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@x2/tsconfig": "workspace:*",
+    "typescript": "^5.7.0"
+  }
+}

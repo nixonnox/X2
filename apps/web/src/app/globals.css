@@ -1,0 +1,49 @@
+@import "../styles/tokens.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-[var(--background)] text-[var(--foreground)] antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  * {
+    @apply border-[var(--border)];
+  }
+}
+
+@layer components {
+  .sidebar-item {
+    @apply flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition-all duration-150;
+  }
+
+  .card {
+    @apply rounded-lg border border-[var(--border)] bg-white;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center gap-2 rounded-md bg-[var(--primary)] px-3.5 py-1.5 text-[13px] font-medium text-white transition-opacity hover:opacity-80;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 rounded-md border border-[var(--border)] bg-white px-3.5 py-1.5 text-[13px] font-medium transition-colors hover:bg-[var(--secondary)];
+  }
+
+  .input {
+    @apply h-8 rounded-md border border-[var(--border)] bg-white px-3 text-[13px] placeholder:text-[var(--muted-foreground)] focus:border-[var(--foreground)] focus:outline-none focus:ring-1 focus:ring-[var(--foreground)];
+    --tw-ring-opacity: 0.1;
+  }
+
+  .badge {
+    @apply inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

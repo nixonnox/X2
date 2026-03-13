@@ -1,0 +1,22 @@
+{
+  "name": "@x2/auth",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./edge": "./src/edge.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@x2/tsconfig": "workspace:*",
+    "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "@auth/prisma-adapter": "^2.11.1",
+    "@x2/db": "workspace:*",
+    "next-auth": "5.0.0-beta.30"
+  }
+}
