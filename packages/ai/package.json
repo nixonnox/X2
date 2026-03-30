@@ -12,5 +12,8 @@
   "devDependencies": {
     "@x2/tsconfig": "workspace:*",
     "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0"
   }
 }

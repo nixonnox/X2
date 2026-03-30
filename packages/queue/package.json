@@ -12,5 +12,9 @@
   "devDependencies": {
     "@x2/tsconfig": "workspace:*",
     "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "bullmq": "^5.71.0",
+    "ioredis": "^5.10.0"
   }
 }

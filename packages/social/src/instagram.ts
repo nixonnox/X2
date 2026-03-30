@@ -201,11 +201,7 @@ export class InstagramProvider implements SocialProvider {
 
     const data = (await res.json()) as { id?: string };
     if (!data.id) {
-      throw new ChannelNotFoundError(
-        PLATFORM,
-        404,
-        `Could not resolve user ID for: ${usernameOrId}`,
-      );
+      throw new ChannelNotFoundError(PLATFORM, usernameOrId);
     }
 
     return data.id;
@@ -328,12 +324,12 @@ export class InstagramProvider implements SocialProvider {
 
     // Token expired / invalid
     if (code === 190) {
-      throw new AuthenticationError(PLATFORM, res.status, message);
+      throw new AuthenticationError(PLATFORM, message);
     }
 
     // User not found
     if (code === 803) {
-      throw new ChannelNotFoundError(PLATFORM, res.status, message);
+      throw new ChannelNotFoundError(PLATFORM, message);
     }
 
     // Rate limit
@@ -342,7 +338,7 @@ export class InstagramProvider implements SocialProvider {
       const retryAfterMs = retryAfterHeader
         ? Number(retryAfterHeader) * 1000
         : 60_000;
-      throw new RateLimitError(PLATFORM, res.status, message, retryAfterMs);
+      throw new RateLimitError(PLATFORM, retryAfterMs, message);
     }
 
     throw new PlatformApiError(PLATFORM, res.status, message);
