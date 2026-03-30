@@ -11,6 +11,7 @@ import {
   ZoomIn,
   ZoomOut,
   Maximize2,
+  AlertTriangle,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -23,63 +24,32 @@ import {
   CartesianGrid,
 } from "recharts";
 import { PageHeader, ChartCard, EmptyState } from "@/components/shared";
-import type {
-  IntentGraphData,
-  IntentGraphNode,
-  TemporalPhase,
-  IntentCategory,
-  SearchJourneyStage,
-} from "@/lib/intent-engine";
 import {
-  INTENT_CATEGORY_LABELS,
-  TEMPORAL_PHASE_LABELS,
-  JOURNEY_STAGE_LABELS,
-} from "@/lib/intent-engine";
+  usePathfinderQuery,
+  JourneyScreenStatePanel,
+} from "@/features/journey";
+import type {
+  PathfinderNodeViewModel,
+  PathfinderEdgeViewModel,
+} from "@/features/journey";
 
-// ── Types ──
+// ── Filter Types ──
 
-type AnalysisState =
-  | { status: "idle" }
-  | { status: "loading"; keyword: string }
-  | { status: "error"; keyword: string; message: string }
-  | { status: "success"; keyword: string; data: IntentGraphData };
+type DirectionFilter = "all" | "before" | "seed" | "after";
+type IntentFilter = "all" | string;
 
-type PathNode = {
-  id: string;
-  name: string;
-  phase: TemporalPhase;
-  intent: IntentCategory;
-  volume: number;
-  gapScore: number;
-  isRising: boolean;
-  isSeed: boolean;
-  journeyStage?: SearchJourneyStage;
-};
+// ── Direction Colors ──
 
-type PathEdge = {
-  source: string;
-  target: string;
-  strength: number;
-  type: string;
-};
-
-type PhaseFilter = "all" | TemporalPhase;
-type IntentFilter = "all" | IntentCategory;
-
-// ── Colors ──
-
-const PHASE_COLORS: Record<TemporalPhase, string> = {
+const DIRECTION_COLORS: Record<string, string> = {
   before: "#8b5cf6",
-  current: "#3b82f6",
+  seed: "#3b82f6",
   after: "#10b981",
 };
 
-const INTENT_COLORS: Record<IntentCategory, string> = {
-  discovery: "#3b82f6",
-  comparison: "#f59e0b",
-  action: "#10b981",
-  troubleshooting: "#ef4444",
-  unknown: "#6b7280",
+const DIRECTION_LABELS: Record<string, string> = {
+  before: "검색 전",
+  seed: "시드",
+  after: "검색 후",
 };
 
 // ── Canvas Graph Renderer ──
@@ -87,13 +57,11 @@ const INTENT_COLORS: Record<IntentCategory, string> = {
 function PathGraph({
   nodes,
   edges,
-  seedKeyword,
   onNodeClick,
   selectedNode,
 }: {
-  nodes: PathNode[];
-  edges: PathEdge[];
-  seedKeyword: string;
+  nodes: PathfinderNodeViewModel[];
+  edges: PathfinderEdgeViewModel[];
   onNodeClick: (nodeId: string | null) => void;
   selectedNode: string | null;
 }) {
@@ -110,47 +78,47 @@ function PathGraph({
   const [tooltipInfo, setTooltipInfo] = useState<{
     x: number;
     y: number;
-    node: PathNode;
+    node: PathfinderNodeViewModel;
   } | null>(null);
 
-  // Layout: position nodes by temporal phase columns
+  // Layout: position nodes by direction columns
   const layoutNodes = useCallback(() => {
     const positions = new Map<string, { x: number; y: number }>();
     const width = containerRef.current?.clientWidth ?? 800;
     const height = containerRef.current?.clientHeight ?? 500;
 
-    const phaseColumns: Record<TemporalPhase, PathNode[]> = {
+    const dirColumns: Record<string, PathfinderNodeViewModel[]> = {
       before: [],
-      current: [],
+      seed: [],
       after: [],
     };
 
     for (const node of nodes) {
-      phaseColumns[node.phase].push(node);
+      dirColumns[node.direction]?.push(node);
     }
 
     // Sort each column by volume descending
-    for (const phase of ["before", "current", "after"] as TemporalPhase[]) {
-      phaseColumns[phase].sort((a, b) => b.volume - a.volume);
+    for (const dir of ["before", "seed", "after"]) {
+      dirColumns[dir]?.sort((a, b) => b.searchVolume - a.searchVolume);
     }
 
-    const colX: Record<TemporalPhase, number> = {
+    const colX: Record<string, number> = {
       before: width * 0.18,
-      current: width * 0.5,
+      seed: width * 0.5,
       after: width * 0.82,
     };
 
-    for (const phase of ["before", "current", "after"] as TemporalPhase[]) {
-      const col = phaseColumns[phase];
+    for (const dir of ["before", "seed", "after"]) {
+      const col = dirColumns[dir] ?? [];
       const totalH = Math.min(col.length, 20) * 36;
       const startY = Math.max(40, (height - totalH) / 2);
 
       col.slice(0, 20).forEach((node, i) => {
         const jitter = node.isSeed
           ? 0
-          : Math.sin(i * 2.7 + node.name.length) * 30;
+          : Math.sin(i * 2.7 + node.label.length) * 30;
         positions.set(node.id, {
-          x: colX[phase] + jitter,
+          x: (colX[dir] ?? 0) + jitter,
           y: startY + i * 36,
         });
       });
@@ -183,37 +151,36 @@ function PathGraph({
 
     const positions = nodePositions.current;
 
-    // Phase column labels
-    const phaseLabels: { phase: TemporalPhase; x: number }[] = [
-      { phase: "before", x: rect.width * 0.18 },
-      { phase: "current", x: rect.width * 0.5 },
-      { phase: "after", x: rect.width * 0.82 },
+    // Direction column labels
+    const dirLabels: { dir: string; x: number }[] = [
+      { dir: "before", x: rect.width * 0.18 },
+      { dir: "seed", x: rect.width * 0.5 },
+      { dir: "after", x: rect.width * 0.82 },
     ];
 
-    for (const { phase, x } of phaseLabels) {
-      const label = TEMPORAL_PHASE_LABELS[phase];
-      ctx.fillStyle = PHASE_COLORS[phase] + "20";
+    for (const { dir, x } of dirLabels) {
+      const color = DIRECTION_COLORS[dir] ?? "#6b7280";
+      ctx.fillStyle = color + "20";
       ctx.fillRect(x - 80, 0, 160, rect.height / zoom);
-      ctx.fillStyle = PHASE_COLORS[phase];
+      ctx.fillStyle = color;
       ctx.font = "bold 12px system-ui";
       ctx.textAlign = "center";
-      ctx.fillText(label.label, x, 18);
+      ctx.fillText(DIRECTION_LABELS[dir] ?? dir, x, 18);
     }
 
     // Draw edges
     for (const edge of edges) {
-      const sPos = positions.get(edge.source);
-      const tPos = positions.get(edge.target);
+      const sPos = positions.get(edge.fromNodeId);
+      const tPos = positions.get(edge.toNodeId);
       if (!sPos || !tPos) continue;
 
       const isHighlighted =
-        selectedNode === edge.source || selectedNode === edge.target;
+        selectedNode === edge.fromNodeId || selectedNode === edge.toNodeId;
       ctx.beginPath();
       ctx.strokeStyle = isHighlighted ? "#3b82f6" : "#d1d5db";
-      ctx.lineWidth = isHighlighted ? 2 : Math.max(0.5, edge.strength * 2);
+      ctx.lineWidth = isHighlighted ? 2 : Math.max(0.5, edge.weight * 2);
       ctx.globalAlpha = isHighlighted ? 0.8 : 0.3;
 
-      // Curved line
       const midX = (sPos.x + tPos.x) / 2;
       const cpOffset = (tPos.x - sPos.x) * 0.2;
       ctx.moveTo(sPos.x, sPos.y);
@@ -258,15 +225,15 @@ function PathGraph({
       const isConnected = selectedNode
         ? edges.some(
             (e) =>
-              (e.source === selectedNode && e.target === node.id) ||
-              (e.target === selectedNode && e.source === node.id),
+              (e.fromNodeId === selectedNode && e.toNodeId === node.id) ||
+              (e.toNodeId === selectedNode && e.fromNodeId === node.id),
           )
         : false;
       const dimmed = selectedNode && !isSelected && !isConnected;
 
       const radius = node.isSeed
         ? 10
-        : Math.max(4, Math.min(8, Math.log2(Math.max(1, node.volume)) * 1.2));
+        : Math.max(4, Math.min(8, node.displaySize * 1.2));
 
       ctx.globalAlpha = dimmed ? 0.2 : 1;
 
@@ -279,7 +246,7 @@ function PathGraph({
         0,
         Math.PI * 2,
       );
-      ctx.fillStyle = INTENT_COLORS[node.intent] ?? "#6b7280";
+      ctx.fillStyle = node.intentColor;
       ctx.fill();
 
       if (isSelected || isHovered) {
@@ -301,12 +268,12 @@ function PathGraph({
         isSelected ||
         isHovered ||
         isConnected ||
-        node.volume > 500;
+        node.searchVolume > 500;
       if (showLabel) {
         ctx.font = node.isSeed ? "bold 11px system-ui" : "10px system-ui";
         ctx.fillStyle = dimmed ? "#9ca3af" : "#111827";
         ctx.textAlign = "left";
-        ctx.fillText(node.name, pos.x + radius + 5, pos.y + 3);
+        ctx.fillText(node.label, pos.x + radius + 5, pos.y + 3);
       }
     }
 
@@ -425,16 +392,20 @@ function PathGraph({
             top: Math.max(0, tooltipInfo.y - 60),
           }}
         >
-          <p className="text-[12px] font-semibold">{tooltipInfo.node.name}</p>
+          <p className="text-[12px] font-semibold">{tooltipInfo.node.label}</p>
           <div className="mt-1 space-y-0.5 text-[11px] text-[var(--muted-foreground)]">
-            <p>
-              의도: {INTENT_CATEGORY_LABELS[tooltipInfo.node.intent]?.label}
-            </p>
-            <p>단계: {TEMPORAL_PHASE_LABELS[tooltipInfo.node.phase]?.label}</p>
-            <p>검색량: {tooltipInfo.node.volume.toLocaleString()}</p>
+            <p>의도: {tooltipInfo.node.intentLabel}</p>
+            <p>방향: {DIRECTION_LABELS[tooltipInfo.node.direction] ?? tooltipInfo.node.direction}</p>
+            {tooltipInfo.node.stageLabel && (
+              <p>여정 단계: {tooltipInfo.node.stageLabel}</p>
+            )}
+            <p>검색량: {tooltipInfo.node.searchVolume.toLocaleString()}</p>
             <p>갭 스코어: {tooltipInfo.node.gapScore}</p>
             {tooltipInfo.node.isRising && (
               <p className="font-medium text-emerald-600">급상승 키워드</p>
+            )}
+            {tooltipInfo.node.lowConfidenceFlag && (
+              <p className="font-medium text-orange-500">낮은 신뢰도</p>
             )}
           </div>
         </div>
@@ -442,32 +413,15 @@ function PathGraph({
 
       {/* Legend */}
       <div className="absolute bottom-2 left-2 flex flex-wrap gap-3 rounded-md bg-white/90 px-3 py-1.5 text-[10px] shadow">
-        {(["before", "current", "after"] as TemporalPhase[]).map((phase) => (
-          <span key={phase} className="flex items-center gap-1">
+        {(["before", "seed", "after"] as const).map((dir) => (
+          <span key={dir} className="flex items-center gap-1">
             <span
               className="h-2.5 w-2.5 rounded-sm"
-              style={{ backgroundColor: PHASE_COLORS[phase] + "30" }}
+              style={{ backgroundColor: DIRECTION_COLORS[dir] + "30" }}
             />
-            {TEMPORAL_PHASE_LABELS[phase].label}
+            {DIRECTION_LABELS[dir]}
           </span>
         ))}
-        <span className="border-l border-gray-200 pl-2" />
-        {(
-          Object.entries(INTENT_CATEGORY_LABELS) as [
-            IntentCategory,
-            { label: string; color: string },
-          ][]
-        )
-          .filter(([key]) => key !== "unknown")
-          .map(([key, { label, color }]) => (
-            <span key={key} className="flex items-center gap-1">
-              <span
-                className="h-2.5 w-2.5 rounded-full"
-                style={{ backgroundColor: color }}
-              />
-              {label}
-            </span>
-          ))}
       </div>
     </div>
   );
@@ -477,152 +431,106 @@ function PathGraph({
 
 export default function PathfinderPage() {
   const [inputValue, setInputValue] = useState("");
-  const [analysis, setAnalysis] = useState<AnalysisState>({ status: "idle" });
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
-  const [phaseFilter, setPhaseFilter] = useState<PhaseFilter>("all");
+  const [directionFilter, setDirectionFilter] = useState<DirectionFilter>("all");
   const [intentFilter, setIntentFilter] = useState<IntentFilter>("all");
+
+  const {
+    nodes,
+    edges,
+    paths,
+    summary,
+    screenState,
+    analyze,
+  } = usePathfinderQuery();
 
   const handleAnalyze = useCallback(
     async (keyword?: string) => {
       const seed = (keyword ?? inputValue).trim();
       if (!seed) return;
-      setAnalysis({ status: "loading", keyword: seed });
       setSelectedNode(null);
-      try {
-        const res = await fetch("/api/intent/analyze", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            seedKeyword: seed,
-            mode: "sync",
-            maxDepth: 2,
-            maxKeywords: 150,
-            platforms: ["youtube", "instagram", "tiktok", "naver_blog"],
-          }),
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = await res.json();
-        if (!json.success || !json.data)
-          throw new Error(json.error ?? "분석 결과가 없습니다.");
-        setAnalysis({
-          status: "success",
-          keyword: seed,
-          data: json.data as IntentGraphData,
-        });
-        setInputValue("");
-      } catch (err) {
-        setAnalysis({
-          status: "error",
-          keyword: seed,
-          message: (err as Error).message,
-        });
-      }
+      await analyze(seed);
+      setInputValue("");
     },
-    [inputValue],
+    [inputValue, analyze],
   );
 
-  // Build path nodes and edges from analysis data
-  const { pathNodes, pathEdges } = useMemo(() => {
-    if (analysis.status !== "success") return { pathNodes: [], pathEdges: [] };
-    const { nodes, links } = analysis.data;
+  // Collect unique intents for filter
+  const uniqueIntents = useMemo(() => {
+    const intents = new Map<string, string>();
+    for (const n of nodes) {
+      if (n.intent !== "unknown") {
+        intents.set(n.intent, n.intentLabel);
+      }
+    }
+    return Array.from(intents.entries());
+  }, [nodes]);
 
+  // Filtered nodes/edges
+  const { filteredNodes, filteredEdges } = useMemo(() => {
     let filtered = nodes;
-    if (phaseFilter !== "all")
-      filtered = filtered.filter((n) => n.temporalPhase === phaseFilter);
+    if (directionFilter !== "all")
+      filtered = filtered.filter((n) => n.direction === directionFilter);
     if (intentFilter !== "all")
-      filtered = filtered.filter((n) => n.intentCategory === intentFilter);
+      filtered = filtered.filter((n) => n.intent === intentFilter);
 
-    const nodeIds = new Set(filtered.map((n) => n.id));
     // Always include seed
     const seedNode = nodes.find((n) => n.isSeed);
+    const nodeIds = new Set(filtered.map((n) => n.id));
     if (seedNode && !nodeIds.has(seedNode.id)) {
       filtered = [seedNode, ...filtered];
       nodeIds.add(seedNode.id);
     }
 
-    const pathNodes: PathNode[] = filtered.map((n) => ({
-      id: n.id,
-      name: n.name,
-      phase: n.temporalPhase,
-      intent: n.intentCategory,
-      volume: n.searchVolume,
-      gapScore: n.gapScore,
-      isRising: n.isRising,
-      isSeed: n.isSeed,
-      journeyStage: n.journeyStage,
-    }));
+    const filteredEdges = edges.filter(
+      (e) => nodeIds.has(e.fromNodeId) && nodeIds.has(e.toNodeId),
+    );
 
-    const pathEdges: PathEdge[] = links
-      .filter((l) => nodeIds.has(l.source) && nodeIds.has(l.target))
-      .map((l) => ({
-        source: l.source,
-        target: l.target,
-        strength: l.strength,
-        type: l.relationshipType,
-      }));
+    return { filteredNodes: filtered, filteredEdges };
+  }, [nodes, edges, directionFilter, intentFilter]);
 
-    return { pathNodes, pathEdges };
-  }, [analysis, phaseFilter, intentFilter]);
-
-  // Selected node info
+  // Selected node data
   const selectedNodeData = useMemo(() => {
-    if (!selectedNode || analysis.status !== "success") return null;
-    return analysis.data.nodes.find((n) => n.id === selectedNode) ?? null;
-  }, [selectedNode, analysis]);
+    if (!selectedNode) return null;
+    return nodes.find((n) => n.id === selectedNode) ?? null;
+  }, [selectedNode, nodes]);
 
-  // Connected nodes
+  // Connected nodes (before / after)
   const connectedNodes = useMemo(() => {
-    if (!selectedNode || analysis.status !== "success")
-      return { before: [], after: [] };
-    const { links, nodes } = analysis.data;
+    if (!selectedNode) return { before: [], after: [] };
     const nodeMap = new Map(nodes.map((n) => [n.id, n]));
 
-    const before: IntentGraphNode[] = [];
-    const after: IntentGraphNode[] = [];
+    const before: PathfinderNodeViewModel[] = [];
+    const after: PathfinderNodeViewModel[] = [];
 
-    for (const link of links) {
-      if (link.source === selectedNode) {
-        const t = nodeMap.get(link.target);
+    for (const edge of edges) {
+      if (edge.fromNodeId === selectedNode) {
+        const t = nodeMap.get(edge.toNodeId);
         if (t) after.push(t);
       }
-      if (link.target === selectedNode) {
-        const s = nodeMap.get(link.source);
+      if (edge.toNodeId === selectedNode) {
+        const s = nodeMap.get(edge.fromNodeId);
         if (s) before.push(s);
       }
     }
 
     return {
-      before: before
-        .sort((a, b) => b.searchVolume - a.searchVolume)
-        .slice(0, 10),
+      before: before.sort((a, b) => b.searchVolume - a.searchVolume).slice(0, 10),
       after: after.sort((a, b) => b.searchVolume - a.searchVolume).slice(0, 10),
     };
-  }, [selectedNode, analysis]);
+  }, [selectedNode, nodes, edges]);
 
-  // Journey stage distribution
-  const journeyStageData = useMemo(() => {
-    if (analysis.status !== "success") return [];
-    const dist = analysis.data.summary.journeyStageDistribution;
-    return Object.entries(JOURNEY_STAGE_LABELS).map(
-      ([key, { label, color }]) => ({
-        name: label,
-        count: dist[key as SearchJourneyStage] ?? 0,
-        fill: color,
-      }),
-    );
-  }, [analysis]);
+  // Stage distribution chart data
+  const stageDistData = useMemo(() => {
+    if (!summary) return [];
+    return summary.stageDistribution;
+  }, [summary]);
 
-  // Phase distribution
-  const phaseDistData = useMemo(() => {
-    if (analysis.status !== "success") return [];
-    const journey = analysis.data.journey;
-    return journey.stages.map((s) => ({
-      name: TEMPORAL_PHASE_LABELS[s.phase].label,
-      keywords: s.keywords.length,
-      avgGap: s.avgGapScore,
-      fill: PHASE_COLORS[s.phase],
-    }));
-  }, [analysis]);
+  // Intent distribution chart data
+  const intentDistData = useMemo(() => {
+    if (!summary) return [];
+    return summary.intentDistribution;
+  }, [summary]);
 
   return (
     <div className="space-y-5">
@@ -644,15 +552,15 @@ export default function PathfinderPage() {
               onKeyDown={(e) => e.key === "Enter" && handleAnalyze()}
               placeholder="검색 여정을 분석할 키워드를 입력하세요"
               className="input w-full pl-8"
-              disabled={analysis.status === "loading"}
+              disabled={screenState.status === "loading"}
             />
           </div>
           <button
             onClick={() => handleAnalyze()}
-            disabled={!inputValue.trim() || analysis.status === "loading"}
+            disabled={!inputValue.trim() || screenState.status === "loading"}
             className="btn-primary flex items-center gap-1.5 whitespace-nowrap disabled:opacity-50"
           >
-            {analysis.status === "loading" ? (
+            {screenState.status === "loading" ? (
               <>
                 <Loader2 className="h-3.5 w-3.5 animate-spin" /> 분석 중...
               </>
@@ -663,25 +571,15 @@ export default function PathfinderPage() {
             )}
           </button>
         </div>
-        {analysis.status === "loading" && (
-          <div className="mt-3 flex items-center gap-2 rounded-md bg-blue-50 px-3 py-2">
-            <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-            <p className="text-[13px] text-blue-700">
-              검색 여정을 분석하고 있습니다...
-            </p>
-          </div>
-        )}
-        {analysis.status === "error" && (
-          <div className="mt-3 rounded-md bg-red-50 px-3 py-2">
-            <p className="text-[13px] text-red-700">
-              분석 실패: {analysis.message}
-            </p>
-          </div>
-        )}
+        <JourneyScreenStatePanel
+          state={screenState}
+          keyword={summary?.seedKeyword}
+          loadingMessage="검색 여정을 분석하고 있습니다..."
+        />
       </div>
 
       {/* Empty */}
-      {analysis.status === "idle" && (
+      {screenState.status === "idle" && (
         <EmptyState
           icon={GitBranch}
           title="검색 여정을 시각화합니다"
@@ -690,97 +588,79 @@ export default function PathfinderPage() {
       )}
 
       {/* Results */}
-      {analysis.status === "success" && (
+      {screenState.status === "success" && summary && (
         <>
           {/* KPI */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
             <div className="card p-3">
-              <p className="text-[11px] text-[var(--muted-foreground)]">
-                시드 키워드
-              </p>
+              <p className="text-[11px] text-[var(--muted-foreground)]">시드 키워드</p>
               <p className="mt-0.5 truncate text-[14px] font-semibold">
-                {analysis.keyword}
+                {summary.seedKeyword}
               </p>
             </div>
             <div className="card p-3">
-              <p className="text-[11px] text-[var(--muted-foreground)]">
-                전체 노드
-              </p>
-              <p className="mt-0.5 text-[14px] font-semibold">
-                {analysis.data.summary.totalNodes}
-              </p>
+              <p className="text-[11px] text-[var(--muted-foreground)]">전체 노드</p>
+              <p className="mt-0.5 text-[14px] font-semibold">{summary.totalNodes}</p>
             </div>
             <div className="card p-3">
-              <p className="text-[11px] text-[var(--muted-foreground)]">
-                연결 수
-              </p>
-              <p className="mt-0.5 text-[14px] font-semibold">
-                {analysis.data.summary.totalLinks}
-              </p>
+              <p className="text-[11px] text-[var(--muted-foreground)]">연결 수</p>
+              <p className="mt-0.5 text-[14px] font-semibold">{summary.totalEdges}</p>
             </div>
             <div className="card p-3">
-              <p className="text-[11px] text-[var(--muted-foreground)]">
-                클러스터
-              </p>
-              <p className="mt-0.5 text-[14px] font-semibold">
-                {analysis.data.summary.totalClusters}
-              </p>
+              <p className="text-[11px] text-[var(--muted-foreground)]">경로 수</p>
+              <p className="mt-0.5 text-[14px] font-semibold">{summary.totalPaths}</p>
             </div>
             <div className="card p-3">
-              <p className="text-[11px] text-[var(--muted-foreground)]">
-                평균 갭 스코어
-              </p>
-              <p className="mt-0.5 text-[14px] font-semibold">
-                {analysis.data.summary.avgGapScore}
-              </p>
+              <p className="text-[11px] text-[var(--muted-foreground)]">평균 갭 스코어</p>
+              <p className="mt-0.5 text-[14px] font-semibold">{summary.avgGapScore}</p>
             </div>
           </div>
 
           {/* Filters */}
           <div className="flex flex-wrap items-center gap-2">
             <Filter className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
-            <span className="text-[11px] text-[var(--muted-foreground)]">
-              시간적 단계:
-            </span>
-            {(["all", "before", "current", "after"] as PhaseFilter[]).map(
-              (f) => (
-                <button
-                  key={f}
-                  onClick={() => setPhaseFilter(f)}
-                  className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                    phaseFilter === f
-                      ? "bg-blue-100 text-blue-700"
-                      : "hover:bg-[var(--secondary)]/80 bg-[var(--secondary)] text-[var(--muted-foreground)]"
-                  }`}
-                >
-                  {f === "all" ? "전체" : TEMPORAL_PHASE_LABELS[f].label}
-                </button>
-              ),
-            )}
-            <span className="ml-2 text-[11px] text-[var(--muted-foreground)]">
-              의도:
-            </span>
-            {(
-              [
-                "all",
-                "discovery",
-                "comparison",
-                "action",
-                "troubleshooting",
-              ] as IntentFilter[]
-            ).map((f) => (
+            <span className="text-[11px] text-[var(--muted-foreground)]">방향:</span>
+            {(["all", "before", "seed", "after"] as DirectionFilter[]).map((f) => (
               <button
                 key={f}
-                onClick={() => setIntentFilter(f)}
+                onClick={() => setDirectionFilter(f)}
                 className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                  intentFilter === f
+                  directionFilter === f
                     ? "bg-blue-100 text-blue-700"
                     : "hover:bg-[var(--secondary)]/80 bg-[var(--secondary)] text-[var(--muted-foreground)]"
                 }`}
               >
-                {f === "all" ? "전체" : INTENT_CATEGORY_LABELS[f]?.label}
+                {f === "all" ? "전체" : DIRECTION_LABELS[f] ?? f}
               </button>
             ))}
+            {uniqueIntents.length > 0 && (
+              <>
+                <span className="ml-2 text-[11px] text-[var(--muted-foreground)]">의도:</span>
+                <button
+                  onClick={() => setIntentFilter("all")}
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                    intentFilter === "all"
+                      ? "bg-blue-100 text-blue-700"
+                      : "hover:bg-[var(--secondary)]/80 bg-[var(--secondary)] text-[var(--muted-foreground)]"
+                  }`}
+                >
+                  전체
+                </button>
+                {uniqueIntents.map(([key, label]) => (
+                  <button
+                    key={key}
+                    onClick={() => setIntentFilter(key)}
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                      intentFilter === key
+                        ? "bg-blue-100 text-blue-700"
+                        : "hover:bg-[var(--secondary)]/80 bg-[var(--secondary)] text-[var(--muted-foreground)]"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </>
+            )}
           </div>
 
           {/* Graph */}
@@ -788,15 +668,13 @@ export default function PathfinderPage() {
             <div className="border-b border-[var(--border)] px-4 py-3">
               <h3 className="text-[13px] font-semibold">검색 여정 네트워크</h3>
               <p className="text-[11px] text-[var(--muted-foreground)]">
-                노드를 클릭하면 연결된 검색어를 확인할 수 있습니다. 드래그로
-                이동, 스크롤로 확대/축소할 수 있습니다.
+                노드를 클릭하면 연결된 검색어를 확인할 수 있습니다. 드래그로 이동, 스크롤로 확대/축소할 수 있습니다.
               </p>
             </div>
             <div className="h-[480px]">
               <PathGraph
-                nodes={pathNodes}
-                edges={pathEdges}
-                seedKeyword={analysis.keyword}
+                nodes={filteredNodes}
+                edges={filteredEdges}
                 onNodeClick={setSelectedNode}
                 selectedNode={selectedNode}
               />
@@ -808,7 +686,12 @@ export default function PathfinderPage() {
             <div className="card p-4">
               <h3 className="mb-3 flex items-center gap-2 text-[13px] font-semibold">
                 <GitBranch className="h-3.5 w-3.5 text-blue-500" />
-                &quot;{selectedNodeData.name}&quot; 검색 경로
+                &quot;{selectedNodeData.label}&quot; 검색 경로
+                {selectedNodeData.lowConfidenceFlag && (
+                  <span className="ml-1 inline-flex items-center gap-0.5 rounded-full bg-orange-50 px-2 py-0.5 text-[10px] text-orange-600">
+                    <AlertTriangle className="h-3 w-3" /> 낮은 신뢰도
+                  </span>
+                )}
               </h3>
               <div className="grid gap-4 lg:grid-cols-3">
                 {/* Before */}
@@ -826,13 +709,9 @@ export default function PathfinderPage() {
                         >
                           <span
                             className="h-2 w-2 rounded-full"
-                            style={{
-                              backgroundColor: INTENT_COLORS[n.intentCategory],
-                            }}
+                            style={{ backgroundColor: n.intentColor }}
                           />
-                          <span className="flex-1 truncate text-[12px]">
-                            {n.name}
-                          </span>
+                          <span className="flex-1 truncate text-[12px]">{n.label}</span>
                           <span className="text-[10px] text-[var(--muted-foreground)]">
                             {n.searchVolume.toLocaleString()}
                           </span>
@@ -849,51 +728,31 @@ export default function PathfinderPage() {
                 {/* Center */}
                 <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-3">
                   <p className="mb-2 text-center text-[14px] font-semibold">
-                    {selectedNodeData.name}
+                    {selectedNodeData.label}
                   </p>
                   <div className="grid grid-cols-2 gap-2 text-[11px]">
                     <div>
                       <p className="text-[var(--muted-foreground)]">의도</p>
-                      <p className="font-medium">
-                        {
-                          INTENT_CATEGORY_LABELS[
-                            selectedNodeData.intentCategory
-                          ]?.label
-                        }
-                      </p>
+                      <p className="font-medium">{selectedNodeData.intentLabel}</p>
                     </div>
                     <div>
-                      <p className="text-[var(--muted-foreground)]">단계</p>
+                      <p className="text-[var(--muted-foreground)]">방향</p>
                       <p className="font-medium">
-                        {
-                          TEMPORAL_PHASE_LABELS[selectedNodeData.temporalPhase]
-                            ?.label
-                        }
+                        {DIRECTION_LABELS[selectedNodeData.direction] ?? selectedNodeData.direction}
                       </p>
                     </div>
                     <div>
                       <p className="text-[var(--muted-foreground)]">검색량</p>
-                      <p className="font-medium">
-                        {selectedNodeData.searchVolume.toLocaleString()}
-                      </p>
+                      <p className="font-medium">{selectedNodeData.searchVolume.toLocaleString()}</p>
                     </div>
                     <div>
-                      <p className="text-[var(--muted-foreground)]">
-                        갭 스코어
-                      </p>
+                      <p className="text-[var(--muted-foreground)]">갭 스코어</p>
                       <p className="font-medium">{selectedNodeData.gapScore}</p>
                     </div>
-                    {selectedNodeData.journeyStage && (
+                    {selectedNodeData.stageLabel && (
                       <div className="col-span-2">
-                        <p className="text-[var(--muted-foreground)]">
-                          여정 단계
-                        </p>
-                        <p className="font-medium">
-                          {
-                            JOURNEY_STAGE_LABELS[selectedNodeData.journeyStage]
-                              ?.label
-                          }
-                        </p>
+                        <p className="text-[var(--muted-foreground)]">여정 단계</p>
+                        <p className="font-medium">{selectedNodeData.stageLabel}</p>
                       </div>
                     )}
                   </div>
@@ -914,13 +773,9 @@ export default function PathfinderPage() {
                         >
                           <span
                             className="h-2 w-2 rounded-full"
-                            style={{
-                              backgroundColor: INTENT_COLORS[n.intentCategory],
-                            }}
+                            style={{ backgroundColor: n.intentColor }}
                           />
-                          <span className="flex-1 truncate text-[12px]">
-                            {n.name}
-                          </span>
+                          <span className="flex-1 truncate text-[12px]">{n.label}</span>
                           <span className="text-[10px] text-[var(--muted-foreground)]">
                             {n.searchVolume.toLocaleString()}
                           </span>
@@ -940,33 +795,19 @@ export default function PathfinderPage() {
           {/* Charts */}
           <div className="grid gap-3 lg:grid-cols-2">
             <ChartCard
-              title="검색 여정 단계 분포"
-              description="소비자 여정 단계별 키워드 수"
+              title="여정 단계 분포"
+              description="소비자 여정 6단계별 키워드 수"
             >
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={journeyStageData}>
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      stroke="var(--border-subtle)"
-                    />
-                    <XAxis
-                      dataKey="name"
-                      tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        fontSize: 12,
-                        borderRadius: 6,
-                        border: "1px solid var(--border)",
-                      }}
-                    />
+                  <BarChart data={stageDistData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
+                    <XAxis dataKey="label" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
+                    <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
+                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 6, border: "1px solid var(--border)" }} />
                     <Bar dataKey="count" name="키워드 수" radius={[3, 3, 0, 0]}>
-                      {journeyStageData.map((entry, i) => (
-                        <Cell key={i} fill={entry.fill} />
+                      {stageDistData.map((entry, i) => (
+                        <Cell key={i} fill={entry.color} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -975,42 +816,21 @@ export default function PathfinderPage() {
             </ChartCard>
 
             <ChartCard
-              title="시간적 단계별 분석"
-              description="검색 전/중/후 키워드 분포"
+              title="의도별 분포"
+              description="검색 의도 카테고리별 키워드 수"
             >
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={phaseDistData}>
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      stroke="var(--border-subtle)"
-                    />
-                    <XAxis
-                      dataKey="name"
-                      tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        fontSize: 12,
-                        borderRadius: 6,
-                        border: "1px solid var(--border)",
-                      }}
-                    />
-                    <Bar
-                      dataKey="keywords"
-                      fill="#3b82f6"
-                      radius={[3, 3, 0, 0]}
-                      name="키워드 수"
-                    />
-                    <Bar
-                      dataKey="avgGap"
-                      fill="#10b981"
-                      radius={[3, 3, 0, 0]}
-                      name="평균 갭 스코어"
-                    />
+                  <BarChart data={intentDistData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
+                    <XAxis dataKey="label" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
+                    <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
+                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 6, border: "1px solid var(--border)" }} />
+                    <Bar dataKey="count" name="키워드 수" radius={[3, 3, 0, 0]}>
+                      {intentDistData.map((entry, i) => (
+                        <Cell key={i} fill={entry.color} />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -1018,120 +838,83 @@ export default function PathfinderPage() {
           </div>
 
           {/* Journey Paths */}
-          {(analysis.data.journey?.paths?.length ?? 0) > 0 && (
+          {paths.length > 0 && (
             <div className="card overflow-hidden">
               <div className="border-b border-[var(--border)] px-4 py-3">
                 <h3 className="text-[13px] font-semibold">검색 흐름 경로</h3>
                 <p className="text-[11px] text-[var(--muted-foreground)]">
-                  검색 단계 간 전환 빈도를 보여줍니다.
+                  분석된 검색 여정 경로. 점수 순으로 정렬됩니다.
                 </p>
               </div>
               <div className="divide-y divide-[var(--border)]">
-                {[...(analysis.data.journey?.paths ?? [])]
-                  .sort((a, b) => b.weight - a.weight)
+                {[...paths]
+                  .sort((a, b) => b.pathScore - a.pathScore)
                   .slice(0, 10)
-                  .map((path, i) => {
-                    const fromLabel =
-                      TEMPORAL_PHASE_LABELS[path.from as TemporalPhase]
-                        ?.label ?? path.from;
-                    const toLabel =
-                      TEMPORAL_PHASE_LABELS[path.to as TemporalPhase]?.label ??
-                      path.to;
-                    return (
-                      <div
-                        key={i}
-                        className="flex items-center gap-3 px-4 py-2.5"
-                      >
-                        <span
-                          className="text-[11px] font-medium"
-                          style={{
-                            color:
-                              PHASE_COLORS[path.from as TemporalPhase] ??
-                              "#6b7280",
-                          }}
-                        >
-                          {fromLabel}
-                        </span>
-                        <ArrowRight className="h-3 w-3 text-[var(--muted-foreground)]" />
-                        <span
-                          className="text-[11px] font-medium"
-                          style={{
-                            color:
-                              PHASE_COLORS[path.to as TemporalPhase] ??
-                              "#6b7280",
-                          }}
-                        >
-                          {toLabel}
-                        </span>
-                        <div className="flex-1" />
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="h-1.5 rounded-full bg-blue-200"
-                            style={{ width: Math.max(20, path.weight * 8) }}
-                          >
-                            <div
-                              className="h-full rounded-full bg-blue-500"
-                              style={{ width: "100%" }}
-                            />
-                          </div>
-                          <span className="text-[11px] text-[var(--muted-foreground)]">
-                            {path.weight}건
-                          </span>
+                  .map((path) => (
+                    <div key={path.id} className="flex items-center gap-3 px-4 py-2.5">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[12px] font-medium">{path.pathLabel}</p>
+                        <div className="mt-0.5 flex flex-wrap gap-1">
+                          {path.steps.slice(0, 5).map((step, si) => (
+                            <span key={si} className="flex items-center gap-1 text-[10px] text-[var(--muted-foreground)]">
+                              {si > 0 && <ArrowRight className="h-2.5 w-2.5" />}
+                              <span className="truncate">{step.keyword}</span>
+                            </span>
+                          ))}
+                          {path.steps.length > 5 && (
+                            <span className="text-[10px] text-[var(--muted-foreground)]">
+                              +{path.steps.length - 5}
+                            </span>
+                          )}
                         </div>
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                            path.journeyType === "circular"
-                              ? "bg-amber-50 text-amber-700"
-                              : path.journeyType === "branching"
-                                ? "bg-blue-50 text-blue-700"
-                                : "bg-gray-50 text-gray-700"
-                          }`}
-                        >
-                          {path.journeyType === "circular"
-                            ? "순환"
-                            : path.journeyType === "branching"
-                              ? "분기"
-                              : "직선"}
-                        </span>
                       </div>
-                    );
-                  })}
+                      <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-700">
+                        {path.dominantIntentLabel}
+                      </span>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                          path.pathType === "circular"
+                            ? "bg-amber-50 text-amber-700"
+                            : path.pathType === "branching"
+                              ? "bg-blue-50 text-blue-700"
+                              : "bg-gray-50 text-gray-700"
+                        }`}
+                      >
+                        {path.pathTypeLabel}
+                      </span>
+                      <span className="text-[11px] text-[var(--muted-foreground)]">
+                        {path.pathScore}점
+                      </span>
+                    </div>
+                  ))}
               </div>
             </div>
           )}
 
-          {/* Top Opportunities */}
-          <div className="card overflow-hidden">
-            <div className="border-b border-[var(--border)] px-4 py-3">
-              <h3 className="text-[13px] font-semibold">콘텐츠 기회 Top 5</h3>
-              <p className="text-[11px] text-[var(--muted-foreground)]">
-                갭 스코어와 검색량을 종합한 콘텐츠 제작 기회
-              </p>
-            </div>
-            <div className="divide-y divide-[var(--border)]">
-              {(analysis.data.summary.topOpportunities ?? []).map((opp, i) => (
-                <div
-                  key={opp.keyword}
-                  className="flex items-center gap-3 px-4 py-2.5"
-                >
-                  <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-50 text-[10px] font-bold text-blue-700">
-                    {i + 1}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[12px] font-medium">
-                      {opp.keyword}
-                    </p>
-                    <p className="text-[11px] text-[var(--muted-foreground)]">
-                      {opp.reason}
-                    </p>
+          {/* Top Blue Oceans */}
+          {summary.topBlueOceans.length > 0 && (
+            <div className="card overflow-hidden">
+              <div className="border-b border-[var(--border)] px-4 py-3">
+                <h3 className="text-[13px] font-semibold">콘텐츠 기회 Top 5</h3>
+                <p className="text-[11px] text-[var(--muted-foreground)]">
+                  갭 스코어와 검색량을 종합한 콘텐츠 제작 기회
+                </p>
+              </div>
+              <div className="divide-y divide-[var(--border)]">
+                {summary.topBlueOceans.slice(0, 5).map((opp, i) => (
+                  <div key={opp.keyword} className="flex items-center gap-3 px-4 py-2.5">
+                    <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-50 text-[10px] font-bold text-blue-700">
+                      {i + 1}
+                    </span>
+                    <span className="flex-1 truncate text-[12px] font-medium">{opp.keyword}</span>
+                    <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+                      갭 {opp.gapScore}
+                    </span>
                   </div>
-                  <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
-                    {opp.opportunityScore}점
-                  </span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </>
       )}
     </div>
