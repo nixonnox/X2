@@ -98,7 +98,7 @@ export class IntentAnalysisService {
 
       // 1. Create IntentQuery record with status=QUEUED
       const query = await this.repositories.intent.createQuery({
-        projectId,
+        project: { connect: { id: projectId } },
         seedKeyword: seedKeyword.trim(),
         locale: options?.locale ?? "ko",
         maxDepth: options?.maxDepth ?? 2,
@@ -179,8 +179,8 @@ export class IntentAnalysisService {
           confidence: result.confidence,
           gapScore: result.gapScore,
           gapType: result.gapType,
-          monthlyVolumes: null,
-          socialBreakdown: null,
+          monthlyVolumes: undefined,
+          socialBreakdown: undefined,
         });
 
         logBuilder.recordSuccess(result.confidence);

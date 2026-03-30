@@ -309,7 +309,7 @@ export class CollectionOrchestrationService {
       const createdJobs: ScheduledJob[] = [];
 
       for (const jobDef of DEFAULT_JOBS) {
-        if (existingTypes.has(jobDef.type)) {
+        if (existingTypes.has(jobDef.type as any)) {
           this.logger.info("Default job already exists, skipping", {
             workspaceId,
             type: jobDef.type,
@@ -318,8 +318,8 @@ export class CollectionOrchestrationService {
         }
 
         const job = await this.repositories.scheduledJob.create({
-          type: jobDef.type,
-          cronExpression: jobDef.cronExpression,
+          type: jobDef.type as any,
+          cronExpr: jobDef.cronExpression,
           status: "ACTIVE",
           retryCount: 0,
           workspace: { connect: { id: workspaceId } },

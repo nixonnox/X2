@@ -463,7 +463,11 @@ export class ActionRecommendationOrchestrator {
       const lowVisibility = [];
       for (const kw of aeoKeywords) {
         for (const snap of kw.snapshots) {
-          if (snap.visibilityScore < 20 && snap.visibilityScore > 0) {
+          if (
+            snap.visibilityScore != null &&
+            snap.visibilityScore < 20 &&
+            snap.visibilityScore > 0
+          ) {
             lowVisibility.push({
               keyword: kw.keyword,
               id: kw.id,

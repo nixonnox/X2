@@ -216,13 +216,13 @@ export class OpsMonitoringService {
           // Create notification for workspace admins
           // TODO: [CROSS-SERVICE] NotificationService.createSystemAlert
           await this.repositories.notification.create({
-            type: "SYSTEM_ALERT",
+            type: "SYSTEM_ALERT" as any,
             title: `Job paused after ${newRetryCount} failures: ${job.type}`,
             message: `Scheduled job "${job.type}" has been paused after ${newRetryCount} consecutive failures. Last error: ${result.error ?? "Unknown"}`,
-            channel: "IN_APP",
+            channels: ["IN_APP"],
             sourceType: "SCHEDULED_JOB",
             sourceId: jobId,
-            workspace: { connect: { id: job.workspaceId } },
+            user: undefined as any,
           });
         }
 

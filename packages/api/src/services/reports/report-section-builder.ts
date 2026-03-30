@@ -144,8 +144,8 @@ export class ReportSectionBuilder {
         {
           dataSourceType: "CHANNEL_SNAPSHOT" as any,
           dataEntityIds: channelIds,
-          displayType: "TABLE",
-          label: "채널 현황",
+          type: "TABLE",
+          title: "채널 현황",
           order: 0,
         },
       );
@@ -193,8 +193,8 @@ export class ReportSectionBuilder {
           {
             dataSourceType: "CHANNEL_SNAPSHOT" as any,
             dataEntityIds: snapshotIds.slice(0, 10),
-            displayType: "KPI_CARD",
-            label: `${(channel as any).name ?? "채널"} KPI`,
+            type: "CHART" as any,
+            title: `${(channel as any).name ?? "채널"} KPI`,
             order: evidenceAssets.length,
           },
         );
@@ -243,8 +243,8 @@ export class ReportSectionBuilder {
         {
           dataSourceType: "COMMENT_ANALYSIS" as any,
           dataEntityIds: [],
-          displayType: "PIE_CHART",
-          label: "감성 분포",
+          type: "CHART" as any,
+          title: "감성 분포",
           order: 0,
         },
       );
@@ -300,8 +300,8 @@ export class ReportSectionBuilder {
         {
           dataSourceType: "FAQ_CANDIDATE" as any,
           dataEntityIds: faqIds.slice(0, 20),
-          displayType: "TABLE",
-          label: "미답변 FAQ 목록",
+          type: "TABLE",
+          title: "미답변 FAQ 목록",
           order: 0,
         },
       );
@@ -345,8 +345,8 @@ export class ReportSectionBuilder {
         {
           dataSourceType: "RISK_SIGNAL" as any,
           dataEntityIds: riskIds.slice(0, 20),
-          displayType: "TABLE",
-          label: "활성 리스크 시그널",
+          type: "TABLE",
+          title: "활성 리스크 시그널",
           order: 0,
         },
       );
@@ -399,8 +399,8 @@ export class ReportSectionBuilder {
         {
           dataSourceType: "INTENT_RESULT" as any,
           dataEntityIds: gapIds.slice(0, 20),
-          displayType: "BAR_CHART",
-          label: "검색 의도 갭 기회",
+          type: "CHART" as any,
+          title: "검색 의도 갭 기회",
           order: 0,
         },
       );
@@ -446,8 +446,8 @@ export class ReportSectionBuilder {
         {
           dataSourceType: "KEYWORD_METRIC" as any,
           dataEntityIds: trendIds.slice(0, 10),
-          displayType: "LINE_CHART",
-          label: "트렌드 키워드",
+          type: "CHART" as any,
+          title: "트렌드 키워드",
           order: 0,
         },
       );

@@ -158,10 +158,10 @@ export class UsageService {
       const dailySyncLimit = 100;
 
       // 4. Calculate percentages
-      const todayApiCalls = todayUsage?.apiCalls ?? 0;
+      const todayApiCalls = todayUsage?.apiCallCount ?? 0;
       const todayTokens = todayUsage?.aiTokensUsed ?? 0;
-      const todaySyncs = todayUsage?.channelSyncs ?? 0;
-      const todayReports = todayUsage?.reportsGenerated ?? 0;
+      const todaySyncs = todayUsage?.channelCount ?? 0;
+      const todayReports = todayUsage?.reportCount ?? 0;
 
       const calcPercent = (used: number, limit: number) =>
         limit > 0 ? Math.round((used / limit) * 10000) / 100 : 0;

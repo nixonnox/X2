@@ -729,11 +729,15 @@ export class InsightGenerationService {
 
     for (const kw of aeoKeywords) {
       for (const snap of kw.snapshots) {
-        if (snap.visibilityScore < 30 && snap.visibilityScore > 0) {
+        if (
+          snap.visibilityScore != null &&
+          snap.visibilityScore < 30 &&
+          snap.visibilityScore > 0
+        ) {
           lowVisibility.push({
             keyword: kw.keyword,
             engine: snap.engine,
-            score: snap.visibilityScore,
+            score: snap.visibilityScore!,
             id: kw.id,
           });
         }
@@ -817,8 +821,8 @@ export class InsightGenerationService {
     );
 
     for (const campaign of activeCampaigns) {
-      const budget = Number(campaign.budget ?? 0);
-      const creators = campaign.creators ?? [];
+      const budget = Number((campaign as any).totalBudget ?? 0);
+      const creators = (campaign as any).creators ?? [];
       let totalEngagements = 0;
       let totalViews = 0;
 

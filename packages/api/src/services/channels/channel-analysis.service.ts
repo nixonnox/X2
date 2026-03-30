@@ -300,7 +300,7 @@ export class ChannelAnalysisService {
         followerGrowth: metrics.followerGrowth,
         followerGrowthRate: metrics.followerGrowthRate,
         estimatedReach: metrics.estimatedReach,
-        rawMetrics: metrics.rawMetrics ?? null,
+        rawMetrics: (metrics.rawMetrics as any) ?? undefined,
       });
 
       // 3. Log success

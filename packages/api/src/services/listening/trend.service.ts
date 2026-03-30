@@ -186,9 +186,9 @@ export class TrendService {
             gapScore,
             relatedKeywords:
               metrics.length > 0
-                ? (metrics[metrics.length - 1]?.relatedTerms ?? null)
-                : null,
-            topContents: null, // TODO: Fetch top performing content for keyword
+                ? (metrics[metrics.length - 1]?.relatedTerms ?? undefined)
+                : undefined,
+            topContents: undefined, // TODO: Fetch top performing content for keyword
           },
         );
 

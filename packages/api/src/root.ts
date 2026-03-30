@@ -13,6 +13,9 @@ import { automationRouter } from "./routers/automation";
 import { collectionRouter } from "./routers/collection";
 import { keywordRouter } from "./routers/keyword";
 import { intentRouter } from "./routers/intent";
+import { verticalDocumentRouter } from "./routers/vertical-document";
+import { listeningRouter } from "./routers/listening";
+import { intelligenceRouter } from "./routers/intelligence";
 
 export const appRouter = router({
   workspace: workspaceRouter,
@@ -29,6 +32,9 @@ export const appRouter = router({
   collection: collectionRouter,
   keyword: keywordRouter,
   intent: intentRouter,
+  verticalDocument: verticalDocumentRouter,
+  listening: listeningRouter,
+  intelligence: intelligenceRouter,
 });
 
 export type AppRouter = typeof appRouter;

@@ -169,8 +169,8 @@ export class ReportAutomationService {
       });
 
       // 섹션 생성 + 증거 자산 연결
-      const sectionDefs =
-        SECTION_DEFS[config.reportType] ?? SECTION_DEFS.WEEKLY_REPORT;
+      const sectionDefs = (SECTION_DEFS[config.reportType] ??
+        SECTION_DEFS.WEEKLY_REPORT)!;
       let totalEvidenceCount = 0;
 
       for (const def of sectionDefs) {

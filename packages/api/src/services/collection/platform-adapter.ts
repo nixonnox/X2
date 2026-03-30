@@ -232,7 +232,8 @@ export class PlatformAdapter {
         {
           title: normalized.title,
           description: normalized.description,
-          contentType: normalized.contentType as any,
+          type: normalized.contentType as any,
+          platform: scope.platform as any,
           url: normalized.url,
           thumbnailUrl: normalized.thumbnailUrl,
           publishedAt: normalized.publishedAt,

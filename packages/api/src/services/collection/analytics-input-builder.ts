@@ -162,7 +162,7 @@ export class AnalyticsInputBuilder {
     );
 
     const pendingQueries = queryResult.data.filter(
-      (q) => q.status === "QUEUED" || q.status === "IN_PROGRESS",
+      (q) => q.status === "QUEUED" || q.status === "PROCESSING",
     );
 
     if (pendingQueries.length === 0) {
@@ -274,7 +274,7 @@ export class AnalyticsInputBuilder {
     );
 
     return queryResult.data
-      .filter((q) => q.status === "QUEUED" || q.status === "IN_PROGRESS")
+      .filter((q) => q.status === "QUEUED" || q.status === "PROCESSING")
       .map((query) => ({
         queryId: query.id,
         queryText: query.seedKeyword,

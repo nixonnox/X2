@@ -111,9 +111,9 @@ export class ReportCompositionService {
         title,
         type: input.reportType as any,
         status: "DRAFT",
-        summary: null,
-        dateRangeStart: input.dateRange.from,
-        dateRangeEnd: input.dateRange.to,
+        summary: "",
+        content: {},
+        period: `${input.dateRange.from.toISOString()}~${input.dateRange.to.toISOString()}`,
         project: { connect: { id: input.projectId } },
         sections: {
           create: sectionDefs.map((def) => ({
@@ -132,7 +132,7 @@ export class ReportCompositionService {
       if (report.sections) {
         for (const section of report.sections) {
           const narrative = await this.buildSectionNarrative(
-            section.type,
+            (section as any).type,
             input.projectId,
             input.dateRange,
           );

@@ -279,7 +279,7 @@ export class WorkspaceAccessService {
         plan,
         maxChannels: workspace.maxChannels ?? defaults.maxChannels,
         maxMembers: workspace.maxMembers ?? defaults.maxMembers,
-        maxProjects: workspace.maxProjects ?? defaults.maxProjects,
+        maxProjects: (workspace as any).maxProjects ?? defaults.maxProjects,
         maxAiTokensPerDay:
           workspace.maxAiTokensPerDay ?? defaults.maxAiTokensPerDay,
         maxReportsPerMonth:
@@ -288,11 +288,12 @@ export class WorkspaceAccessService {
         canAccessApi: workspace.canAccessApi ?? defaults.canAccessApi,
         geoAeoEnabled: workspace.geoAeoEnabled ?? defaults.geoAeoEnabled,
         competitorTrackingEnabled:
-          workspace.competitorTrackingEnabled ??
+          (workspace as any).competitorTrackingEnabled ??
           defaults.competitorTrackingEnabled,
         customReportsEnabled:
-          workspace.customReportsEnabled ?? defaults.customReportsEnabled,
-        whiteLabel: workspace.whiteLabel ?? defaults.whiteLabel,
+          (workspace as any).customReportsEnabled ??
+          defaults.customReportsEnabled,
+        whiteLabel: (workspace as any).whiteLabel ?? defaults.whiteLabel,
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
@@ -324,18 +325,14 @@ export class WorkspaceAccessService {
 
       // Update all capability fields based on plan
       await this.repositories.workspace.update(workspaceId, {
-        plan,
+        plan: plan as any,
         maxChannels: capabilities.maxChannels,
         maxMembers: capabilities.maxMembers,
-        maxProjects: capabilities.maxProjects,
         maxAiTokensPerDay: capabilities.maxAiTokensPerDay,
         maxReportsPerMonth: capabilities.maxReportsPerMonth,
         canExportData: capabilities.canExportData,
         canAccessApi: capabilities.canAccessApi,
         geoAeoEnabled: capabilities.geoAeoEnabled,
-        competitorTrackingEnabled: capabilities.competitorTrackingEnabled,
-        customReportsEnabled: capabilities.customReportsEnabled,
-        whiteLabel: capabilities.whiteLabel,
       });
 
       this.logger.info("Workspace capabilities synced from plan", {

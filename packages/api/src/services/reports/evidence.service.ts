@@ -252,8 +252,8 @@ export class EvidenceService {
       const asset = await this.repositories.evidenceAsset.create(sectionId, {
         dataSourceType: input.dataSourceType as any,
         dataEntityIds: input.dataEntityIds,
-        displayType: input.displayType,
-        label: input.label ?? null,
+        type: (input.displayType ?? "TABLE") as any,
+        title: input.label ?? null,
         order: input.order ?? 0,
       });
 

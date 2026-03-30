@@ -60,16 +60,15 @@ export class NotificationService {
       }
 
       const notification = await this.repositories.notification.create({
-        type: input.type,
+        type: input.type as any,
         title: input.title,
         message: input.message,
-        channel: input.channel ?? "IN_APP",
+        channels: [input.channel ?? "IN_APP"],
         isRead: false,
         actionUrl: input.actionUrl ?? null,
         sourceType: input.sourceType ?? null,
         sourceId: input.sourceId ?? null,
-        user: input.userId ? { connect: { id: input.userId } } : undefined,
-        workspace: { connect: { id: input.workspaceId } },
+        user: { connect: { id: input.userId } },
       });
 
       // TODO: [INTEGRATION] WebSocket push for real-time delivery
@@ -219,15 +218,14 @@ export class NotificationService {
 
       for (const admin of admins) {
         const notification = await this.repositories.notification.create({
-          type,
+          type: type as any,
           title,
           message,
-          channel: "IN_APP",
+          channels: ["IN_APP"],
           isRead: false,
           sourceType: sourceType ?? null,
           sourceId: sourceId ?? null,
           user: { connect: { id: admin.userId } },
-          workspace: { connect: { id: workspaceId } },
         });
 
         lastCreated = notification as unknown as Notification;

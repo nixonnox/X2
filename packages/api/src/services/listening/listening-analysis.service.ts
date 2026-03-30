@@ -322,13 +322,10 @@ export class ListeningAnalysisService {
         if (metrics.length >= 2) {
           const mid = Math.floor(metrics.length / 2);
           const firstHalfAvg =
-            metrics
-              .slice(0, mid)
-              .reduce((sum, m) => sum + (m.searchVolume ?? 0), 0) / mid;
+            metrics.slice(0, mid).reduce((sum, m) => sum + (m.volume ?? 0), 0) /
+            mid;
           const secondHalfAvg =
-            metrics
-              .slice(mid)
-              .reduce((sum, m) => sum + (m.searchVolume ?? 0), 0) /
+            metrics.slice(mid).reduce((sum, m) => sum + (m.volume ?? 0), 0) /
             (metrics.length - mid);
           const change =
             firstHalfAvg > 0

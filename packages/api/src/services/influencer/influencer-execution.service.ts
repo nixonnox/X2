@@ -122,11 +122,10 @@ export class InfluencerExecutionService {
           subscriberCount,
           avgViews,
         ),
-        engagementRate: avgEngagement,
-        avgViews: Math.round(avgViews),
+        avgEngagementRecent: avgEngagement,
+        avgViewsRecent: Math.round(avgViews),
         categories: [],
         country: null,
-        language: null,
       });
 
       // 4. Log
@@ -211,13 +210,13 @@ export class InfluencerExecutionService {
         snapshots.length > 0
           ? snapshots.reduce((sum, s) => sum + s.avgEngagement, 0) /
             snapshots.length
-          : (profile.engagementRate ?? 0);
+          : (profile.avgEngagementRecent ?? 0);
 
       const avgViews =
         snapshots.length > 0
           ? snapshots.reduce((sum, s) => sum + (s.avgViewsPerContent ?? 0), 0) /
             snapshots.length
-          : (profile.avgViews ?? 0);
+          : (profile.avgViewsRecent ?? 0);
 
       // Content frequency
       const rangeDays = Math.max(
@@ -271,7 +270,7 @@ export class InfluencerExecutionService {
         dateRange,
         engagementRate: Math.round(avgEngagement * 10000) / 10000,
         avgViews: Math.round(avgViews),
-        audienceQualityScore: profile.audienceQualityScore,
+        audienceQualityScore: profile.overallScore ?? null,
         contentFrequency: Math.round(contentFrequency * 100) / 100,
         viewGrowthRate: Math.round(viewGrowthRate * 100) / 100,
         engagementTrend,

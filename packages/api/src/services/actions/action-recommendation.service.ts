@@ -155,7 +155,11 @@ export class ActionRecommendationService {
         await this.repositories.aeo.findLatestSnapshots(projectId);
       for (const kw of aeoKeywords) {
         for (const snap of kw.snapshots) {
-          if (snap.visibilityScore < 20 && snap.visibilityScore > 0) {
+          if (
+            snap.visibilityScore != null &&
+            snap.visibilityScore < 20 &&
+            snap.visibilityScore > 0
+          ) {
             signals.push({
               module: "GEO_AEO",
               title: `Low AEO visibility for "${kw.keyword}" on ${snap.engine}`,
@@ -314,10 +318,11 @@ export class ActionRecommendationService {
       // For now, create the campaign directly
       const campaign = await this.repositories.campaign.create({
         name: campaignData.name,
-        description: campaignData.description ?? action.description ?? null,
+        objective: campaignData.description ?? action.description ?? null,
+        campaignType: "BRAND_AWARENESS" as any,
         startDate: campaignData.startDate ?? null,
         endDate: campaignData.endDate ?? null,
-        budget: campaignData.budget ?? null,
+        totalBudget: campaignData.budget ?? null,
         currency: campaignData.currency ?? "USD",
         status: "DRAFT",
         project: { connect: { id: report.id } },

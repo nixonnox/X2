@@ -4,15 +4,19 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./services/*": "./src/services/*"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@prisma/client": "^6.19.2",
     "@trpc/server": "^11.0.0",
+    "@x2/ai": "workspace:*",
     "@x2/auth": "workspace:*",
     "@x2/db": "workspace:*",
+    "@x2/queue": "workspace:*",
     "@x2/social": "workspace:*",
     "superjson": "^2.2.0",
     "zod": "^3.24.0"

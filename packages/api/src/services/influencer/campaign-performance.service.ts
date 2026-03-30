@@ -113,11 +113,9 @@ export class CampaignPerformanceService {
         normalizedDate,
         {
           totalReach: metrics.totalReach,
-          totalImpressions: metrics.totalImpressions,
-          totalEngagements: metrics.totalEngagements,
-          totalClicks: metrics.totalClicks,
-          totalConversions: metrics.totalConversions,
-          spend: metrics.spend,
+          totalEngagement: metrics.totalEngagements,
+          totalNewFollowers: 0,
+          spentBudget: metrics.spend,
         },
       );
 
@@ -155,14 +153,11 @@ export class CampaignPerformanceService {
         contentId,
         normalizedDate,
         {
-          views: measurement.views,
-          likes: measurement.likes,
-          comments: measurement.comments,
-          shares: measurement.shares,
-          clicks: measurement.clicks,
-          conversions: measurement.conversions,
-          reach: measurement.reach,
-          impressions: measurement.impressions,
+          viewCount: measurement.views,
+          likeCount: measurement.likes,
+          commentCount: measurement.comments,
+          shareCount: measurement.shares,
+          engagementRate: 0,
         },
       );
 
@@ -223,7 +218,7 @@ export class CampaignPerformanceService {
       }
 
       // 3. Calculate ROI, ROAS, CPM, CPV, CPE
-      const totalSpend = Number(campaign.budget ?? 0);
+      const totalSpend = Number(campaign.totalBudget ?? 0);
       const totalRevenue = totalConversions * 50; // TODO: Use actual conversion value from config
 
       const roi =
@@ -244,16 +239,15 @@ export class CampaignPerformanceService {
       const roiRecord = await this.repositories.campaign.createRoiCalculation(
         campaignId,
         {
-          totalSpend,
-          totalRevenue,
+          totalCost: totalSpend,
           roi: Math.round(roi * 100) / 100,
           roas: Math.round(roas * 100) / 100,
           cpm: Math.round(cpm * 100) / 100,
           cpv: Math.round(cpv * 100) / 100,
           cpe: Math.round(cpe * 100) / 100,
           totalReach,
-          totalEngagements,
-          totalConversions,
+          totalEngagement: totalEngagements,
+          conversions: totalConversions,
           aiSummary,
         },
       );
@@ -298,7 +292,7 @@ export class CampaignPerformanceService {
       let totalEngagements = 0;
       let totalClicks = 0;
       let totalConversions = 0;
-      const totalSpend = Number(campaign.budget ?? 0);
+      const totalSpend = Number(campaign.totalBudget ?? 0);
 
       const creatorPerformance: CreatorPerformance[] = [];
       const creators = campaign.creators ?? [];

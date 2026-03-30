@@ -116,14 +116,14 @@ export class CampaignService {
 
       const campaign = await this.repositories.campaign.create({
         name: input.name,
-        description: input.description ?? null,
+        objective: input.description ?? null,
+        campaignType: "BRAND_AWARENESS" as any,
         status: "DRAFT",
         startDate: input.startDate ?? null,
         endDate: input.endDate ?? null,
-        budget: input.budget ?? null,
+        totalBudget: input.budget ?? null,
         currency: input.currency ?? "USD",
-        goals: input.goals ?? [],
-        hashtags: input.hashtags ?? [],
+        kpiTargets: input.goals ? (input.goals as any) : undefined,
         project: { connect: { id: projectId } },
       });
 
@@ -184,9 +184,8 @@ export class CampaignService {
             ...(input.influencerProfileId && {
               influencerProfile: { connect: { id: input.influencerProfileId } },
             }),
-            role: input.role ?? null,
-            agreedRate: input.agreedRate ?? null,
-            status: "INVITED",
+            outreachStatus: "PROPOSED" as any,
+            compensationAmount: input.agreedRate ?? null,
           },
         );
 
@@ -225,10 +224,9 @@ export class CampaignService {
         creatorId,
         {
           campaign: { connect: { id: content.campaignId } },
-          title: content.title,
-          contentUrl: content.contentUrl ?? null,
+          platformContentUrl: content.contentUrl ?? null,
           platform: content.platform as any,
-          contentType: content.contentType ?? null,
+          status: "PLANNED" as any,
           publishedAt: content.publishedAt ?? null,
         },
       );
@@ -334,11 +332,11 @@ export class CampaignService {
         id: campaign.id,
         projectId: campaign.projectId,
         name: campaign.name,
-        description: campaign.description,
+        description: campaign.objective ?? null,
         status: campaign.status,
         startDate: campaign.startDate,
         endDate: campaign.endDate,
-        budget: campaign.budget ? Number(campaign.budget) : null,
+        budget: campaign.totalBudget ? Number(campaign.totalBudget) : null,
         currency: campaign.currency,
         createdAt: campaign.createdAt,
         updatedAt: campaign.updatedAt,

@@ -10,6 +10,115 @@ export {
   err,
   consoleLogger,
 } from "./types";
+export { assessSearchDataQuality } from "./search-intelligence/search-data-quality";
+export type {
+  SearchIntelligenceResult as SearchIntelligenceResultInput,
+  SearchDataQualityAssessment,
+  RoleContext as SearchRoleContext,
+} from "./search-intelligence/types";
+export type {
+  DocumentBlock,
+  ReportOutputSection,
+  PtSlideBlock,
+  GeneratedDocumentOutput,
+  DocumentRole,
+  DocumentUseCase,
+  ReportOutputType,
+} from "./documents/types";
+export type {
+  PtDeck,
+  PtDeckType,
+  PtNarrative,
+  PtAudience,
+  PtAudienceConfig,
+  RecommendedVisualType,
+} from "./pt/types";
+export type { GeneratePtDeckInput } from "./pt/pt-deck-generation.service";
+export type {
+  WorkDoc,
+  WorkDocType,
+  WorkDocAudience,
+  WorkDocSection,
+  WorkDocSentenceBlock,
+  WorkDocBlockType,
+  SentenceTone,
+  WorkDocAudienceConfig,
+} from "./workdocs/types";
+export type { GenerateWorkDocInput } from "./workdocs/work-report-generation.service";
+export type {
+  IndustryType,
+  VerticalTemplate,
+  VerticalDocumentProfile,
+  VerticalInsightMapping,
+  VerticalActionMapping,
+} from "./vertical-templates/types";
+export type {
+  VerticalAssemblyInput,
+  VerticalAssemblyResult,
+} from "./vertical-templates/vertical-document-assembler";
+export type { EvidencePolicyResult } from "./vertical-templates/vertical-evidence-policy";
+export type { IndustrySuggestion } from "./vertical-templates/vertical-industry-suggester";
+export type {
+  VerticalPreview,
+  VerticalComparisonPreview,
+  ExportFormatPreview,
+} from "./vertical-templates/vertical-preview-builder";
+export type {
+  VerticalDocumentGenerationInput,
+  VerticalDocumentGenerationResult,
+  VerticalDocumentOutputType,
+  VerticalExportInput,
+  VerticalComparisonInput,
+} from "./vertical-templates/vertical-document-integration.service";
+export type {
+  VerticalComparisonData,
+  IndustryResult,
+  HighlightedDifference,
+} from "./vertical-templates/vertical-comparison-assembler";
+export type {
+  DifferenceHighlightResult,
+  ComparisonSection,
+} from "./vertical-templates/vertical-difference-highlighter";
+export type {
+  VerticalPreviewInput,
+  VerticalPreviewResult,
+} from "./vertical-templates/vertical-preview.service";
+export type {
+  VerticalPreviewViewModel,
+  VerticalPreviewScreenState,
+  VerticalComparisonRowViewModel,
+} from "./vertical-templates/vertical-preview-viewmodel-builder";
+export type {
+  ClusterInput as TaxonomyClusterInput,
+  TaxonomyMappingResult,
+  ClusterTaxonomyMapping,
+} from "./vertical-templates/topic-taxonomy-mapping.service";
+export type {
+  BenchmarkMetric,
+  BenchmarkComparison,
+  BenchmarkComparisonResult,
+} from "./vertical-templates/benchmark-baseline.service";
+export type {
+  SocialCommentData,
+  VerticalSocialIntegrationResult,
+} from "./vertical-templates/vertical-social-comment-integration.service";
+export type {
+  SignalFusionInput,
+  SignalFusionResult,
+} from "./vertical-templates/vertical-signal-fusion.service";
+export type {
+  ExportFormat,
+  ExportPurpose,
+  ExportJob,
+  ExportBundle,
+  ExportWarning,
+  ExportResult,
+  ExportInput,
+  WordDocument,
+  PptPresentation,
+  PdfDocument,
+} from "./export/types";
+
 export type {
   NormalizedChannel,
   NormalizedContent,
@@ -77,6 +186,51 @@ import { ActionFollowupService } from "./automation/action/actionFollowupService
 import { GeoRecommendationAutomationService } from "./automation/geo/geoRecommendationAutomationService";
 import { CampaignFollowupAutomationService } from "./automation/campaign/campaignFollowupAutomationService";
 
+// Group 7: Search Intelligence Integration
+import { SearchInsightIntegrationService } from "./search-intelligence/search-insight-integration.service";
+import { SearchActionIntegrationService } from "./search-intelligence/search-action-integration.service";
+import { SearchEvidenceBundleService } from "./search-intelligence/search-evidence-bundle.service";
+import { SearchReportSectionBuilder as SearchReportSectionBuilderService } from "./search-intelligence/search-report-section-builder";
+import { SearchExecutiveSummaryService } from "./search-intelligence/search-executive-summary.service";
+
+// Group 8: Document Generation (Search Intelligence → GEO/AEO, PT, Report)
+import { SearchDocumentGenerationService } from "./documents/search-document-generation.service";
+
+// Group 9: PT Deck Generation (Search Intelligence → Advertiser PT)
+import { PtDeckGenerationService } from "./pt/pt-deck-generation.service";
+
+// Group 10: Work Document Generation (Search Intelligence → 실무형 복붙/정리/보고)
+import { WorkReportGenerationService } from "./workdocs/work-report-generation.service";
+
+// Group 11: Vertical Template Engine (업종별 문서 템플릿)
+import { VerticalTemplateRegistryService } from "./vertical-templates/vertical-template-registry";
+import { VerticalDocumentAssembler } from "./vertical-templates/vertical-document-assembler";
+import { VerticalInsightMapper } from "./vertical-templates/vertical-insight-mapper";
+import { VerticalActionMapper } from "./vertical-templates/vertical-action-mapper";
+import { VerticalEvidencePolicyService } from "./vertical-templates/vertical-evidence-policy";
+import { VerticalIndustrySuggester } from "./vertical-templates/vertical-industry-suggester";
+import { VerticalPreviewBuilder } from "./vertical-templates/vertical-preview-builder";
+import { VerticalDocumentIntegrationService } from "./vertical-templates/vertical-document-integration.service";
+import { VerticalComparisonAssembler } from "./vertical-templates/vertical-comparison-assembler";
+import { VerticalDifferenceHighlighter } from "./vertical-templates/vertical-difference-highlighter";
+import { VerticalPreviewService } from "./vertical-templates/vertical-preview.service";
+import { VerticalPreviewViewModelBuilder } from "./vertical-templates/vertical-preview-viewmodel-builder";
+
+// Group 13: Vertical Intelligence Enhancement (cluster/social/benchmark → vertical)
+import { TopicTaxonomyMappingService } from "./vertical-templates/topic-taxonomy-mapping.service";
+import { BenchmarkBaselineService } from "./vertical-templates/benchmark-baseline.service";
+import { VerticalSocialCommentIntegrationService } from "./vertical-templates/vertical-social-comment-integration.service";
+import { VerticalSignalFusionService } from "./vertical-templates/vertical-signal-fusion.service";
+
+// Group 12: Export Format Engine (Word / PPT / PDF)
+import { ExportOrchestratorService } from "./export/export-orchestrator.service";
+import { ExportBlockAssembler } from "./export/export-block-assembler";
+import { ExportWarningBuilder } from "./export/export-warning-builder";
+import { VerticalExportPolicyService } from "./export/vertical-export-policy";
+import { WordExportBuilder } from "./export/word-export-builder";
+import { PptExportBuilder } from "./export/ppt-export-builder";
+import { PdfExportBuilder } from "./export/pdf-export-builder";
+
 // Group 4: Analytics engines (Phase 6)
 import { TextAnalyzer } from "./engines/text-analyzer";
 import { IntentClassifier } from "./engines/intent-classifier";
@@ -137,6 +291,46 @@ export {
   ActionFollowupService,
   GeoRecommendationAutomationService,
   CampaignFollowupAutomationService,
+  // Group 7: Search Intelligence Integration
+  SearchInsightIntegrationService,
+  SearchActionIntegrationService,
+  SearchEvidenceBundleService,
+  SearchReportSectionBuilderService,
+  SearchExecutiveSummaryService,
+  // Group 8: Document Generation
+  SearchDocumentGenerationService,
+  // Group 9: PT Deck Generation
+  PtDeckGenerationService,
+  // Group 10: Work Document Generation
+  WorkReportGenerationService,
+  // Group 11: Vertical Template Engine
+  VerticalTemplateRegistryService,
+  VerticalDocumentAssembler,
+  VerticalInsightMapper,
+  VerticalActionMapper,
+  VerticalEvidencePolicyService,
+  // Group 11b: Vertical Runtime Connection
+  VerticalIndustrySuggester,
+  VerticalPreviewBuilder,
+  VerticalDocumentIntegrationService,
+  // Group 11c: Vertical Preview (Task N)
+  VerticalComparisonAssembler,
+  VerticalDifferenceHighlighter,
+  VerticalPreviewService,
+  VerticalPreviewViewModelBuilder,
+  // Group 13: Vertical Intelligence Enhancement
+  TopicTaxonomyMappingService,
+  BenchmarkBaselineService,
+  VerticalSocialCommentIntegrationService,
+  VerticalSignalFusionService,
+  // Group 12: Export Format Engine
+  ExportOrchestratorService,
+  ExportBlockAssembler,
+  ExportWarningBuilder,
+  VerticalExportPolicyService,
+  WordExportBuilder,
+  PptExportBuilder,
+  PdfExportBuilder,
   // Group 4: Analytics engines
   TextAnalyzer,
   IntentClassifier,
@@ -280,6 +474,56 @@ export function createServices(
           ),
         }
       : {}),
+
+    // Group 7: Search Intelligence Integration (stateless — no repo/logger needed)
+    searchInsightIntegration: new SearchInsightIntegrationService(),
+    searchActionIntegration: new SearchActionIntegrationService(),
+    searchEvidenceBundle: new SearchEvidenceBundleService(),
+    searchReportSectionBuilder: new SearchReportSectionBuilderService(),
+    searchExecutiveSummary: new SearchExecutiveSummaryService(),
+
+    // Group 8: Document Generation (stateless)
+    searchDocumentGeneration: new SearchDocumentGenerationService(),
+
+    // Group 9: PT Deck Generation (stateless)
+    ptDeckGeneration: new PtDeckGenerationService(),
+
+    // Group 10: Work Document Generation (stateless)
+    workReportGeneration: new WorkReportGenerationService(),
+
+    // Group 11: Vertical Template Engine (stateless)
+    verticalTemplateRegistry: new VerticalTemplateRegistryService(),
+    verticalDocumentAssembler: new VerticalDocumentAssembler(),
+    verticalInsightMapper: new VerticalInsightMapper(),
+    verticalActionMapper: new VerticalActionMapper(),
+    verticalEvidencePolicy: new VerticalEvidencePolicyService(),
+
+    // Group 11b: Vertical Runtime Connection (stateless)
+    verticalIndustrySuggester: new VerticalIndustrySuggester(),
+    verticalPreviewBuilder: new VerticalPreviewBuilder(),
+    verticalDocumentIntegration: new VerticalDocumentIntegrationService(),
+
+    // Group 11c: Vertical Preview (stateless)
+    verticalComparisonAssembler: new VerticalComparisonAssembler(),
+    verticalDifferenceHighlighter: new VerticalDifferenceHighlighter(),
+    verticalPreviewService: new VerticalPreviewService(),
+    verticalPreviewViewModelBuilder: new VerticalPreviewViewModelBuilder(),
+
+    // Group 12: Export Format Engine (stateless)
+    exportOrchestrator: new ExportOrchestratorService(),
+    exportBlockAssembler: new ExportBlockAssembler(),
+    exportWarningBuilder: new ExportWarningBuilder(),
+    verticalExportPolicy: new VerticalExportPolicyService(),
+    wordExportBuilder: new WordExportBuilder(),
+    pptExportBuilder: new PptExportBuilder(),
+    pdfExportBuilder: new PdfExportBuilder(),
+
+    // Group 13: Vertical Intelligence Enhancement (stateless)
+    topicTaxonomyMapping: new TopicTaxonomyMappingService(),
+    benchmarkBaseline: new BenchmarkBaselineService(),
+    verticalSocialCommentIntegration:
+      new VerticalSocialCommentIntegrationService(),
+    verticalSignalFusion: new VerticalSignalFusionService(),
 
     // Group 4: Analytics engines (Phase 6)
     // Standalone engine instances for direct use

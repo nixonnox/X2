@@ -109,9 +109,9 @@ export class GeoAeoService {
       for (const input of keywords) {
         const keyword = await this.repositories.aeo.createKeyword({
           keyword: input.keyword,
-          targetEngines: input.targetEngines,
-          locale: input.locale ?? null,
-          category: input.category ?? null,
+          locale: input.locale ?? "ko",
+          targetBrand: null,
+          competitorBrands: [],
           status: "ACTIVE",
           project: { connect: { id: projectId } },
         });
@@ -120,9 +120,9 @@ export class GeoAeoService {
           id: keyword.id,
           projectId,
           keyword: keyword.keyword,
-          targetEngines: keyword.targetEngines,
+          targetEngines: input.targetEngines,
           locale: keyword.locale,
-          category: keyword.category,
+          category: null,
           status: keyword.status,
           createdAt: keyword.createdAt,
           updatedAt: keyword.updatedAt,
@@ -176,7 +176,7 @@ export class GeoAeoService {
 
       // 2. For each keyword x engine combination
       for (const kw of keywords) {
-        const engines = (kw.targetEngines ?? []) as string[];
+        const engines = ((kw as any).targetEngines ?? []) as string[];
 
         for (const engine of engines) {
           enginesUsed.add(engine);
@@ -198,7 +198,7 @@ export class GeoAeoService {
               visibilityScore,
               citedSources,
               brandMentioned,
-              rawResponse: null,
+              aiResponse: null,
             },
           );
           snapshotsCreated++;
@@ -211,9 +211,7 @@ export class GeoAeoService {
               });
 
             for (const source of allSources) {
-              const isCited = citedSources.some(
-                (url) => url === source.sourceUrl,
-              );
+              const isCited = citedSources.some((url) => url === source.url);
               if (isCited) {
                 await this.repositories.citationSource.updateCitationCount(
                   source.id,
@@ -315,10 +313,12 @@ export class GeoAeoService {
           allEngines.add(engine);
 
           const currentScore =
-            snaps.length > 0 ? snaps[snaps.length - 1]!.visibilityScore : 0;
+            snaps.length > 0
+              ? (snaps[snaps.length - 1]!.visibilityScore ?? 0)
+              : 0;
           const mid = Math.floor(snaps.length / 2);
           const previousScore =
-            mid > 0 ? snaps[mid - 1]!.visibilityScore : currentScore;
+            mid > 0 ? (snaps[mid - 1]!.visibilityScore ?? 0) : currentScore;
 
           const diff = currentScore - previousScore;
           const trend: "RISING" | "STABLE" | "DECLINING" =
@@ -448,7 +448,7 @@ export class GeoAeoService {
             for (const snap of kw.snapshots) {
               const cited = (snap.citedSources as string[]) ?? [];
               for (const url of cited) {
-                if (url !== source.sourceUrl) {
+                if (url !== source.url) {
                   competingUrls.add(url);
                 }
               }
@@ -458,7 +458,7 @@ export class GeoAeoService {
 
         gaps.push({
           sourceId: source.id,
-          sourceUrl: source.sourceUrl,
+          sourceUrl: source.url,
           sourceTitle: source.title,
           primaryTopic: source.primaryTopic,
           competingUrls: Array.from(competingUrls),

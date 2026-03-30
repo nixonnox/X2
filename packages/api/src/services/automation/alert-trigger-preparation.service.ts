@@ -304,17 +304,12 @@ export class AlertTriggerPreparationService {
       // Create notification for each recipient
       for (const userId of recipientIds) {
         await this.repositories.notification.create({
-          userId,
-          type: this.mapTriggerToNotificationType(trigger.type),
+          user: { connect: { id: userId } },
+          type: this.mapTriggerToNotificationType(trigger.type) as any,
           title: this.generateNotificationTitle(trigger),
-          body: trigger.condition.description,
-          data: {
-            triggerId: trigger.id,
-            triggerType: trigger.type,
-            priority: trigger.priority,
-            ...trigger.payload,
-          },
-          read: false,
+          message: trigger.condition.description,
+          channels: ["IN_APP"],
+          isRead: false,
         });
       }
 

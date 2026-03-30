@@ -438,7 +438,11 @@ export class ScheduleRegistryService {
 
       if (parts.length !== 5) return null;
 
-      const [minute, hour, dayOfMonth, _month, dayOfWeek] = parts;
+      const minute = parts[0]!;
+      const hour = parts[1]!;
+      const dayOfMonth = parts[2]!;
+      const _month = parts[3]!;
+      const dayOfWeek = parts[4]!;
 
       // N분마다: */N * * * *
       if (

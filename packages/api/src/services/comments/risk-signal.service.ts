@@ -175,7 +175,7 @@ export class RiskSignalService {
         } else {
           // Create new RiskSignal
           await this.repositories.riskSignal.create({
-            projectId,
+            project: { connect: { id: projectId } },
             title: `Risk detected: ${topic}`,
             description: `${comments.length} risk comment(s) detected related to "${topic}"`,
             riskType: topic,
@@ -200,12 +200,14 @@ export class RiskSignalService {
         if (maxSeverity === "HIGH" || maxSeverity === "CRITICAL") {
           // TODO: [INTEGRATION] @x2/queue -- Queue notification dispatch
           await this.repositories.notification.create({
-            type: "RISK_DETECTED",
+            type: "RISK_DETECTED" as any,
             title: `${maxSeverity} risk: ${topic}`,
             message: `${comments.length} risk signals detected for "${topic}" in project`,
-            priority: maxSeverity === "CRITICAL" ? "URGENT" : "HIGH",
+            priority: maxSeverity === "CRITICAL" ? "URGENT" : ("HIGH" as any),
             sourceType: "RiskSignal",
             sourceId: projectId,
+            channels: ["IN_APP"],
+            user: undefined as any,
           });
           notificationsCreated++;
         }

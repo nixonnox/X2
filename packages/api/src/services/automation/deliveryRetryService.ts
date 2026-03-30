@@ -357,16 +357,12 @@ export class DeliveryRetryService {
     try {
       // 인앱 알림 생성
       await this.repositories.notification.create({
-        userId: delivery.recipientId,
-        type: "AUTOMATION_ALERT",
+        user: { connect: { id: delivery.recipientId } },
+        type: "SYSTEM_ALERT" as any,
         title: "자동화 알림",
-        body: `자동화 실행 결과가 전달되었습니다 (실행 ID: ${delivery.executionId})`,
-        data: {
-          deliveryId,
-          executionId: delivery.executionId,
-          channel: delivery.channel,
-        },
-        read: false,
+        message: `자동화 실행 결과가 전달되었습니다 (실행 ID: ${delivery.executionId})`,
+        channels: ["IN_APP"],
+        isRead: false,
       });
 
       return this.markDelivered(deliveryId, delivery, trace);

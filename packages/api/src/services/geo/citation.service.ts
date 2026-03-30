@@ -94,7 +94,8 @@ export class CitationService {
       }
 
       const source = await this.repositories.citationSource.create({
-        sourceUrl: input.sourceUrl,
+        url: input.sourceUrl,
+        domain: new URL(input.sourceUrl).hostname,
         title: input.title,
         sourceType: input.sourceType as any,
         primaryTopic: input.primaryTopic ?? null,
@@ -176,7 +177,7 @@ export class CitationService {
       let newlyUncited = 0;
 
       for (const source of sources) {
-        const citationInfo = citedUrlMap.get(source.sourceUrl);
+        const citationInfo = citedUrlMap.get(source.url);
         const previousCount = source.currentCitationCount;
 
         if (citationInfo) {
@@ -268,7 +269,7 @@ export class CitationService {
         .sort((a, b) => b.currentCitationCount - a.currentCitationCount)
         .slice(0, 10)
         .map((s) => ({
-          sourceUrl: s.sourceUrl,
+          sourceUrl: s.url,
           title: s.title,
           citationCount: s.currentCitationCount,
           lastCitedEngine: s.lastCitedEngine,
@@ -280,14 +281,14 @@ export class CitationService {
       for (const source of allSources) {
         if (!source.geoOptimized) {
           needsOptimization.push({
-            sourceUrl: source.sourceUrl,
+            sourceUrl: source.url,
             title: source.title,
             reason:
               "Not GEO-optimized — add structured data, citations, and entity markup",
           });
         } else if (source.currentCitationCount === 0) {
           needsOptimization.push({
-            sourceUrl: source.sourceUrl,
+            sourceUrl: source.url,
             title: source.title,
             reason:
               "GEO-optimized but not yet cited — review content freshness and authority signals",

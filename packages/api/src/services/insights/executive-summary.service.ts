@@ -103,7 +103,7 @@ export class ExecutiveSummaryService {
       );
       let totalCampaignBudget = 0;
       for (const campaign of activeCampaigns) {
-        totalCampaignBudget += Number(campaign.budget ?? 0);
+        totalCampaignBudget += Number((campaign as any).totalBudget ?? 0);
       }
 
       // 3. Fetch sentiment data

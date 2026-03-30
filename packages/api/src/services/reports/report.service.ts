@@ -112,10 +112,10 @@ export class ReportService {
       if (input.templateId) {
         const templates = await this.repositories.report.findTemplates();
         const template = templates.find((t) => t.id === input.templateId);
-        if (template && template.sectionSchema) {
-          // Use template section schema as defaults
+        if (template && template.sectionDefinitions) {
+          // Use template section definitions as defaults
           const schema =
-            template.sectionSchema as unknown as SectionDefinition[];
+            template.sectionDefinitions as unknown as SectionDefinition[];
           if (Array.isArray(schema) && sectionDefs.length === 0) {
             sectionDefs = schema;
           }
@@ -127,9 +127,9 @@ export class ReportService {
         title: input.title,
         type: input.type as any,
         status: "DRAFT",
-        summary: null,
-        dateRangeStart: input.dateRangeStart,
-        dateRangeEnd: input.dateRangeEnd,
+        summary: "",
+        content: {},
+        period: `${input.dateRangeStart.toISOString()}~${input.dateRangeEnd.toISOString()}`,
         project: { connect: { id: input.projectId } },
         sections: {
           create: sectionDefs.map((def, idx) => ({
@@ -154,8 +154,8 @@ export class ReportService {
               await this.repositories.evidenceAsset.create(section.id, {
                 dataSourceType: dsType as any,
                 dataEntityIds: [],
-                displayType: "TABLE",
-                label: `${dsType} data`,
+                type: "TABLE" as any,
+                title: `${dsType} data`,
                 order: i,
               });
             }
