@@ -26,6 +26,7 @@ model User {
   workspaceMembers WorkspaceMember[]
   insightReports   InsightReport[]
   notifications    Notification[]
+  alertPreferences UserAlertPreference[]
 
   @@map("users")
 }
@@ -161,6 +162,14 @@ model Project {
   citationSources    CitationReadyReportSource[]
   faqCandidates      FAQCandidate[]
   riskSignals        RiskSignal[]
+
+  // Intelligence persistence
+  intelligenceRuns        IntelligenceAnalysisRun[]
+  intelligenceComparisons IntelligenceComparisonRun[]
+  socialMentionSnapshots  SocialMentionSnapshot[]
+  benchmarkSnapshots      BenchmarkSnapshot[]
+  intelligenceKeywords    IntelligenceKeyword[]
+  alertPreferences        UserAlertPreference[]
 
   @@map("projects")
 }
@@ -1420,9 +1429,9 @@ model AutomationExecution {
 
 /// 발송 기록. 리포트/알림/이메일 등 외부 전달 추적.
 model DeliveryLog {
-  id          String @id @default(cuid())
-  executionId String
-  execution   AutomationExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  id          String  @id @default(cuid())
+  executionId String?
+  execution   AutomationExecution? @relation(fields: [executionId], references: [id], onDelete: Cascade)
 
   // 발송 대상
   channel     DeliveryChannel
@@ -1475,6 +1484,10 @@ enum SocialPlatform {
   INSTAGRAM
   TIKTOK
   X
+  NAVER_BLOG
+  NAVER_NEWS
+  NEWS_API
+  COMMUNITY
 }
 
 enum ConnectionType {
@@ -1581,6 +1594,8 @@ enum JobType {
   FAQ_EXTRACT
   RISK_DETECT
   NOTIFICATION_SEND
+  MENTION_COLLECT
+  SNAPSHOT_GEN
 }
 
 enum JobStatus {
@@ -2056,4 +2071,221 @@ enum BrandContext {
   COMPARISON  // 비교 검색
   ALTERNATIVE // 대안 탐색
   RELATED     // 관련 검색
+}
+
+// ============================================
+// Intelligence: Analysis Run & Snapshot Persistence
+// ============================================
+
+/// Intelligence 분석 실행 이력 — 단일 키워드 분석 결과를 시점별로 저장
+model IntelligenceAnalysisRun {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // Analysis input
+  seedKeyword    String
+  industryType   String
+  industryLabel  String
+
+  // Signal fusion summary
+  signalQuality  Json   // { hasClusterData, hasSocialData, hasBenchmarkData, overallRichness }
+  fusionResult   Json   // Full SignalFusionResult snapshot
+
+  // Structured output
+  taxonomyMapping      Json?  // { coveredCategories, uncoveredCategories, unmappedClusters, totalClusters }
+  benchmarkComparison  Json?  // { overallScore, highlights, warnings, comparisons }
+  benchmarkBaseline    Json?  // Array of baseline metrics
+  socialIntegration    Json?  // { hasSocialData, socialDataQuality, evidenceCount, ... }
+
+  // Intelligence blocks
+  additionalInsights  Json?  // Array of insight objects
+  additionalWarnings  Json?  // Array of warning strings
+  additionalEvidence  Json?  // Array of evidence objects
+
+  // Metadata
+  confidence   Float    @default(0)
+  freshness    String   @default("fresh")
+  isPartial    Boolean  @default(false)
+  isMockOnly   Boolean  @default(false)
+  isStaleBased Boolean  @default(false)
+
+  // Provider coverage at analysis time
+  providerCoverage Json?  // { connectedProviders, totalProviders, isPartial, providers: [...] }
+
+  // Social mention snapshot
+  socialMentionSnapshot Json?  // { totalCount, buzzLevel, topicSignals, ... }
+
+  analyzedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  @@index([projectId, seedKeyword])
+  @@index([projectId, analyzedAt(sort: Desc)])
+  @@index([seedKeyword, industryType, analyzedAt(sort: Desc)])
+  @@map("intelligence_analysis_runs")
+}
+
+/// Intelligence 비교 이력 — A/B 비교 결과 저장
+model IntelligenceComparisonRun {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  comparisonType String  // keyword_vs_keyword | industry_vs_industry | period_vs_period
+
+  // Left side reference
+  leftLabel       String
+  leftKeyword     String
+  leftIndustry    String
+  leftRunId       String?  // Reference to IntelligenceAnalysisRun.id (optional, for historical)
+
+  // Right side reference
+  rightLabel      String
+  rightKeyword    String
+  rightIndustry   String
+  rightRunId      String?  // Reference to IntelligenceAnalysisRun.id (optional, for historical)
+
+  // Comparison result snapshot
+  comparisonResult Json   // Full IntelligenceComparisonResult
+  overallDifferenceScore Int @default(0)
+
+  // Period comparison metadata
+  leftPeriodStart  DateTime?
+  leftPeriodEnd    DateTime?
+  rightPeriodStart DateTime?
+  rightPeriodEnd   DateTime?
+
+  analyzedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  @@index([projectId, analyzedAt(sort: Desc)])
+  @@index([projectId, comparisonType])
+  @@map("intelligence_comparison_runs")
+}
+
+/// Social mention 일별 스냅샷 — 시계열 분석 기반
+model SocialMentionSnapshot {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  date      DateTime @db.Date
+  keyword   String
+
+  // Aggregated metrics
+  totalCount   Int    @default(0)
+  buzzLevel    String @default("NONE")  // HIGH | MODERATE | LOW | NONE
+
+  // Sentiment breakdown
+  positiveCount      Int @default(0)
+  neutralCount       Int @default(0)
+  negativeCount      Int @default(0)
+  unclassifiedCount  Int @default(0)  // null/unknown sentiment — not analyzed
+
+  // Provider coverage
+  providerStatuses Json  // Array of { provider, platform, isConnected, isAvailable, mentionCount }
+
+  // Topic signals
+  topicSignals Json?  // Array of TopicSignal
+
+  // Raw mention sample (top 20)
+  sampleMentions Json?  // Array of { text, platform, sentiment, publishedAt }
+
+  freshness   String @default("fresh")
+  collectedAt DateTime @default(now())
+
+  @@unique([projectId, keyword, date])
+  @@index([projectId, keyword, date(sort: Desc)])
+  @@map("social_mention_snapshots")
+}
+
+/// Benchmark 일별 스냅샷 — 업종별 벤치마크 시계열
+model BenchmarkSnapshot {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  date         DateTime @db.Date
+  keyword      String
+  industryType String
+
+  // Benchmark comparison result
+  overallScore Float    @default(0)
+  comparisons  Json     // Array of { metricKey, metricLabel, baselineValue, actualValue, deviationPercent, rating }
+  highlights   Json?    // Array of highlight strings
+  warnings     Json?    // Array of warning strings
+
+  createdAt DateTime @default(now())
+
+  @@unique([projectId, keyword, industryType, date])
+  @@index([projectId, keyword, date(sort: Desc)])
+  @@map("benchmark_snapshots")
+}
+
+/// Intelligence 키워드 이력 — 최근 분석 키워드 + 사용자 북마크
+model IntelligenceKeyword {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String
+
+  keyword      String
+  industryType String?   // 마지막 분석 시 사용한 업종
+  industryLabel String?
+
+  // 상태
+  isSaved      Boolean  @default(false)  // 사용자가 북마크한 키워드
+  analysisCount Int     @default(1)       // 분석 횟수
+
+  // 마지막 분석 요약
+  lastConfidence Float?
+  lastFreshness  String?
+  lastSignalHint String?  // "RICH" | "MODERATE" | "MINIMAL"
+
+  lastAnalyzedAt DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([projectId, userId, keyword])
+  @@index([projectId, userId, lastAnalyzedAt(sort: Desc)])
+  @@index([projectId, userId, isSaved])
+  @@map("intelligence_keywords")
+}
+
+/// 사용자 알림 설정 — 채널/임계값/유형별 개인화
+/// projectId가 null이면 user-global 설정, 값이 있으면 project-specific 설정
+model UserAlertPreference {
+  id        String  @id @default(cuid())
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId String? // null = global, 값 = project-specific
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // 채널 활성 상태
+  channelInApp    Boolean @default(true)
+  channelEmail    Boolean @default(false)
+  channelWebhook  Boolean @default(false)
+  webhookUrl      String?
+
+  // Alert type 활성 상태
+  enableWarningSpike      Boolean @default(true)
+  enableLowConfidence     Boolean @default(true)
+  enableBenchmarkDecline  Boolean @default(true)
+  enableProviderCoverage  Boolean @default(true)
+
+  // 임계값 커스터마이징
+  warningSpike_minCount       Int   @default(3)    // 최소 경고 수
+  lowConfidence_threshold     Float @default(0.4)  // 신뢰도 기준 (0-1)
+  benchmarkDecline_threshold  Int   @default(15)   // 벤치마크 하락 포인트
+
+  // Guardrail
+  globalCooldownMinutes  Int @default(60)  // 최소 쿨다운 (분)
+  maxAlertsPerDay        Int @default(20)  // 일일 최대 알림 수
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, projectId])
+  @@index([userId])
+  @@map("user_alert_preferences")
 }
