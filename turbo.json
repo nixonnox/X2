@@ -2,6 +2,35 @@
   "$schema": "https://turbo.build/schema.json",
   // TUI(Terminal UI) 모드로 각 패키지 로그를 구분하여 표시
   "ui": "tui",
+  "globalEnv": [
+    "AUTH_DEV_LOGIN",
+    "OPENAI_API_KEY",
+    "DATAFORSEO_LOGIN",
+    "DATAFORSEO_PASSWORD",
+    "DATAFORSEO_SANDBOX",
+    "GOOGLE_ADS_CLIENT_ID",
+    "GOOGLE_ADS_CLIENT_SECRET",
+    "GOOGLE_ADS_DEVELOPER_TOKEN",
+    "GOOGLE_ADS_REFRESH_TOKEN",
+    "GOOGLE_ADS_CUSTOMER_ID",
+    "GOOGLE_ADS_LOGIN_CUSTOMER_ID",
+    "SERP_API_KEY",
+    "GOOGLE_TRENDS_PROXY_URL",
+    "NAVER_CLIENT_ID",
+    "NAVER_CLIENT_SECRET",
+    "REDIS_URL",
+    "YOUTUBE_API_KEY",
+    "INSTAGRAM_ACCESS_TOKEN",
+    "TIKTOK_ACCESS_TOKEN",
+    "X_API_BEARER_TOKEN",
+    "DATABASE_URL",
+    "DIRECT_URL",
+    "NOTIFICATION_EMAIL_API_KEY",
+    "NOTIFICATION_EMAIL_API_URL",
+    "NOTIFICATION_EMAIL_FROM",
+    "NOTIFICATION_WEBHOOK_URL",
+    "NOTIFICATION_WEBHOOK_SECRET"
+  ],
   "tasks": {
     // 개발 서버: 캐시 불필요, 프로세스가 지속 실행됨
     "dev": {
