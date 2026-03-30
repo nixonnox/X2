@@ -61,6 +61,8 @@
     "insightAction": "Insight",
     "actions": "Actions",
     "evidence": "Evidence",
+    "verticalTemplate": "Vertical Template",
+    "verticalPreview": "Vertical Preview",
     "reportAutomation": "Reports",
     "execute": "Execute",
     "campaigns": "Campaigns",

@@ -187,7 +187,6 @@ export default function NewChannelPage() {
     } else {
       urlInputRef.current?.focus();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function handleUrlChange(url: string) {

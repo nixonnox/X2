@@ -33,11 +33,22 @@ import {
   FileText,
   Users,
   Globe,
+  Brain,
+  GitCompareArrows,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { PageHeader, KpiCard, ChartCard } from "@/components/shared";
 import { resolveChannelUrl, getPlatformLabel } from "@/lib/channels";
+import { TrendingIntentCard } from "@/components/dashboard/TrendingIntentCard";
+import { TopJourneyPreviewCard } from "@/components/dashboard/TopJourneyPreviewCard";
+import { PersonaSummaryCard } from "@/components/dashboard/PersonaSummaryCard";
+import { ClusterSummaryCard } from "@/components/dashboard/ClusterSummaryCard";
+import { ListeningActionCard } from "@/components/dashboard/ListeningActionCard";
+import { ListeningSummaryCard } from "@/components/dashboard/ListeningSummaryCard";
+import { SearchIntelligenceStatusBar } from "@/components/dashboard/SearchIntelligenceStatusBar";
+import { trpc } from "@/lib/trpc";
+import { useCurrentProject } from "@/hooks/use-current-project";
 
 // ---- Types for props ----
 
@@ -311,7 +322,7 @@ function DataStatusBar({
       ) : (
         <span className="inline-flex items-center gap-1.5 text-amber-700">
           <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
-          수집 상태: {failed}/{total} 파이프라인 실패
+          데이터 수집 {failed}/{total}건 실패
         </span>
       )}
       {lowConf > 0 && (
@@ -322,7 +333,7 @@ function DataStatusBar({
             className="inline-flex items-center gap-1.5 text-amber-700 hover:underline"
           >
             <AlertTriangle className="h-3.5 w-3.5" />
-            Low confidence {lowConf}건
+            낮은 신뢰도 {lowConf}건
           </Link>
         </>
       )}
@@ -461,6 +472,146 @@ function GeoAeoCard({ hasChannels }: { hasChannels: boolean }) {
   );
 }
 
+// ---- Intelligence Summary Card ----
+
+function IntelligenceSummaryCard() {
+  const { projectId } = useCurrentProject();
+  const keywordsQuery = trpc.intelligence.keywords.useQuery(
+    { projectId: projectId ?? "", filter: "all", limit: 3 },
+    { enabled: !!projectId },
+  );
+
+  // Source of truth: actual Notification unreadCount (same as Bell badge)
+  const unreadCountQuery = trpc.notification.unreadCount.useQuery(
+    undefined,
+    { refetchInterval: 30000 },
+  );
+  const unreadAlertCount = (unreadCountQuery.data as any)?.count ?? 0;
+
+  const keywords = keywordsQuery.data?.keywords ?? [];
+  const hasKeywords = keywords.length > 0;
+
+  return (
+    <div className="rounded-xl border border-[var(--border)] bg-white p-5 shadow-sm">
+      {/* Header */}
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50">
+            <Brain className="h-4 w-4 text-indigo-600" />
+          </div>
+          <div>
+            <h3 className="text-[14px] font-semibold text-[var(--foreground)]">
+              인사이트 허브
+            </h3>
+            <p className="text-[11px] text-[var(--muted-foreground)]">
+              키워드 분석 인사이트
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/intelligence/compare"
+            className="inline-flex items-center gap-1 rounded-md border border-[var(--border)] px-2.5 py-1 text-[11px] font-medium text-[var(--muted-foreground)] transition-colors hover:bg-[var(--secondary)] hover:text-[var(--foreground)]"
+          >
+            <GitCompareArrows className="h-3 w-3" />
+            비교 분석
+          </Link>
+          <Link
+            href="/intelligence"
+            className="text-[12px] font-medium text-blue-600 hover:text-blue-700"
+          >
+            전체 보기
+          </Link>
+        </div>
+      </div>
+
+      {/* Body */}
+      {!hasKeywords ? (
+        <div className="rounded-lg bg-[var(--secondary)] px-4 py-6 text-center">
+          <Brain className="mx-auto mb-2 h-7 w-7 text-[var(--muted-foreground)]" />
+          <p className="text-[13px] text-[var(--muted-foreground)]">
+            아직 분석한 키워드가 없어요. 여기서 첫 분석을 시작해보세요.
+          </p>
+          <Link
+            href="/intelligence"
+            className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-indigo-700"
+          >
+            분석 시작
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {/* Recent keywords list */}
+          <div className="space-y-2">
+            {keywords.map((kw: any) => (
+              <div
+                key={kw.id}
+                className="flex items-center justify-between rounded-lg border border-[var(--border-subtle)] px-3 py-2"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  {/* Signal hint dot */}
+                  <span
+                    className={`h-2 w-2 flex-shrink-0 rounded-full ${
+                      kw.lastSignalHint?.toLowerCase().includes("warning") ||
+                      kw.lastSignalHint?.toLowerCase().includes("risk")
+                        ? "bg-amber-400"
+                        : kw.lastSignalHint?.toLowerCase().includes("opportunity")
+                          ? "bg-emerald-400"
+                          : "bg-blue-400"
+                    }`}
+                  />
+                  <span className="truncate text-[13px] font-medium text-[var(--foreground)]">
+                    {kw.keyword}
+                  </span>
+                  {kw.industryLabel && (
+                    <span className="badge bg-[var(--secondary)] text-[10px] text-[var(--muted-foreground)]">
+                      {kw.industryLabel}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5 text-[11px] text-[var(--muted-foreground)]">
+                  <Clock className="h-3 w-3" />
+                  {kw.lastAnalyzedAt
+                    ? new Date(kw.lastAnalyzedAt).toLocaleDateString("ko-KR", {
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "—"}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Alert summary + CTA — source: Notification unreadCount */}
+          <div className="flex items-center justify-between">
+            {unreadAlertCount > 0 ? (
+              <span className="inline-flex items-center gap-1.5 text-[12px] text-amber-600">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                읽지 않은 알림 {unreadAlertCount}건
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 text-[12px] text-emerald-600">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                새 알림이 없어요
+              </span>
+            )}
+            <Link
+              href="/intelligence"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-indigo-700"
+            >
+              분석 시작
+              <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ---- DashboardView (main client component) ----
 
 export default function DashboardView({
@@ -523,12 +674,61 @@ export default function DashboardView({
         </div>
       )}
 
-      {/* 4. Today's Insights */}
+      {/* 4. Search Intelligence Status */}
+      {hasChannels && <SearchIntelligenceStatusBar />}
+
+      {/* 4.5 Intelligence 인사이트 */}
+      <IntelligenceSummaryCard />
+
+      {/* 5. Listening Intelligence — Core Discovery */}
+      <div>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-[15px] font-semibold text-[var(--foreground)]">
+            오늘의 핵심 발견
+          </h2>
+          <Link
+            href="/listening-hub"
+            className="text-[12px] font-medium text-blue-600 hover:text-blue-700"
+          >
+            리스닝 허브에서 자세히 보기
+          </Link>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <TrendingIntentCard />
+          <ClusterSummaryCard />
+          <PersonaSummaryCard />
+        </div>
+      </div>
+
+      {/* 6. Journey & Listening Overview */}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <TopJourneyPreviewCard />
+        <ListeningSummaryCard />
+      </div>
+
+      {/* 7. Recommended Actions from Listening */}
+      <div>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-[15px] font-semibold text-[var(--foreground)]">
+            추천 액션
+          </h2>
+          {hasChannels && (
+            <Link
+              href="/insights/actions"
+              className="text-[12px] font-medium text-blue-600 hover:text-blue-700"
+            >
+              전체 보기
+            </Link>
+          )}
+        </div>
+        <ListeningActionCard />
+      </div>
+
+      {/* Legacy insight cards for social/comments data */}
       <div>
         <h2 className="mb-3 text-[15px] font-semibold text-[var(--foreground)]">
-          오늘의 핵심 발견
+          소셜 & 댓글 분석
         </h2>
-        {/* Empty state for both — real data from InsightGenerationService via tRPC in Phase 9 */}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {[
             {
@@ -579,25 +779,7 @@ export default function DashboardView({
         </div>
       </div>
 
-      {/* 5. Recommended Actions */}
-      <div>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-[15px] font-semibold text-[var(--foreground)]">
-            추천 액션
-          </h2>
-          {hasChannels && (
-            <Link
-              href="/insights/actions"
-              className="text-[12px] font-medium text-blue-600 hover:text-blue-700"
-            >
-              전체 보기
-            </Link>
-          )}
-        </div>
-        <RecommendedActions hasChannels={hasChannels} />
-      </div>
-
-      {/* 6. KPI Cards (top 4) */}
+      {/* 8. KPI Cards (top 4) */}
       {topKpis.length > 0 && (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {topKpis.map((kpi) => (

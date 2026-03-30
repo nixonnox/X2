@@ -47,6 +47,11 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     titleKey: "nav.listeningMind",
     items: [
+      {
+        labelKey: "nav.listeningHub",
+        href: "/listening-hub",
+        icon: "Radio",
+      },
       { labelKey: "nav.intentFinder", href: "/intent", icon: "Search" },
       { labelKey: "nav.pathfinder", href: "/pathfinder", icon: "GitBranch" },
       { labelKey: "nav.personaView", href: "/persona", icon: "Users" },
@@ -78,6 +83,26 @@ export const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
+    titleKey: "nav.intelligence",
+    items: [
+      {
+        labelKey: "nav.intelligenceHub",
+        href: "/intelligence",
+        icon: "Brain",
+      },
+      {
+        labelKey: "nav.intelligenceCompare",
+        href: "/intelligence/compare",
+        icon: "GitCompareArrows",
+      },
+      {
+        labelKey: "nav.verticalPreview",
+        href: "/vertical-preview",
+        icon: "GitBranch",
+      },
+    ],
+  },
+  {
     titleKey: "nav.reportAutomation",
     items: [
       { labelKey: "nav.reports", href: "/insights/reports", icon: "FileText" },
@@ -98,6 +123,8 @@ export const NAV_SECTIONS: NavSection[] = [
 ];
 
 export const NAV_ACCOUNT: NavItem[] = [
+  { labelKey: "nav.notifications", href: "/notifications", icon: "Bell" },
+  { labelKey: "nav.alertSettings", href: "/settings/notifications", icon: "BellRing" },
   { labelKey: "nav.billing", href: "/billing", icon: "CreditCard" },
   { labelKey: "nav.settings", href: "/settings", icon: "Settings" },
 ];
