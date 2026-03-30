@@ -11,5 +11,12 @@
     "@x2/tsconfig": "workspace:*",
     "tsx": "^4.0.0",
     "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "@x2/ai": "workspace:*",
+    "@x2/queue": "workspace:*",
+    "@x2/db": "workspace:*",
+    "bullmq": "^5.71.0",
+    "ioredis": "^5.10.0"
   }
 }
