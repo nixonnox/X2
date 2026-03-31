@@ -378,16 +378,41 @@ export class DeliveryRetryService {
     delivery: DeliveryLogRecord,
     trace: TraceContext,
   ): Promise<ServiceResult<DeliveryLogRecord>> {
-    // 이메일 전송 플레이스홀더 — 실제 이메일 서비스 연동 시 구현
-    this.logger.info("이메일 배달 처리 (플레이스홀더)", {
-      deliveryId,
-      recipientId: delivery.recipientId,
-      recipientAddress: delivery.recipientAddress,
-      requestId: trace.requestId,
+    const { NotificationChannelDispatchService } = await import(
+      "../notification/channel-dispatch.service"
+    );
+    const dispatcher = new NotificationChannelDispatchService();
+
+    if (!delivery.recipientAddress) {
+      return this.markFailed(
+        deliveryId,
+        delivery,
+        "수신자 이메일 주소가 없습니다",
+        trace,
+      );
+    }
+
+    const results = await dispatcher.dispatch({
+      notificationId: deliveryId,
+      userId: delivery.recipientId,
+      channels: ["EMAIL"],
+      title: `자동화 알림 (${delivery.executionId})`,
+      message: `자동화 실행 결과가 전달되었습니다.`,
+      priority: "NORMAL",
+      recipientEmail: delivery.recipientAddress,
     });
 
-    // 현재는 성공으로 처리
-    return this.markDelivered(deliveryId, delivery, trace);
+    const emailResult = results.find((r) => r.channel === "EMAIL");
+    if (emailResult?.status === "SUCCESS") {
+      return this.markDelivered(deliveryId, delivery, trace);
+    }
+
+    return this.markFailed(
+      deliveryId,
+      delivery,
+      emailResult?.error ?? "이메일 발송 실패",
+      trace,
+    );
   }
 
   private async processWebhookDelivery(
@@ -395,14 +420,31 @@ export class DeliveryRetryService {
     delivery: DeliveryLogRecord,
     trace: TraceContext,
   ): Promise<ServiceResult<DeliveryLogRecord>> {
-    // 웹훅 호출 플레이스홀더 — 실제 HTTP 클라이언트 연동 시 구현
-    this.logger.info("웹훅 배달 처리 (플레이스홀더)", {
-      deliveryId,
-      recipientAddress: delivery.recipientAddress,
-      requestId: trace.requestId,
+    const { NotificationChannelDispatchService } = await import(
+      "../notification/channel-dispatch.service"
+    );
+    const dispatcher = new NotificationChannelDispatchService();
+
+    const results = await dispatcher.dispatch({
+      notificationId: deliveryId,
+      userId: delivery.recipientId,
+      channels: ["WEBHOOK"],
+      title: `자동화 알림 (${delivery.executionId})`,
+      message: `자동화 실행 결과가 전달되었습니다.`,
+      priority: "NORMAL",
+      webhookUrl: delivery.recipientAddress,
     });
 
-    // 현재는 성공으로 처리
-    return this.markDelivered(deliveryId, delivery, trace);
+    const webhookResult = results.find((r) => r.channel === "WEBHOOK");
+    if (webhookResult?.status === "SUCCESS") {
+      return this.markDelivered(deliveryId, delivery, trace);
+    }
+
+    return this.markFailed(
+      deliveryId,
+      delivery,
+      webhookResult?.error ?? "웹훅 발송 실패",
+      trace,
+    );
   }
 }
