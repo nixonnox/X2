@@ -74,6 +74,96 @@ export class NaverDatalabAdapter extends BaseSearchAdapter {
     return ["trend_series", "demographic"];
   }
 
+  /**
+   * 성별/연령별 검색 트렌드 비교 수집.
+   * 네이버 DataLab 검색어 트렌드 API의 gender/ages 필터를 활용.
+   *
+   * gender: "" (전체), "m" (남성), "f" (여성)
+   * ages: "1"(0-12), "2"(13-18), "3"(19-24), "4"(25-29), "5"(30-34),
+   *        "6"(35-39), "7"(40-44), "8"(45-49), "9"(50-54), "10"(55-59), "11"(60+)
+   */
+  async collectDemographicTrend(
+    keyword: string,
+    options?: { months?: number },
+  ): Promise<DemographicTrendResult | null> {
+    if (!this.clientId || !this.clientSecret) return null;
+
+    const months = options?.months ?? 12;
+    const genders = ["", "m", "f"] as const;
+    const ageGroups = [
+      { code: "3", label: "19-24" },
+      { code: "4", label: "25-29" },
+      { code: "5", label: "30-34" },
+      { code: "6", label: "35-39" },
+      { code: "7", label: "40-44" },
+      { code: "8", label: "45-49" },
+      { code: "9", label: "50-54" },
+      { code: "10", label: "55-59" },
+      { code: "11", label: "60+" },
+    ];
+
+    try {
+      // 1. Gender comparison
+      const genderResults: { gender: string; avgRatio: number }[] = [];
+      for (const g of genders) {
+        const body = { ...buildDatalabBody(keyword, months), ...(g ? { gender: g } : {}) };
+        const res = await this.fetchWithTimeout(
+          "https://openapi.naver.com/v1/datalab/search",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Naver-Client-Id": this.clientId!,
+              "X-Naver-Client-Secret": this.clientSecret!,
+            },
+            body: JSON.stringify(body),
+          },
+        );
+        if (!res.ok) continue;
+        const data = await res.json();
+        const points = data.results?.[0]?.data ?? [];
+        const avg = points.length > 0
+          ? points.reduce((s: number, p: any) => s + p.ratio, 0) / points.length
+          : 0;
+        genderResults.push({ gender: g || "all", avgRatio: Math.round(avg * 10) / 10 });
+      }
+
+      // 2. Age group comparison
+      const ageResults: { ageGroup: string; label: string; avgRatio: number }[] = [];
+      for (const ag of ageGroups) {
+        const body = { ...buildDatalabBody(keyword, months), ages: [ag.code] };
+        const res = await this.fetchWithTimeout(
+          "https://openapi.naver.com/v1/datalab/search",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Naver-Client-Id": this.clientId!,
+              "X-Naver-Client-Secret": this.clientSecret!,
+            },
+            body: JSON.stringify(body),
+          },
+        );
+        if (!res.ok) continue;
+        const data = await res.json();
+        const points = data.results?.[0]?.data ?? [];
+        const avg = points.length > 0
+          ? points.reduce((s: number, p: any) => s + p.ratio, 0) / points.length
+          : 0;
+        ageResults.push({ ageGroup: ag.code, label: ag.label, avgRatio: Math.round(avg * 10) / 10 });
+      }
+
+      return {
+        keyword,
+        genderBreakdown: genderResults,
+        ageBreakdown: ageResults,
+        collectedAt: new Date().toISOString(),
+      };
+    } catch {
+      return null;
+    }
+  }
+
   async collectTrendSeries(
     keyword: string,
     options?: CollectOptions,
@@ -166,3 +256,12 @@ function formatDate(date: Date): string {
   const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
 }
+
+// ── Types ──
+
+export type DemographicTrendResult = {
+  keyword: string;
+  genderBreakdown: { gender: string; avgRatio: number }[];
+  ageBreakdown: { ageGroup: string; label: string; avgRatio: number }[];
+  collectedAt: string;
+};

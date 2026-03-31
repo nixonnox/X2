@@ -18,6 +18,7 @@ import { listeningRouter } from "./routers/listening";
 import { intelligenceRouter } from "./routers/intelligence";
 import { usageRouter } from "./routers/usage";
 import { geoAeoRouter } from "./routers/geo-aeo";
+import { demographicRouter } from "./routers/demographic";
 
 export const appRouter = router({
   workspace: workspaceRouter,
@@ -39,6 +40,7 @@ export const appRouter = router({
   intelligence: intelligenceRouter,
   usage: usageRouter,
   geoAeo: geoAeoRouter,
+  demographic: demographicRouter,
 });
 
 export type AppRouter = typeof appRouter;
