@@ -15,6 +15,8 @@ import {
   Loader2,
   ExternalLink,
   X,
+  BellOff,
+  Clock,
 } from "lucide-react";
 
 // ─── Types ──────────────────────────────────────────────────────
@@ -115,6 +117,22 @@ export default function NotificationsPage() {
       unreadCountQuery.refetch();
     },
   });
+
+  const dismissMutation = trpc.notification.dismiss.useMutation({
+    onSuccess: () => {
+      listQuery.refetch();
+      unreadCountQuery.refetch();
+    },
+  });
+
+  const snoozeMutation = trpc.notification.snooze.useMutation({
+    onSuccess: () => {
+      listQuery.refetch();
+      unreadCountQuery.refetch();
+    },
+  });
+
+  const [snoozeMenuId, setSnoozeMenuId] = useState<string | null>(null);
 
   const data = listQuery.data as any;
   const items = data?.items ?? [];
@@ -389,8 +407,8 @@ export default function NotificationsPage() {
               </div>
             </div>
 
-            {/* Read action */}
-            <div className="shrink-0">
+            {/* Actions */}
+            <div className="relative flex shrink-0 items-center gap-0.5">
               {!n.isRead && (
                 <button
                   onClick={(e) => {
@@ -402,6 +420,51 @@ export default function NotificationsPage() {
                 >
                   <Check className="h-3.5 w-3.5" />
                 </button>
+              )}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSnoozeMenuId(snoozeMenuId === n.id ? null : n.id);
+                }}
+                className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                title="다시 알림"
+              >
+                <Clock className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  dismissMutation.mutate({ id: n.id });
+                }}
+                className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-red-500"
+                title="알림 해제"
+              >
+                <BellOff className="h-3.5 w-3.5" />
+              </button>
+
+              {/* Snooze menu */}
+              {snoozeMenuId === n.id && (
+                <div className="absolute right-0 top-8 z-10 w-36 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+                  {[
+                    { label: "15분 후", minutes: 15 },
+                    { label: "1시간 후", minutes: 60 },
+                    { label: "3시간 후", minutes: 180 },
+                    { label: "내일", minutes: 1440 },
+                    { label: "1주일 후", minutes: 10080 },
+                  ].map((opt) => (
+                    <button
+                      key={opt.minutes}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        snoozeMutation.mutate({ id: n.id, minutes: opt.minutes });
+                        setSnoozeMenuId(null);
+                      }}
+                      className="block w-full px-3 py-1.5 text-left text-[11px] text-gray-600 hover:bg-gray-50"
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
           </div>

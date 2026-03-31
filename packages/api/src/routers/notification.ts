@@ -16,15 +16,26 @@ export const notificationRouter = router({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const where: any = { userId: ctx.userId };
+      const where: any = {
+        userId: ctx.userId,
+        isDismissed: false,
+        OR: [
+          { snoozedUntil: null },
+          { snoozedUntil: { lte: new Date() } },
+        ],
+      };
       if (input.unreadOnly) where.isRead = false;
       if (input.priority) where.priority = input.priority;
       if (input.sourceType) where.sourceType = input.sourceType;
       if (input.since) where.createdAt = { gte: new Date(input.since) };
       if (input.search) {
-        where.OR = [
-          { title: { contains: input.search, mode: "insensitive" } },
-          { message: { contains: input.search, mode: "insensitive" } },
+        where.AND = [
+          {
+            OR: [
+              { title: { contains: input.search, mode: "insensitive" } },
+              { message: { contains: input.search, mode: "insensitive" } },
+            ],
+          },
         ];
       }
 
@@ -71,10 +82,47 @@ export const notificationRouter = router({
     return { success: true };
   }),
 
-  /** 읽지 않은 알림 개수 */
+  /** 알림 해제 (dismiss) */
+  dismiss: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.notification.updateMany({
+        where: { id: input.id, userId: ctx.userId },
+        data: { isDismissed: true, dismissedAt: new Date(), isRead: true, readAt: new Date() },
+      });
+      return { success: true };
+    }),
+
+  /** 알림 다시 알림 (snooze) */
+  snooze: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        /** snooze 기간 (분) */
+        minutes: z.number().min(5).max(10080).default(60), // 5분 ~ 7일
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const snoozedUntil = new Date(Date.now() + input.minutes * 60 * 1000);
+      await ctx.db.notification.updateMany({
+        where: { id: input.id, userId: ctx.userId },
+        data: { snoozedUntil, isRead: true, readAt: new Date() },
+      });
+      return { success: true, snoozedUntil: snoozedUntil.toISOString() };
+    }),
+
+  /** 읽지 않은 알림 개수 (dismissed/snoozed 제외) */
   unreadCount: protectedProcedure.query(async ({ ctx }) => {
     const count = await ctx.db.notification.count({
-      where: { userId: ctx.userId, isRead: false },
+      where: {
+        userId: ctx.userId,
+        isRead: false,
+        isDismissed: false,
+        OR: [
+          { snoozedUntil: null },
+          { snoozedUntil: { lte: new Date() } },
+        ],
+      },
     });
     return { count };
   }),

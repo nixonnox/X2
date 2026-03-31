@@ -1316,6 +1316,11 @@ model Notification {
   isRead Boolean   @default(false)
   readAt DateTime?
 
+  // dismiss / snooze
+  isDismissed  Boolean   @default(false)
+  dismissedAt  DateTime?
+  snoozedUntil DateTime?
+
   // 발송 채널
   channels    String[]
   emailSentAt DateTime?
