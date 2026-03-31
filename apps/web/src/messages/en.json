@@ -56,6 +56,8 @@
     "clusterFinder": "Cluster Finder",
     "roadView": "Road View",
     "faqIssues": "FAQ / Issues",
+    "categoryEntry": "Category Entry",
+    "demographic": "Demographics",
     "geoAeo": "GEO / AEO",
     "citationTracker": "Citation Tracker",
     "insightAction": "Insight",
@@ -66,7 +68,9 @@
     "reportAutomation": "Reports",
     "execute": "Execute",
     "campaigns": "Campaigns",
-    "mentions": "Mention Analysis"
+    "mentions": "Mention Analysis",
+    "usage": "Usage",
+    "alertSettings": "Alert Settings"
   },
   "admin": {
     "title": "Admin",
@@ -87,7 +91,8 @@
     "planManagement": "Plan Management",
     "planManagementDesc": "Plan changes take effect from the next billing date. Downgrading may limit some features.",
     "systemLogs": "System Logs",
-    "systemLogsDesc": "View system activity logs. Logs are retained for 90 days."
+    "systemLogsDesc": "View system activity logs. Logs are retained for 90 days.",
+    "pipelineMonitor": "Pipeline Monitor"
   },
   "dashboard": {
     "title": "Dashboard",

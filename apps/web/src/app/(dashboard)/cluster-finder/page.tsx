@@ -26,6 +26,9 @@ import { useClusterQuery } from "@/features/persona-cluster";
 import type { ClusterViewModel } from "@/features/persona-cluster";
 import { ScreenStatePanel } from "@/features/persona-cluster/components/ScreenStatePanel";
 import { CLUSTER_CATEGORY_LABELS } from "@/lib/persona-cluster-engine";
+import { ClusterNetworkGraph } from "@/components/intelligence/ClusterNetworkGraph";
+import { WordCloud } from "@/components/intelligence/WordCloud";
+import { AiInsightPanel } from "@/components/intelligence/AiInsightPanel";
 
 // ── Colors ──
 
@@ -258,6 +261,50 @@ export default function ClusterFinderPage() {
               </div>
             </ChartCard>
           </div>
+
+          {/* Network Graph + Word Cloud */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <ChartCard title="키워드 네트워크" description="클러스터 간 관계를 시각적으로 탐색합니다.">
+              <ClusterNetworkGraph
+                clusters={clusters.map((c) => ({
+                  id: c.id,
+                  label: c.label,
+                  keywords: c.keywords.map((k: any) => typeof k === "string" ? k : k.keyword ?? k.label ?? ""),
+                  dominantIntent: c.dominantIntent,
+                }))}
+                seedKeyword={keyword}
+                width={500}
+                height={380}
+              />
+            </ChartCard>
+            <ChartCard title="키워드 워드클라우드" description="키워드 빈도와 감성을 크기/색상으로 표현합니다.">
+              <WordCloud
+                words={clusters.flatMap((c) =>
+                  c.keywords.slice(0, 8).map((k: any, ki: number) => ({
+                    text: typeof k === "string" ? k : k.keyword ?? k.label ?? "",
+                    value: c.keywords.length - ki,
+                    sentiment: undefined,
+                  }))
+                )}
+                width={500}
+                height={380}
+              />
+            </ChartCard>
+          </div>
+
+          {/* AI Insight */}
+          <AiInsightPanel
+            type="cluster_analysis"
+            keyword={keyword}
+            data={{
+              clusterCount: clusters.length,
+              topClusters: clusters.slice(0, 5).map((c) => ({
+                label: c.label,
+                size: c.keywords.length,
+                intent: c.dominantIntent,
+              })),
+            }}
+          />
 
           {/* Cluster List */}
           <div className="card overflow-hidden">

@@ -62,6 +62,16 @@ export const NAV_SECTIONS: NavSection[] = [
       },
       { labelKey: "nav.roadView", href: "/road-view", icon: "Route" },
       { labelKey: "nav.faqIssues", href: "/comments/faq", icon: "HelpCircle" },
+      {
+        labelKey: "nav.categoryEntry",
+        href: "/category-entry",
+        icon: "Layers",
+      },
+      {
+        labelKey: "nav.demographic",
+        href: "/demographic",
+        icon: "PieChart",
+      },
     ],
   },
   {
@@ -126,6 +136,7 @@ export const NAV_ACCOUNT: NavItem[] = [
   { labelKey: "nav.notifications", href: "/notifications", icon: "Bell" },
   { labelKey: "nav.alertSettings", href: "/settings/notifications", icon: "BellRing" },
   { labelKey: "nav.billing", href: "/billing", icon: "CreditCard" },
+  { labelKey: "nav.usage", href: "/settings/usage", icon: "BarChart3" },
   { labelKey: "nav.settings", href: "/settings", icon: "Settings" },
 ];
 
@@ -151,6 +162,11 @@ export const NAV_ADMIN: NavSection[] = [
         icon: "CreditCard",
       },
       { labelKey: "admin.systemLogs", href: "/admin/logs", icon: "ScrollText" },
+      {
+        labelKey: "admin.pipelineMonitor",
+        href: "/admin/pipeline",
+        icon: "Activity",
+      },
     ],
   },
 ];

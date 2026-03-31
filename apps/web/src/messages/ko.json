@@ -56,6 +56,8 @@
     "clusterFinder": "클러스터 파인더",
     "roadView": "로드 뷰",
     "faqIssues": "FAQ / 이슈",
+    "categoryEntry": "카테고리 엔트리",
+    "demographic": "인구통계 분석",
     "geoAeo": "GEO / AEO",
     "citationTracker": "인용 트래커",
     "insightAction": "인사이트",
@@ -68,7 +70,9 @@
     "reportAutomation": "리포트",
     "execute": "실행",
     "campaigns": "캠페인",
-    "mentions": "멘션 분석"
+    "mentions": "멘션 분석",
+    "usage": "사용량",
+    "alertSettings": "알림 설정"
   },
   "admin": {
     "title": "관리자",
@@ -89,7 +93,8 @@
     "planManagement": "요금제 관리",
     "planManagementDesc": "요금제를 변경하면 다음 결제일부터 적용됩니다. 다운그레이드 시 일부 기능이 제한될 수 있습니다.",
     "systemLogs": "시스템 로그",
-    "systemLogsDesc": "시스템 동작 기록을 확인할 수 있습니다. 로그는 90일간 보관됩니다."
+    "systemLogsDesc": "시스템 동작 기록을 확인할 수 있습니다. 로그는 90일간 보관됩니다.",
+    "pipelineMonitor": "파이프라인 모니터링"
   },
   "dashboard": {
     "title": "대시보드",
