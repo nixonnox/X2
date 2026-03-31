@@ -2514,4 +2514,128 @@ export const intelligenceRouter = router({
         data: input.data,
       });
     }),
+
+  /**
+   * 신규/급상승 키워드 탐지.
+   * 최근 기간에 새로 등장하거나 급격히 증가한 연관 키워드를 탐지.
+   */
+  emergingKeywords: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.string(),
+        keyword: z.string(),
+        currentDays: z.number().min(1).max(30).default(7),
+        previousDays: z.number().min(1).max(30).default(7),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const now = new Date();
+      const currentStart = new Date(now);
+      currentStart.setDate(currentStart.getDate() - input.currentDays);
+      const previousStart = new Date(currentStart);
+      previousStart.setDate(previousStart.getDate() - input.previousDays);
+
+      // Current period topics
+      const currentMentions = await ctx.db.rawSocialMention.findMany({
+        where: {
+          projectId: input.projectId,
+          matchedKeyword: input.keyword,
+          publishedAt: { gte: currentStart },
+          topics: { isEmpty: false },
+        },
+        select: { topics: true },
+      });
+
+      // Previous period topics
+      const previousMentions = await ctx.db.rawSocialMention.findMany({
+        where: {
+          projectId: input.projectId,
+          matchedKeyword: input.keyword,
+          publishedAt: { gte: previousStart, lt: currentStart },
+          topics: { isEmpty: false },
+        },
+        select: { topics: true },
+      });
+
+      // Count topics
+      const currentTopics = new Map<string, number>();
+      for (const m of currentMentions) {
+        for (const t of m.topics) {
+          currentTopics.set(t, (currentTopics.get(t) ?? 0) + 1);
+        }
+      }
+
+      const previousTopics = new Map<string, number>();
+      for (const m of previousMentions) {
+        for (const t of m.topics) {
+          previousTopics.set(t, (previousTopics.get(t) ?? 0) + 1);
+        }
+      }
+
+      // Classify: new, surging, rising, stable, declining, gone
+      type EmergingKeyword = {
+        keyword: string;
+        currentCount: number;
+        previousCount: number;
+        changeRate: number; // %
+        status: "new" | "surging" | "rising" | "stable" | "declining" | "gone";
+      };
+
+      const results: EmergingKeyword[] = [];
+
+      // Check current topics
+      for (const [topic, count] of currentTopics) {
+        const prev = previousTopics.get(topic) ?? 0;
+        let status: EmergingKeyword["status"];
+        let changeRate: number;
+
+        if (prev === 0) {
+          status = "new";
+          changeRate = 100;
+        } else {
+          changeRate = Math.round(((count - prev) / prev) * 100);
+          if (changeRate >= 200) status = "surging";
+          else if (changeRate >= 50) status = "rising";
+          else if (changeRate >= -20) status = "stable";
+          else status = "declining";
+        }
+
+        results.push({ keyword: topic, currentCount: count, previousCount: prev, changeRate, status });
+      }
+
+      // Check gone topics
+      for (const [topic, count] of previousTopics) {
+        if (!currentTopics.has(topic)) {
+          results.push({ keyword: topic, currentCount: 0, previousCount: count, changeRate: -100, status: "gone" });
+        }
+      }
+
+      // Sort: new/surging first, then by change rate
+      const statusOrder = { new: 0, surging: 1, rising: 2, stable: 3, declining: 4, gone: 5 };
+      results.sort((a, b) => statusOrder[a.status] - statusOrder[b.status] || b.changeRate - a.changeRate);
+
+      const newKeywords = results.filter((r) => r.status === "new");
+      const surgingKeywords = results.filter((r) => r.status === "surging");
+      const risingKeywords = results.filter((r) => r.status === "rising");
+      const decliningKeywords = results.filter((r) => r.status === "declining" || r.status === "gone");
+
+      return {
+        keyword: input.keyword,
+        period: { currentDays: input.currentDays, previousDays: input.previousDays },
+        hasData: currentMentions.length > 0 || previousMentions.length > 0,
+        summary: {
+          totalCurrent: currentTopics.size,
+          totalPrevious: previousTopics.size,
+          newCount: newKeywords.length,
+          surgingCount: surgingKeywords.length,
+          risingCount: risingKeywords.length,
+          decliningCount: decliningKeywords.length,
+        },
+        newKeywords: newKeywords.slice(0, 20),
+        surgingKeywords: surgingKeywords.slice(0, 20),
+        risingKeywords: risingKeywords.slice(0, 20),
+        decliningKeywords: decliningKeywords.slice(0, 20),
+        allKeywords: results.slice(0, 50),
+      };
+    }),
 });
