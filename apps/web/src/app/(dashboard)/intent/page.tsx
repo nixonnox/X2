@@ -102,15 +102,20 @@ export default function IntentFinderPage() {
 
   const handleAnalyze = useCallback(
     async (keyword?: string) => {
-      const seed = (keyword ?? inputValue).trim();
+      const raw = (keyword ?? inputValue).trim();
+      if (!raw) return;
+      // 콤마 구분 다중 키워드 지원: "AI, 마케팅, 숏폼" → 첫 번째로 분석, 나머지는 확장에 포함
+      const seeds = raw.split(/[,，]/).map((s) => s.trim()).filter(Boolean);
+      const seed = seeds[0];
       if (!seed) return;
-      setAnalysis({ status: "loading", keyword: seed });
+      setAnalysis({ status: "loading", keyword: seeds.length > 1 ? seeds.join(", ") : seed });
       try {
         const res = await fetch("/api/intent/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             seedKeyword: seed,
+            additionalKeywords: seeds.length > 1 ? seeds.slice(1) : undefined,
             mode: "sync",
             maxDepth: 2,
             maxKeywords: 150,
@@ -248,7 +253,7 @@ export default function IntentFinderPage() {
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAnalyze()}
-              placeholder="분석할 키워드를 입력하세요 (예: 지속사회, AI 마케팅, 숏폼 전략)"
+              placeholder="키워드 입력 (콤마로 여러 개 입력 가능: AI 마케팅, 숏폼 전략, 인플루언서)"
               className="input w-full pl-8"
               disabled={analysis.status === "loading"}
             />
