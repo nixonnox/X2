@@ -380,6 +380,73 @@ export class NaverKinSearchAdapter implements SocialProviderAdapter {
   }
 }
 
+// ─── Naver Web Document (웹문서) Search ────────────────────
+
+export class NaverWebDocSearchAdapter implements SocialProviderAdapter {
+  readonly config: ProviderConfig = {
+    name: "naver_webdoc",
+    platform: "NAVER_NEWS", // reuse existing platform for now
+    requiresApiKey: true,
+    envKeyName: "NAVER_CLIENT_ID",
+    authType: "API_KEY",
+    rateLimitPerDay: 25000,
+    documentation:
+      "https://developers.naver.com/docs/serviceapi/search/web/web.md",
+  };
+
+  private clientId = process.env.NAVER_CLIENT_ID;
+  private clientSecret = process.env.NAVER_CLIENT_SECRET;
+
+  isConfigured(): boolean {
+    return !!this.clientId && !!this.clientSecret && this.clientId !== "your-naver-client-id";
+  }
+
+  async testConnection(): Promise<{ ok: boolean; error?: string }> {
+    if (!this.isConfigured()) return { ok: false, error: "NAVER_CLIENT_ID/SECRET 미설정" };
+    try {
+      const res = await fetch(
+        `https://openapi.naver.com/v1/search/webkr.json?query=test&display=1`,
+        { headers: { "X-Naver-Client-Id": this.clientId!, "X-Naver-Client-Secret": this.clientSecret! } },
+      );
+      return res.ok ? { ok: true } : { ok: false, error: `Naver WebDoc API ${res.status}` };
+    } catch (err: any) {
+      return { ok: false, error: err.message };
+    }
+  }
+
+  async fetchMentions(keyword: string, options?: { maxResults?: number }): Promise<ProviderFetchResult> {
+    if (!this.isConfigured()) {
+      return { mentions: [], fetchedAt: new Date().toISOString(), error: "NAVER_CLIENT_ID 미설정" };
+    }
+
+    const display = Math.min(options?.maxResults ?? 20, 100);
+    try {
+      const url = `https://openapi.naver.com/v1/search/webkr.json?query=${encodeURIComponent(keyword)}&display=${display}&sort=date`;
+      const res = await fetch(url, {
+        headers: { "X-Naver-Client-Id": this.clientId!, "X-Naver-Client-Secret": this.clientSecret! },
+      });
+      if (!res.ok) return { mentions: [], fetchedAt: new Date().toISOString(), error: `Naver WebDoc API ${res.status}` };
+
+      const data = await res.json();
+      const mentions: SocialMention[] = (data.items ?? []).map((item: any) => ({
+        id: `naver-web-${Buffer.from(item.link).toString("base64").slice(0, 20)}`,
+        platform: "NAVER_NEWS",
+        text: stripHtml(item.title + " " + (item.description ?? "")),
+        authorName: null,
+        authorHandle: null,
+        sentiment: null,
+        topics: [],
+        publishedAt: new Date().toISOString(),
+        url: item.link,
+        engagement: { likes: 0, comments: 0, shares: 0 },
+      }));
+      return { mentions, fetchedAt: new Date().toISOString() };
+    } catch (err: any) {
+      return { mentions: [], fetchedAt: new Date().toISOString(), error: err.message };
+    }
+  }
+}
+
 function stripHtml(html: string): string {
   return html
     .replace(/<[^>]*>/g, "")
