@@ -17,6 +17,7 @@ import { verticalDocumentRouter } from "./routers/vertical-document";
 import { listeningRouter } from "./routers/listening";
 import { intelligenceRouter } from "./routers/intelligence";
 import { usageRouter } from "./routers/usage";
+import { geoAeoRouter } from "./routers/geo-aeo";
 
 export const appRouter = router({
   workspace: workspaceRouter,
@@ -37,6 +38,7 @@ export const appRouter = router({
   listening: listeningRouter,
   intelligence: intelligenceRouter,
   usage: usageRouter,
+  geoAeo: geoAeoRouter,
 });
 
 export type AppRouter = typeof appRouter;
