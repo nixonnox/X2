@@ -414,7 +414,7 @@ export const DATA_SOURCE_META: Record<SearchDataSource, {
     rateLimit: "15,000 operations/day (Standard Access)",
     cost: "무료 (API 호출), 단 광고 계정 + 최소 지출 필요",
     requiresAuth: true,
-    status: "scaffold",
+    status: "available",
     legalNote: "Google Ads API 이용약관 준수 필요. 광고 계정이 활성 상태여야 정확한 데이터 제공.",
   },
   google_autocomplete: {
@@ -434,7 +434,7 @@ export const DATA_SOURCE_META: Record<SearchDataSource, {
     rateLimit: "비공식 — pytrends: 분당 ~5회 권장",
     cost: "무료 (pytrends) 또는 SerpAPI $50/5000",
     requiresAuth: false,
-    status: "scaffold",
+    status: "available",
     legalNote: "공식 API 없음. pytrends(비공식) 또는 SerpAPI/DataForSEO 경유 권장.",
   },
   google_related: {
@@ -444,7 +444,7 @@ export const DATA_SOURCE_META: Record<SearchDataSource, {
     rateLimit: "SERP API 경유 시 해당 API의 제한 적용",
     cost: "SERP API 비용에 포함",
     requiresAuth: false,
-    status: "scaffold",
+    status: "available",
     legalNote: "SERP 결과의 일부로 수집. 별도 API 없음, SERP adapter 경유.",
   },
   naver_search: {
@@ -474,7 +474,7 @@ export const DATA_SOURCE_META: Record<SearchDataSource, {
     rateLimit: "플랜별 상이 (기본 5,000/월)",
     cost: "$50/5,000 searches (Startup plan)",
     requiresAuth: true,
-    status: "scaffold",
+    status: "available",
     legalNote: "공식 유료 API. Google/Naver/Bing SERP 데이터 합법적 수집.",
   },
   dataforseo: {
@@ -484,7 +484,7 @@ export const DATA_SOURCE_META: Record<SearchDataSource, {
     rateLimit: "초당 2,000 요청",
     cost: "$0.002/task (종량제)",
     requiresAuth: true,
-    status: "scaffold",
+    status: "available",
     legalNote: "공식 유료 API. 가장 포괄적인 데이터. 대규모 운영 시 비용 효율적.",
   },
   mock: {
