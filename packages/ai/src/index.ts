@@ -15,3 +15,8 @@ export {
   type SentimentResult,
   type BatchSentimentResult,
 } from "./services/sentiment";
+export {
+  InsightInterpreterService,
+  type InterpretInput,
+  type InterpretResult,
+} from "./services/insight-interpreter";

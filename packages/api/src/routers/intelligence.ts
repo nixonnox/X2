@@ -2487,4 +2487,31 @@ export const intelligenceRouter = router({
       });
       return { id: created.id, isSaved: created.isSaved };
     }),
+
+  /** LLM 기반 인사이트 해석 */
+  interpret: protectedProcedure
+    .input(
+      z.object({
+        type: z.enum([
+          "intelligence_summary",
+          "cluster_analysis",
+          "persona_analysis",
+          "journey_analysis",
+          "trend_change",
+          "competitor_comparison",
+          "demographic_analysis",
+        ]),
+        keyword: z.string(),
+        data: z.record(z.unknown()),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const { InsightInterpreterService } = await import("@x2/ai");
+      const interpreter = new InsightInterpreterService();
+      return interpreter.interpret({
+        type: input.type,
+        keyword: input.keyword,
+        data: input.data,
+      });
+    }),
 });
