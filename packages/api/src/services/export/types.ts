@@ -17,7 +17,7 @@ import type { IndustryType } from "../vertical-templates/types";
 
 // ─── Export Format ──────────────────────────────────────────────────
 
-export type ExportFormat = "WORD" | "PPT" | "PDF";
+export type ExportFormat = "WORD" | "PPT" | "PDF" | "CSV" | "XLSX";
 
 // ─── Export 목적 ────────────────────────────────────────────────────
 
@@ -43,10 +43,24 @@ export type PdfExportPurpose =
   | "SNAPSHOT_RESULT" // 스냅샷 결과물
   | "SHAREABLE_REPORT"; // 공유 링크 대체 문서
 
+export type CsvExportPurpose =
+  | "DATA_TABLE" // 원시 데이터 테이블
+  | "KEYWORD_LIST" // 키워드 목록
+  | "RANKING_EXPORT" // 랭킹 내보내기
+  | "MENTION_LIST"; // 멘션 목록
+
+export type XlsxExportPurpose =
+  | "FULL_REPORT" // 시트별 전체 보고서
+  | "DASHBOARD_DATA" // 대시보드 데이터
+  | "COMPARISON_TABLE" // 비교 분석 표
+  | "EVIDENCE_BUNDLE"; // 근거 자료 묶음
+
 export type ExportPurpose =
   | WordExportPurpose
   | PptExportPurpose
-  | PdfExportPurpose;
+  | PdfExportPurpose
+  | CsvExportPurpose
+  | XlsxExportPurpose;
 
 // ─── Export Status ──────────────────────────────────────────────────
 
@@ -466,7 +480,71 @@ export type PdfMetadata = {
   isWatermarked: boolean;
 };
 
-// ─── 8. Export Orchestrator Input/Output ─────────────────────────────
+// ─── 8. CSV Export 전용 구조 ─────────────────────────────────────────
+
+export type CsvDocument = {
+  id: string;
+  title: string;
+  purpose: CsvExportPurpose;
+  /** 헤더 행 */
+  headers: string[];
+  /** 데이터 행 */
+  rows: string[][];
+  /** 메타데이터 */
+  metadata: CsvMetadata;
+};
+
+export type CsvMetadata = {
+  generatedAt: string;
+  rowCount: number;
+  columnCount: number;
+  confidence: number;
+  isMockBased: boolean;
+  /** CSV 인코딩 (BOM 포함 UTF-8 권장) */
+  encoding: "utf-8-bom" | "utf-8";
+};
+
+// ─── 9. XLSX Export 전용 구조 ────────────────────────────────────────
+
+export type XlsxDocument = {
+  id: string;
+  title: string;
+  purpose: XlsxExportPurpose;
+  /** 시트 목록 */
+  sheets: XlsxSheet[];
+  /** 메타데이터 */
+  metadata: XlsxMetadata;
+};
+
+export type XlsxSheet = {
+  /** 시트 이름 */
+  name: string;
+  /** 헤더 행 */
+  headers: string[];
+  /** 데이터 행 */
+  rows: (string | number | null)[][];
+  /** 열 너비 (문자 수 기준) */
+  columnWidths?: number[];
+  /** 시트 유형 */
+  sheetType: XlsxSheetType;
+};
+
+export type XlsxSheetType =
+  | "SUMMARY" // 요약
+  | "DATA" // 원시 데이터
+  | "EVIDENCE" // 근거
+  | "WARNINGS" // 경고/유의사항
+  | "ACTIONS"; // 실행 항목
+
+export type XlsxMetadata = {
+  generatedAt: string;
+  sheetCount: number;
+  totalRowCount: number;
+  confidence: number;
+  isMockBased: boolean;
+};
+
+// ─── 10. Export Orchestrator Input/Output ────────────────────────────
 
 export type ExportInput = {
   exportFormat: ExportFormat;
@@ -577,6 +655,10 @@ export type ExportResult = {
   pptPresentation?: PptPresentation;
   /** PDF 결과 (format=PDF일 때) */
   pdfDocument?: PdfDocument;
+  /** CSV 결과 (format=CSV일 때) */
+  csvDocument?: CsvDocument;
+  /** XLSX 결과 (format=XLSX일 때) */
+  xlsxDocument?: XlsxDocument;
   /** 공통 bundle */
   bundle: ExportBundle;
 };

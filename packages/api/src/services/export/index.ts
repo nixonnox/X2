@@ -9,6 +9,8 @@ export type {
   WordExportPurpose,
   PptExportPurpose,
   PdfExportPurpose,
+  CsvExportPurpose,
+  XlsxExportPurpose,
   ExportStatus,
   SourceDocumentType,
   ExportJob,
@@ -44,6 +46,12 @@ export type {
   PdfTocEntry,
   PdfDisclaimerPage,
   PdfMetadata,
+  CsvDocument,
+  CsvMetadata,
+  XlsxDocument,
+  XlsxSheet,
+  XlsxSheetType,
+  XlsxMetadata,
   ExportInput,
   ExportSourceData,
   ExportResult,
@@ -57,3 +65,5 @@ export { VerticalExportPolicyService } from "./vertical-export-policy";
 export { WordExportBuilder } from "./word-export-builder";
 export { PptExportBuilder } from "./ppt-export-builder";
 export { PdfExportBuilder } from "./pdf-export-builder";
+export { CsvExportBuilder } from "./csv-export-builder";
+export { XlsxExportBuilder } from "./xlsx-export-builder";

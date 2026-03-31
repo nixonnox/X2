@@ -27,6 +27,8 @@ import type {
   WordExportPurpose,
   PptExportPurpose,
   PdfExportPurpose,
+  CsvExportPurpose,
+  XlsxExportPurpose,
 } from "./types";
 import { ExportBlockAssembler } from "./export-block-assembler";
 import { ExportWarningBuilder } from "./export-warning-builder";
@@ -34,6 +36,8 @@ import { VerticalExportPolicyService } from "./vertical-export-policy";
 import { WordExportBuilder } from "./word-export-builder";
 import { PptExportBuilder } from "./ppt-export-builder";
 import { PdfExportBuilder } from "./pdf-export-builder";
+import { CsvExportBuilder } from "./csv-export-builder";
+import { XlsxExportBuilder } from "./xlsx-export-builder";
 
 export class ExportOrchestratorService {
   private blockAssembler = new ExportBlockAssembler();
@@ -42,6 +46,8 @@ export class ExportOrchestratorService {
   private wordBuilder = new WordExportBuilder();
   private pptBuilder = new PptExportBuilder();
   private pdfBuilder = new PdfExportBuilder();
+  private csvBuilder = new CsvExportBuilder();
+  private xlsxBuilder = new XlsxExportBuilder();
 
   /**
    * Export 실행
@@ -106,6 +112,26 @@ export class ExportOrchestratorService {
         result.pdfDocument = this.pdfBuilder.build(
           bundle,
           purpose as PdfExportPurpose,
+          audience,
+          sourceData.seedKeyword,
+          industryLabel,
+        );
+        break;
+
+      case "CSV":
+        result.csvDocument = this.csvBuilder.build(
+          bundle,
+          purpose as CsvExportPurpose,
+          audience,
+          sourceData.seedKeyword,
+          industryLabel,
+        );
+        break;
+
+      case "XLSX":
+        result.xlsxDocument = this.xlsxBuilder.build(
+          bundle,
+          purpose as XlsxExportPurpose,
           audience,
           sourceData.seedKeyword,
           industryLabel,
