@@ -16,6 +16,7 @@ import { intentRouter } from "./routers/intent";
 import { verticalDocumentRouter } from "./routers/vertical-document";
 import { listeningRouter } from "./routers/listening";
 import { intelligenceRouter } from "./routers/intelligence";
+import { usageRouter } from "./routers/usage";
 
 export const appRouter = router({
   workspace: workspaceRouter,
@@ -35,6 +36,7 @@ export const appRouter = router({
   verticalDocument: verticalDocumentRouter,
   listening: listeningRouter,
   intelligence: intelligenceRouter,
+  usage: usageRouter,
 });
 
 export type AppRouter = typeof appRouter;
