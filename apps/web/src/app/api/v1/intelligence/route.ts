@@ -148,8 +148,95 @@ export async function GET(req: NextRequest) {
       });
     }
 
+    if (action === "related-keywords") {
+      const mentions = await db.rawSocialMention.findMany({
+        where: { matchedKeyword: keyword, publishedAt: { gte: startDate }, topics: { isEmpty: false } },
+        select: { topics: true, sentiment: true },
+      });
+      const topicMap = new Map<string, { count: number; positive: number; negative: number; neutral: number }>();
+      for (const m of mentions) {
+        for (const topic of m.topics) {
+          const entry = topicMap.get(topic) ?? { count: 0, positive: 0, negative: 0, neutral: 0 };
+          entry.count++;
+          if (m.sentiment === "POSITIVE") entry.positive++;
+          else if (m.sentiment === "NEGATIVE") entry.negative++;
+          else entry.neutral++;
+          topicMap.set(topic, entry);
+        }
+      }
+      const sorted = Array.from(topicMap.entries())
+        .map(([topic, stats]) => ({ topic, ...stats }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 50);
+      return NextResponse.json({
+        keyword, days, action: "related-keywords",
+        data: sorted,
+        count: sorted.length,
+      });
+    }
+
+    if (action === "rankings") {
+      const type = searchParams.get("type") ?? "channel"; // channel | content
+      const sortBy = searchParams.get("sortBy") ?? (type === "channel" ? "subscriberCount" : "viewCount");
+      const limit = Math.min(parseInt(searchParams.get("limit") ?? "20", 10), 50);
+
+      if (type === "channel") {
+        const channels = await db.channel.findMany({
+          where: { workspace: { members: { some: { userId: auth.userId } } } },
+          orderBy: { [sortBy]: "desc" } as any,
+          take: limit,
+          select: { id: true, name: true, platform: true, subscriberCount: true, contentCount: true, avgEngagement: true },
+        });
+        return NextResponse.json({
+          keyword, days, action: "rankings", type: "channel",
+          data: channels.map((c: any, i: number) => ({ rank: i + 1, ...c })),
+          count: channels.length,
+        });
+      }
+
+      const contents = await db.content.findMany({
+        where: { channel: { workspace: { members: { some: { userId: auth.userId } } } } },
+        orderBy: { [sortBy]: "desc" } as any,
+        take: limit,
+        select: { id: true, title: true, platform: true, viewCount: true, engagementRate: true, commentCount: true, publishedAt: true },
+      });
+      return NextResponse.json({
+        keyword, days, action: "rankings", type: "content",
+        data: contents.map((c: any, i: number) => ({ rank: i + 1, ...c })),
+        count: contents.length,
+      });
+    }
+
+    if (action === "evidence") {
+      const limit = Math.min(parseInt(searchParams.get("limit") ?? "20", 10), 50);
+      const mentions = await db.rawSocialMention.findMany({
+        where: { matchedKeyword: keyword, publishedAt: { gte: startDate } },
+        orderBy: { publishedAt: "desc" },
+        take: limit,
+        select: {
+          platform: true, text: true, authorName: true, publishedAt: true,
+          sentiment: true, postUrl: true, topics: true,
+          viewCount: true, likeCount: true, commentCount: true,
+        },
+      });
+      return NextResponse.json({
+        keyword, days, action: "evidence",
+        data: mentions.map((m: any) => ({
+          platform: m.platform,
+          snippet: (m.text ?? "").slice(0, 300),
+          author: m.authorName,
+          publishedAt: m.publishedAt?.toISOString(),
+          sentiment: m.sentiment,
+          url: m.postUrl,
+          topics: m.topics,
+          engagement: { views: m.viewCount ?? 0, likes: m.likeCount ?? 0, comments: m.commentCount ?? 0 },
+        })),
+        count: mentions.length,
+      });
+    }
+
     return NextResponse.json(
-      { error: `알 수 없는 action이에요: ${action}. trend/mentions/sentiment 중 하나를 사용해 주세요.`, code: "INVALID_ACTION" },
+      { error: `알 수 없는 action이에요: ${action}. trend/mentions/sentiment/related-keywords/rankings/evidence 중 하나를 사용해 주세요.`, code: "INVALID_ACTION" },
       { status: 400 },
     );
   } catch (err) {
