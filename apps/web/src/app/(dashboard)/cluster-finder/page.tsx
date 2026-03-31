@@ -269,7 +269,7 @@ export default function ClusterFinderPage() {
                 clusters={clusters.map((c) => ({
                   id: c.id,
                   label: c.label,
-                  keywords: c.keywords.map((k: any) => typeof k === "string" ? k : k.keyword ?? k.label ?? ""),
+                  keywords: c.representativeKeywords,
                   dominantIntent: c.dominantIntent,
                 }))}
                 seedKeyword={keyword}
@@ -280,9 +280,9 @@ export default function ClusterFinderPage() {
             <ChartCard title="키워드 워드클라우드" description="키워드 빈도와 감성을 크기/색상으로 표현합니다.">
               <WordCloud
                 words={clusters.flatMap((c) =>
-                  c.keywords.slice(0, 8).map((k: any, ki: number) => ({
-                    text: typeof k === "string" ? k : k.keyword ?? k.label ?? "",
-                    value: c.keywords.length - ki,
+                  c.representativeKeywords.slice(0, 8).map((k, ki) => ({
+                    text: k,
+                    value: c.representativeKeywords.length - ki,
                     sentiment: undefined,
                   }))
                 )}
@@ -300,7 +300,7 @@ export default function ClusterFinderPage() {
               clusterCount: clusters.length,
               topClusters: clusters.slice(0, 5).map((c) => ({
                 label: c.label,
-                size: c.keywords.length,
+                size: c.representativeKeywords.length,
                 intent: c.dominantIntent,
               })),
             }}

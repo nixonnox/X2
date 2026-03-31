@@ -136,7 +136,7 @@ export default function CategoryEntryPage() {
                       <Cell key={i} fill={CATEGORY_COLORS[d.category] ?? "#999"} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(v: number) => `${v}건`} />
+                  <Tooltip formatter={(v: any) => `${v}건`} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -155,12 +155,12 @@ export default function CategoryEntryPage() {
                     type="category"
                     dataKey="entryType"
                     tick={{ fontSize: 10 }}
-                    tickFormatter={(v: string) => ENTRY_LABELS[v] ?? v}
+                    tickFormatter={(v: any) => ENTRY_LABELS[v] ?? v}
                     width={80}
                   />
                   <Tooltip
-                    formatter={(v: number) => `${v}건`}
-                    labelFormatter={(l: string) => ENTRY_LABELS[l] ?? l}
+                    formatter={(v: any) => `${v}건`}
+                    labelFormatter={(l: any) => ENTRY_LABELS[l] ?? l}
                   />
                   <Bar dataKey="count" radius={[0, 4, 4, 0]}>
                     {result.entryTypeDistribution.map((d, i) => (

@@ -263,12 +263,12 @@ export default function UsageDashboardPage() {
                 <XAxis
                   dataKey="date"
                   tick={{ fontSize: 10 }}
-                  tickFormatter={(v: string) => v.slice(5)} // MM-DD
+                  tickFormatter={(v: any) => String(v).slice(5)} // MM-DD
                 />
                 <YAxis tick={{ fontSize: 10 }} />
                 <Tooltip
                   contentStyle={{ fontSize: 11 }}
-                  labelFormatter={(l: string) => `날짜: ${l}`}
+                  labelFormatter={(l: any) => `날짜: ${l}`}
                 />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Bar

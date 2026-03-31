@@ -4,7 +4,7 @@
 // 분석 작업 상태 조회
 
 import { NextRequest, NextResponse } from "next/server";
-import { intentAnalysisService } from "@/lib/intent-engine";
+import { intentAnalysisService } from "@/lib/intent-engine/service";
 
 export async function GET(
   _req: NextRequest,

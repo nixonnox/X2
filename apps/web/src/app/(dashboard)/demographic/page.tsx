@@ -164,7 +164,7 @@ export default function DemographicPage() {
                     })}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis dataKey="date" tick={{ fontSize: 10 }} tickFormatter={(v: string) => v.slice(5)} />
+                    <XAxis dataKey="date" tick={{ fontSize: 10 }} tickFormatter={(v: any) => String(v).slice(5)} />
                     <YAxis tick={{ fontSize: 10 }} />
                     <Tooltip contentStyle={{ fontSize: 11 }} />
                     <Legend wrapperStyle={{ fontSize: 11 }} />
@@ -195,7 +195,7 @@ export default function DemographicPage() {
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis dataKey="label" tick={{ fontSize: 10 }} />
                     <YAxis tick={{ fontSize: 10 }} />
-                    <Tooltip contentStyle={{ fontSize: 11 }} labelFormatter={(l: string) => `연령대: ${l}`} />
+                    <Tooltip contentStyle={{ fontSize: 11 }} labelFormatter={(l: any) => `연령대: ${l}`} />
                     <Bar dataKey="avgRatio" name="평균 관심도" radius={[4, 4, 0, 0]}>
                       {(data.ageBreakdown ?? []).map((_: any, i: number) => (
                         <Cell key={i} fill={AGE_COLORS[i % AGE_COLORS.length]} />

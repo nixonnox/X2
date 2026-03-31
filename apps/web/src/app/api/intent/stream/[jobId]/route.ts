@@ -5,7 +5,7 @@
 // 분석 진행 상태를 실시간으로 클라이언트에 push
 
 import { NextRequest } from "next/server";
-import { intentAnalysisService } from "@/lib/intent-engine";
+import { intentAnalysisService } from "@/lib/intent-engine/service";
 
 export async function GET(
   _req: NextRequest,

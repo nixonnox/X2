@@ -41,8 +41,9 @@ export {
   SUB_INTENT_LABELS,
 } from "./types";
 
-// ── Service ──
-export { intentAnalysisService } from "./service";
+// ── Service (server-only — uses BullMQ via analysis-queue) ──
+// Import directly in API routes: import { intentAnalysisService } from "@/lib/intent-engine/service"
+// export { intentAnalysisService } from "./service";
 
 // ── Pipeline ──
 export { expandKeywords } from "./pipeline/keyword-expander";
@@ -69,8 +70,10 @@ export { classifyWithLLM } from "./classifier/llm-adapter";
 // ── Graph ──
 export { buildIntentGraph } from "./graph/graph-builder";
 
-// ── Cache ──
-export { cacheManager } from "./cache/cache-manager";
+// ── Cache (server-only — uses ioredis) ──
+// Import directly in API routes: import { cacheManager } from "@/lib/intent-engine/cache/cache-manager"
+// export { cacheManager } from "./cache/cache-manager";
 
-// ── Queue ──
-export { analysisJobStore, ANALYSIS_STAGES } from "./queue/analysis-queue";
+// ── Queue (server-only, do not import in client components) ──
+// Use dynamic import: const { analysisJobStore } = await import("./queue/analysis-queue")
+// export { analysisJobStore, ANALYSIS_STAGES } from "./queue/analysis-queue";

@@ -7,7 +7,7 @@
 // 비동기 모드 (mode=async, 기본): Job ID 반환 → SSE로 결과 push
 
 import { NextRequest, NextResponse } from "next/server";
-import { intentAnalysisService } from "@/lib/intent-engine";
+import { intentAnalysisService } from "@/lib/intent-engine/service";
 import type { AnalysisRequest } from "@/lib/intent-engine";
 
 export async function POST(req: NextRequest) {

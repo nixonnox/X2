@@ -5,6 +5,22 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@x2/ui", "@x2/db", "@x2/auth", "@x2/api"],
+  serverExternalPackages: ["bullmq", "ioredis"],
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      // Prevent Node.js modules from being bundled in client-side code
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        net: false,
+        tls: false,
+        dns: false,
+        fs: false,
+        worker_threads: false,
+        child_process: false,
+      };
+    }
+    return config;
+  },
   headers: async () => [
     {
       source: "/(.*)",
