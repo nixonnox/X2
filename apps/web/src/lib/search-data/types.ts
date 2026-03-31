@@ -54,7 +54,8 @@ export type HealthCheckResult = {
 /** 수집 옵션 */
 export type CollectOptions = {
   locale?: string;            // 기본 "ko"
-  country?: string;           // 기본 "KR"
+  country?: string;           // ISO 3166-1 alpha-2, 기본 "KR"
+  language?: string;          // ISO 639-1, 기본 "ko"
   maxResults?: number;
   includeQuestions?: boolean;
   dateRange?: {
@@ -62,6 +63,23 @@ export type CollectOptions = {
     end: string;
   };
   timeout?: number;           // ms, 기본 30000
+};
+
+/** 지원 국가 목록 */
+export type SupportedCountry =
+  | "KR" | "US" | "JP" | "CN" | "GB" | "DE" | "FR"
+  | "IN" | "BR" | "AU" | "CA" | "SG" | "TH" | "VN" | "ID";
+
+/** 지원 언어 목록 */
+export type SupportedLanguage =
+  | "ko" | "en" | "ja" | "zh" | "de" | "fr"
+  | "es" | "pt" | "th" | "vi" | "id";
+
+/** 국가-언어 기본 매핑 */
+export const COUNTRY_LANGUAGE_MAP: Record<string, string> = {
+  KR: "ko", US: "en", JP: "ja", CN: "zh", GB: "en", DE: "de",
+  FR: "fr", IN: "en", BR: "pt", AU: "en", CA: "en", SG: "en",
+  TH: "th", VN: "vi", ID: "id",
 };
 
 /**
@@ -117,6 +135,8 @@ export type NormalizedSearchKeyword = {
   keyword: string;
   normalizedKeyword: string;       // lowercase, trimmed
   locale: string;
+  country?: string;                // ISO 3166-1 alpha-2
+  language?: string;               // ISO 639-1
   source: SearchDataSource;
   avgMonthlySearches: number;
   cpc?: number;                    // USD
@@ -132,6 +152,8 @@ export type NormalizedRelatedKeyword = {
   normalizedKeyword: string;
   parentKeyword: string;
   locale: string;
+  country?: string;
+  language?: string;
   source: SearchDataSource;
   sourceType: "autocomplete" | "related" | "question" | "suggestion" | "paa";
   avgMonthlySearches?: number;
@@ -143,6 +165,8 @@ export type NormalizedRelatedKeyword = {
 export type NormalizedTrendSeries = {
   keyword: string;
   locale: string;
+  country?: string;
+  language?: string;
   source: SearchDataSource;
   timelineData: { date: string; value: number }[];  // "2025-01", 0-100
   relatedTopics?: { topic: string; score: number }[];
@@ -159,6 +183,8 @@ export type NormalizedTrendSeries = {
 export type NormalizedSerpDocument = {
   keyword: string;
   locale: string;
+  country?: string;
+  language?: string;
   engine: "google" | "naver" | "bing";
   source: SearchDataSource;
   organicResults: SerpOrganicResult[];
