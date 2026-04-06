@@ -9,31 +9,19 @@ import { PathfinderSection } from "@/components/listening-hub/PathfinderSection"
 import { RoadViewSection } from "@/components/listening-hub/RoadViewSection";
 import { PersonaSection } from "@/components/listening-hub/PersonaSection";
 import { SearchInsightSection } from "@/components/listening-hub/SearchInsightSection";
-import { SearchActionSection } from "@/components/listening-hub/SearchActionSection";
-import { SearchEvidenceSection } from "@/components/listening-hub/SearchEvidenceSection";
 import { SearchIntelligenceStatusBar } from "@/components/dashboard/SearchIntelligenceStatusBar";
-import type {
-  SearchIntelligenceResult,
-  EngineExecutionResult,
-} from "@/services/search-intelligence";
+import type { SearchIntelligenceResult } from "@/services/search-intelligence";
 import { Search, Loader2, AlertTriangle } from "lucide-react";
 
-/**
- * API 응답은 SearchIntelligenceResult + 추가 통합 엔진 결과.
- * SearchIntelligenceResult: seedKeyword, payloadSummary, trace, durationMs,
- *   cluster?, pathfinder?, roadview?, persona?, analyzedAt, completedAt
- * 추가 필드: insight, action, evidence (통합 서비스에서 생성)
- */
-type ListeningHubResponse = SearchIntelligenceResult & {
-  insight?: EngineExecutionResult<unknown>;
-  action?: EngineExecutionResult<unknown>;
-  evidence?: EngineExecutionResult<unknown>;
-};
+/** API 응답 envelope (route.ts에서 NextResponse.json({success, data})로 반환) */
+type AnalyzeApiResponse =
+  | { success: true; data: SearchIntelligenceResult }
+  | { success: false; error: string };
 
 export default function ListeningHubPage() {
   const [seedKeyword, setSeedKeyword] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [result, setResult] = useState<ListeningHubResponse | null>(null);
+  const [result, setResult] = useState<SearchIntelligenceResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function handleAnalyze(e: React.FormEvent) {
@@ -63,12 +51,14 @@ export default function ListeningHubPage() {
       }
 
       if (!res.ok) {
-        const body = await res.text();
         throw new Error("분석에 실패했어요. 잠시 후 다시 시도해 주세요.");
       }
 
-      const json = await res.json();
-      setResult(json.data ?? json);
+      const json = (await res.json()) as AnalyzeApiResponse;
+      if (!json.success) {
+        throw new Error(json.error || "분석에 실패했어요");
+      }
+      setResult(json.data);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "알 수 없는 오류가 발생했어요",
@@ -180,15 +170,8 @@ export default function ListeningHubPage() {
           <SearchInsightSection result={result} />
         </ErrorBoundary>
 
-        {/* Section 7: Actions */}
-        <ErrorBoundary>
-          <SearchActionSection actionResult={result?.action} />
-        </ErrorBoundary>
-
-        {/* Section 8: Evidence */}
-        <ErrorBoundary>
-          <SearchEvidenceSection evidenceResult={result?.evidence} />
-        </ErrorBoundary>
+        {/* Section 7-8 (Actions, Evidence): 백엔드 어그리게이터 미구현 — P1에서 복구 예정.
+            컴포넌트 파일은 보존됨: SearchActionSection.tsx, SearchEvidenceSection.tsx */}
       </ListeningHubLayout>
     </div>
   );
