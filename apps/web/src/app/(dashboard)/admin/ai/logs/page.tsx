@@ -176,7 +176,7 @@ export default function AdminAiLogsPage() {
                 <tr className="border-b text-left text-[var(--muted-foreground)]">
                   <th className="px-3 py-2 font-medium">시각</th>
                   <th className="px-3 py-2 font-medium">작업</th>
-                  <th className="px-3 py-2 font-medium">Provider</th>
+                  <th className="px-3 py-2 font-medium">제공자</th>
                   <th className="px-3 py-2 font-medium">모델</th>
                   <th className="px-3 py-2 text-right font-medium">토큰</th>
                   <th className="px-3 py-2 text-right font-medium">응답시간</th>

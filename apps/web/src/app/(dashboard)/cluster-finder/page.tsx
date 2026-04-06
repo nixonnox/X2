@@ -33,10 +33,26 @@ import { AiInsightPanel } from "@/components/intelligence/AiInsightPanel";
 // ── Colors ──
 
 const CLUSTER_COLORS = [
-  "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899",
-  "#06b6d4", "#84cc16", "#f97316", "#6366f1", "#14b8a6", "#e11d48",
-  "#a855f7", "#0ea5e9", "#d97706", "#22c55e", "#7c3aed", "#f43f5e",
-  "#0891b2", "#ca8a04",
+  "#3b82f6",
+  "#10b981",
+  "#f59e0b",
+  "#ef4444",
+  "#8b5cf6",
+  "#ec4899",
+  "#06b6d4",
+  "#84cc16",
+  "#f97316",
+  "#6366f1",
+  "#14b8a6",
+  "#e11d48",
+  "#a855f7",
+  "#0ea5e9",
+  "#d97706",
+  "#22c55e",
+  "#7c3aed",
+  "#f43f5e",
+  "#0891b2",
+  "#ca8a04",
 ];
 
 // ── GPT Analysis Types ──
@@ -60,8 +76,12 @@ export default function ClusterFinderPage() {
   const [inputValue, setInputValue] = useState("");
   const [keyword, setKeyword] = useState("");
   const [selectedCluster, setSelectedCluster] = useState<string | null>(null);
-  const [expandedClusters, setExpandedClusters] = useState<Set<string>>(new Set());
-  const [gptAnalysis, setGptAnalysis] = useState<GptAnalysisState>({ status: "idle" });
+  const [expandedClusters, setExpandedClusters] = useState<Set<string>>(
+    new Set(),
+  );
+  const [gptAnalysis, setGptAnalysis] = useState<GptAnalysisState>({
+    status: "idle",
+  });
 
   const { clusters, summary, screenState, analyze } = useClusterQuery();
 
@@ -128,8 +148,11 @@ export default function ClusterFinderPage() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       if (!json.success || !json.data)
-        throw new Error(json.error ?? "GPT 분석 결과가 없습니다.");
-      setGptAnalysis({ status: "success", result: json.data as GptClusterAnalysis });
+        throw new Error(json.error ?? "AI 분석 결과가 없어요.");
+      setGptAnalysis({
+        status: "success",
+        result: json.data as GptClusterAnalysis,
+      });
     } catch (err) {
       setGptAnalysis({ status: "error", message: (err as Error).message });
     }
@@ -139,8 +162,8 @@ export default function ClusterFinderPage() {
     <div className="space-y-5">
       <PageHeader
         title="클러스터 파인더"
-        description="검색어 전후로 검색한 키워드를 모아 마이크로 모멘트를 가시화합니다."
-        guide="키워드를 분석하면 유사 검색어를 자동으로 클러스터링하고, 각 클러스터의 소비자 관심사와 트렌드를 파악할 수 있습니다."
+        description="검색어 전후로 검색한 키워드를 모아 마이크로 모멘트를 시각화해요."
+        guide="키워드를 분석하면 유사 검색어를 자동으로 클러스터링하고, 각 클러스터의 소비자 관심사와 트렌드를 파악할 수 있어요."
       />
 
       {/* ── Input ── */}
@@ -177,7 +200,7 @@ export default function ClusterFinderPage() {
         <ScreenStatePanel
           state={screenState}
           keyword={keyword}
-          loadingMessage="키워드를 클러스터링하고 있습니다..."
+          loadingMessage="키워드를 클러스터링하고 있어요..."
         />
       </div>
 
@@ -185,8 +208,8 @@ export default function ClusterFinderPage() {
       {screenState.status === "idle" && (
         <EmptyState
           icon={Network}
-          title="관련 검색어를 자동으로 그룹핑합니다"
-          description="키워드를 입력하면 유사한 검색어를 클러스터로 묶고, 각 클러스터의 핵심 토픽과 소비자 관심사를 분석합니다."
+          title="관련 검색어를 자동으로 그룹핑해요"
+          description="키워드를 입력하면 유사한 검색어를 클러스터로 묶고, 각 클러스터의 핵심 토픽과 소비자 관심사를 분석해요."
         />
       )}
 
@@ -196,20 +219,36 @@ export default function ClusterFinderPage() {
           {/* KPI */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="card p-3">
-              <p className="text-[11px] text-[var(--muted-foreground)]">시드 키워드</p>
-              <p className="mt-0.5 truncate text-[14px] font-semibold">{keyword}</p>
+              <p className="text-[11px] text-[var(--muted-foreground)]">
+                시드 키워드
+              </p>
+              <p className="mt-0.5 truncate text-[14px] font-semibold">
+                {keyword}
+              </p>
             </div>
             <div className="card p-3">
-              <p className="text-[11px] text-[var(--muted-foreground)]">전체 키워드</p>
-              <p className="mt-0.5 text-[14px] font-semibold">{summary.totalKeywords}</p>
+              <p className="text-[11px] text-[var(--muted-foreground)]">
+                전체 키워드
+              </p>
+              <p className="mt-0.5 text-[14px] font-semibold">
+                {summary.totalKeywords}
+              </p>
             </div>
             <div className="card p-3">
-              <p className="text-[11px] text-[var(--muted-foreground)]">클러스터 수</p>
-              <p className="mt-0.5 text-[14px] font-semibold">{summary.totalClusters}</p>
+              <p className="text-[11px] text-[var(--muted-foreground)]">
+                클러스터 수
+              </p>
+              <p className="mt-0.5 text-[14px] font-semibold">
+                {summary.totalClusters}
+              </p>
             </div>
             <div className="card p-3">
-              <p className="text-[11px] text-[var(--muted-foreground)]">평균 갭 스코어</p>
-              <p className="mt-0.5 text-[14px] font-semibold">{summary.avgGapScore}</p>
+              <p className="text-[11px] text-[var(--muted-foreground)]">
+                평균 갭 스코어
+              </p>
+              <p className="mt-0.5 text-[14px] font-semibold">
+                {summary.avgGapScore}
+              </p>
             </div>
           </div>
 
@@ -217,7 +256,8 @@ export default function ClusterFinderPage() {
           {screenState.durationMs != null && (
             <p className="text-[11px] text-[var(--muted-foreground)]">
               분석 완료 · {(screenState.durationMs / 1000).toFixed(1)}초 소요
-              {screenState.lowConfidenceItems > 0 && ` · ${screenState.lowConfidenceItems}개 낮은 신뢰도 클러스터`}
+              {screenState.lowConfidenceItems > 0 &&
+                ` · ${screenState.lowConfidenceItems}개 낮은 신뢰도 클러스터`}
             </p>
           )}
 
@@ -230,11 +270,30 @@ export default function ClusterFinderPage() {
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={clusterBarData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
-                    <XAxis dataKey="name" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} />
-                    <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
-                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 6, border: "1px solid var(--border)" }} />
-                    <Bar dataKey="keywords" fill="#3b82f6" radius={[3, 3, 0, 0]} name="키워드 수" />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="var(--border-subtle)"
+                    />
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        fontSize: 12,
+                        borderRadius: 6,
+                        border: "1px solid var(--border)",
+                      }}
+                    />
+                    <Bar
+                      dataKey="keywords"
+                      fill="#3b82f6"
+                      radius={[3, 3, 0, 0]}
+                      name="키워드 수"
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -247,10 +306,24 @@ export default function ClusterFinderPage() {
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={intentBarData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
-                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} />
-                    <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
-                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 6, border: "1px solid var(--border)" }} />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="var(--border-subtle)"
+                    />
+                    <XAxis
+                      dataKey="label"
+                      tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        fontSize: 12,
+                        borderRadius: 6,
+                        border: "1px solid var(--border)",
+                      }}
+                    />
                     <Bar dataKey="count" name="키워드 수" radius={[3, 3, 0, 0]}>
                       {intentBarData.map((entry, i) => (
                         <Cell key={i} fill={entry.color} />
@@ -264,7 +337,10 @@ export default function ClusterFinderPage() {
 
           {/* Network Graph + Word Cloud */}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <ChartCard title="키워드 네트워크" description="클러스터 간 관계를 시각적으로 탐색합니다.">
+            <ChartCard
+              title="키워드 네트워크"
+              description="클러스터 간 관계를 시각적으로 탐색해요."
+            >
               <ClusterNetworkGraph
                 clusters={clusters.map((c) => ({
                   id: c.id,
@@ -277,14 +353,17 @@ export default function ClusterFinderPage() {
                 height={380}
               />
             </ChartCard>
-            <ChartCard title="키워드 워드클라우드" description="키워드 빈도와 감성을 크기/색상으로 표현합니다.">
+            <ChartCard
+              title="키워드 워드클라우드"
+              description="키워드 빈도와 감성을 크기/색상으로 표현해요."
+            >
               <WordCloud
                 words={clusters.flatMap((c) =>
                   c.representativeKeywords.slice(0, 8).map((k, ki) => ({
                     text: k,
                     value: c.representativeKeywords.length - ki,
                     sentiment: undefined,
-                  }))
+                  })),
                 )}
                 width={500}
                 height={380}
@@ -311,7 +390,8 @@ export default function ClusterFinderPage() {
             <div className="border-b border-[var(--border)] px-4 py-3">
               <h3 className="text-[13px] font-semibold">클러스터 목록</h3>
               <p className="text-[11px] text-[var(--muted-foreground)]">
-                클러스터를 클릭하면 포함된 키워드를 확인하고, GPT 분석을 실행할 수 있습니다.
+                클러스터를 클릭하면 포함된 키워드를 확인하고, AI 분석을 실행할
+                수 있어요.
               </p>
             </div>
             <div className="divide-y divide-[var(--border)]">
@@ -342,7 +422,9 @@ export default function ClusterFinderPage() {
           )}
           {gptAnalysis.status === "error" && (
             <div className="rounded-md bg-red-50 px-3 py-2">
-              <p className="text-[12px] text-red-700">GPT 분석 실패: {gptAnalysis.message}</p>
+              <p className="text-[12px] text-red-700">
+                AI 분석에 실패했어요: {gptAnalysis.message}
+              </p>
             </div>
           )}
         </>
@@ -370,7 +452,10 @@ function ClusterRow({
   onGptAnalysis: () => void;
   gptLoading: boolean;
 }) {
-  const catLabel = CLUSTER_CATEGORY_LABELS[cluster.category as keyof typeof CLUSTER_CATEGORY_LABELS];
+  const catLabel =
+    CLUSTER_CATEGORY_LABELS[
+      cluster.category as keyof typeof CLUSTER_CATEGORY_LABELS
+    ];
 
   return (
     <div>
@@ -389,17 +474,14 @@ function ClusterRow({
         )}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <p className="truncate text-[13px] font-medium">
-              {cluster.label}
-            </p>
+            <p className="truncate text-[13px] font-medium">{cluster.label}</p>
             {cluster.lowConfidenceFlag && (
               <AlertTriangle className="h-3 w-3 flex-shrink-0 text-orange-400" />
             )}
           </div>
           <p className="text-[11px] text-[var(--muted-foreground)]">
-            {cluster.memberCount}개 키워드
-            · {cluster.dominantIntentLabel}
-            · {cluster.categoryLabel}
+            {cluster.memberCount}개 키워드 · {cluster.dominantIntentLabel}·{" "}
+            {cluster.categoryLabel}
             {cluster.risingCount > 0 && ` · ↑${cluster.risingCount}개 급상승`}
           </p>
         </div>
@@ -476,9 +558,13 @@ function ClusterRow({
           {/* Representative questions */}
           {cluster.representativeQuestions.length > 0 && (
             <div className="space-y-1 rounded-md bg-white/50 p-2">
-              <p className="text-[11px] font-medium text-[var(--muted-foreground)]">대표 질문</p>
+              <p className="text-[11px] font-medium text-[var(--muted-foreground)]">
+                대표 질문
+              </p>
               {cluster.representativeQuestions.slice(0, 5).map((q, i) => (
-                <p key={i} className="text-[11px] text-[var(--foreground)]">• {q}</p>
+                <p key={i} className="text-[11px] text-[var(--foreground)]">
+                  • {q}
+                </p>
               ))}
             </div>
           )}
@@ -490,11 +576,11 @@ function ClusterRow({
           >
             {gptLoading ? (
               <>
-                <Loader2 className="h-3 w-3 animate-spin" /> GPT 분석 중...
+                <Loader2 className="h-3 w-3 animate-spin" /> AI 분석 중...
               </>
             ) : (
               <>
-                <Sparkles className="h-3 w-3" /> GPT 종합 분석
+                <Sparkles className="h-3 w-3" /> AI 종합 분석
               </>
             )}
           </button>
@@ -517,7 +603,7 @@ function GptAnalysisPanel({
     <div className="space-y-3">
       <h2 className="flex items-center gap-2 text-[14px] font-semibold">
         <Sparkles className="h-4 w-4 text-amber-500" />
-        GPT 분석 결과: {clusterLabel}
+        AI 분석 결과: {clusterLabel}
       </h2>
 
       <div className="card p-4">
@@ -530,7 +616,10 @@ function GptAnalysisPanel({
         </p>
         <div className="mt-3 flex flex-wrap gap-1.5">
           {result.topKeywords.map((kw) => (
-            <span key={kw} className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-medium text-blue-700">
+            <span
+              key={kw}
+              className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-medium text-blue-700"
+            >
               {kw}
             </span>
           ))}
@@ -541,12 +630,19 @@ function GptAnalysisPanel({
         <h3 className="mb-3 text-[13px] font-semibold">페르소나 분석</h3>
         <div className="grid gap-3 sm:grid-cols-3">
           {result.personas.map((p, i) => (
-            <div key={i} className="rounded-lg border border-[var(--border)] p-3">
+            <div
+              key={i}
+              className="rounded-lg border border-[var(--border)] p-3"
+            >
               <p className="mb-1 text-[12px] font-semibold">{p.label}</p>
-              <p className="mb-2 text-[11px] text-[var(--muted-foreground)]">{p.situation}</p>
+              <p className="mb-2 text-[11px] text-[var(--muted-foreground)]">
+                {p.situation}
+              </p>
               <div className="space-y-1">
                 {p.questions.map((q, qi) => (
-                  <p key={qi} className="text-[11px] text-[var(--foreground)]">• {q}</p>
+                  <p key={qi} className="text-[11px] text-[var(--foreground)]">
+                    • {q}
+                  </p>
                 ))}
               </div>
             </div>
@@ -555,16 +651,23 @@ function GptAnalysisPanel({
       </div>
 
       <div className="card p-4">
-        <h3 className="mb-3 text-[13px] font-semibold">주요 토픽 분석 (상위 10개 질문)</h3>
+        <h3 className="mb-3 text-[13px] font-semibold">
+          주요 토픽 분석 (상위 10개 질문)
+        </h3>
         <div className="space-y-2">
           {result.topics.map((t, i) => (
-            <div key={i} className="flex gap-3 rounded-md border border-[var(--border)] p-2.5">
+            <div
+              key={i}
+              className="flex gap-3 rounded-md border border-[var(--border)] p-2.5"
+            >
               <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[var(--secondary)] text-[10px] font-medium">
                 {i + 1}
               </span>
               <div>
                 <p className="text-[12px] font-medium">{t.question}</p>
-                <p className="text-[11px] text-[var(--muted-foreground)]">{t.evidence}</p>
+                <p className="text-[11px] text-[var(--muted-foreground)]">
+                  {t.evidence}
+                </p>
               </div>
             </div>
           ))}

@@ -32,14 +32,22 @@ type FilterState = {
 const PRIORITY_OPTIONS = [
   { value: undefined, label: "전체" },
   { value: "URGENT" as const, label: "긴급", color: "bg-red-100 text-red-700" },
-  { value: "HIGH" as const, label: "중요", color: "bg-amber-100 text-amber-700" },
-  { value: "NORMAL" as const, label: "일반", color: "bg-blue-100 text-blue-700" },
+  {
+    value: "HIGH" as const,
+    label: "중요",
+    color: "bg-amber-100 text-amber-700",
+  },
+  {
+    value: "NORMAL" as const,
+    label: "일반",
+    color: "bg-blue-100 text-blue-700",
+  },
   { value: "LOW" as const, label: "낮음", color: "bg-gray-100 text-gray-600" },
 ];
 
 const SOURCE_OPTIONS = [
   { value: undefined, label: "전체" },
-  { value: "intelligence_alert", label: "Intelligence" },
+  { value: "intelligence_alert", label: "인텔리전스" },
   { value: "system", label: "시스템" },
 ];
 
@@ -215,8 +223,10 @@ export default function NotificationsPage() {
       {/* Filters */}
       {showFilters && (
         <div className="mb-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-gray-700">필터 설정</span>
+          <div className="mb-3 flex items-center justify-between">
+            <span className="text-xs font-semibold text-gray-700">
+              필터 설정
+            </span>
             {hasActiveFilters && (
               <button
                 onClick={clearFilters}
@@ -230,16 +240,24 @@ export default function NotificationsPage() {
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
             {/* Read state */}
             <div>
-              <label className="mb-1 block text-[11px] font-medium text-gray-500">상태</label>
+              <label className="mb-1 block text-[11px] font-medium text-gray-500">
+                상태
+              </label>
               <div className="flex gap-1">
                 <button
-                  onClick={() => { setFilters((f) => ({ ...f, unreadOnly: false })); setPage(1); }}
+                  onClick={() => {
+                    setFilters((f) => ({ ...f, unreadOnly: false }));
+                    setPage(1);
+                  }}
                   className={`rounded-md px-2.5 py-1 text-[11px] ${!filters.unreadOnly ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
                 >
                   전체
                 </button>
                 <button
-                  onClick={() => { setFilters((f) => ({ ...f, unreadOnly: true })); setPage(1); }}
+                  onClick={() => {
+                    setFilters((f) => ({ ...f, unreadOnly: true }));
+                    setPage(1);
+                  }}
                   className={`rounded-md px-2.5 py-1 text-[11px] ${filters.unreadOnly ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
                 >
                   안읽음
@@ -249,42 +267,72 @@ export default function NotificationsPage() {
 
             {/* Priority */}
             <div>
-              <label className="mb-1 block text-[11px] font-medium text-gray-500">중요도</label>
+              <label className="mb-1 block text-[11px] font-medium text-gray-500">
+                중요도
+              </label>
               <select
                 value={filters.priority ?? ""}
-                onChange={(e) => { setFilters((f) => ({ ...f, priority: (e.target.value || undefined) as any })); setPage(1); }}
+                onChange={(e) => {
+                  setFilters((f) => ({
+                    ...f,
+                    priority: (e.target.value || undefined) as any,
+                  }));
+                  setPage(1);
+                }}
                 className="w-full rounded-md border border-gray-200 px-2 py-1 text-[11px] outline-none focus:border-indigo-300"
               >
                 {PRIORITY_OPTIONS.map((o) => (
-                  <option key={o.label} value={o.value ?? ""}>{o.label}</option>
+                  <option key={o.label} value={o.value ?? ""}>
+                    {o.label}
+                  </option>
                 ))}
               </select>
             </div>
 
             {/* Source type */}
             <div>
-              <label className="mb-1 block text-[11px] font-medium text-gray-500">유형</label>
+              <label className="mb-1 block text-[11px] font-medium text-gray-500">
+                유형
+              </label>
               <select
                 value={filters.sourceType ?? ""}
-                onChange={(e) => { setFilters((f) => ({ ...f, sourceType: e.target.value || undefined })); setPage(1); }}
+                onChange={(e) => {
+                  setFilters((f) => ({
+                    ...f,
+                    sourceType: e.target.value || undefined,
+                  }));
+                  setPage(1);
+                }}
                 className="w-full rounded-md border border-gray-200 px-2 py-1 text-[11px] outline-none focus:border-indigo-300"
               >
                 {SOURCE_OPTIONS.map((o) => (
-                  <option key={o.label} value={o.value ?? ""}>{o.label}</option>
+                  <option key={o.label} value={o.value ?? ""}>
+                    {o.label}
+                  </option>
                 ))}
               </select>
             </div>
 
             {/* Period */}
             <div>
-              <label className="mb-1 block text-[11px] font-medium text-gray-500">기간</label>
+              <label className="mb-1 block text-[11px] font-medium text-gray-500">
+                기간
+              </label>
               <select
                 value={filters.since ?? ""}
-                onChange={(e) => { setFilters((f) => ({ ...f, since: e.target.value || undefined })); setPage(1); }}
+                onChange={(e) => {
+                  setFilters((f) => ({
+                    ...f,
+                    since: e.target.value || undefined,
+                  }));
+                  setPage(1);
+                }}
                 className="w-full rounded-md border border-gray-200 px-2 py-1 text-[11px] outline-none focus:border-indigo-300"
               >
                 {SINCE_OPTIONS.map((o) => (
-                  <option key={o.label} value={o.value ?? ""}>{o.label}</option>
+                  <option key={o.label} value={o.value ?? ""}>
+                    {o.label}
+                  </option>
                 ))}
               </select>
             </div>
@@ -297,7 +345,10 @@ export default function NotificationsPage() {
               <input
                 type="text"
                 value={filters.search}
-                onChange={(e) => { setFilters((f) => ({ ...f, search: e.target.value })); setPage(1); }}
+                onChange={(e) => {
+                  setFilters((f) => ({ ...f, search: e.target.value }));
+                  setPage(1);
+                }}
                 placeholder="알림에서 찾기..."
                 className="w-full rounded-md border border-gray-200 py-1.5 pl-8 pr-3 text-[12px] outline-none focus:border-indigo-300"
               />
@@ -307,19 +358,21 @@ export default function NotificationsPage() {
       )}
 
       {/* List */}
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
         {/* Loading */}
         {listQuery.isLoading && (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-            <span className="ml-2 text-sm text-gray-400">알림을 불러오는 중이에요</span>
+            <span className="ml-2 text-sm text-gray-400">
+              알림을 불러오는 중이에요
+            </span>
           </div>
         )}
 
         {/* Error */}
         {listQuery.isError && (
           <div className="py-12 text-center">
-            <AlertTriangle className="mx-auto h-6 w-6 text-red-400 mb-2" />
+            <AlertTriangle className="mx-auto mb-2 h-6 w-6 text-red-400" />
             <p className="text-sm text-red-500">알림을 불러오지 못했어요</p>
             <button
               onClick={() => listQuery.refetch()}
@@ -332,17 +385,24 @@ export default function NotificationsPage() {
 
         {/* Empty */}
         {!listQuery.isLoading && !listQuery.isError && items.length === 0 && (
-          <div className="py-16 text-center">
-            <Bell className="mx-auto h-7 w-7 text-gray-300 mb-3" />
-            <p className="text-sm text-gray-500">
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-300 bg-gray-50/50 py-20">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
+              <span className="text-2xl">🔔</span>
+            </div>
+            <h3 className="mt-4 text-[15px] font-semibold text-gray-900">
               {hasActiveFilters
-                ? "조건에 맞는 알림이 없어요. 필터를 바꿔보면 찾을 수 있어요."
-                : "새로운 알림이 없어요. 분석하면서 중요한 변화가 생기면 여기에 알려드려요."}
+                ? "조건에 맞는 알림이 없어요"
+                : "새로운 알림이 없어요"}
+            </h3>
+            <p className="mt-2 max-w-sm text-center text-[13px] text-gray-500">
+              {hasActiveFilters
+                ? "필터를 바꿔보면 찾을 수 있어요."
+                : "분석하면서 중요한 변화가 생기면 여기에 알려드려요."}
             </p>
             {hasActiveFilters && (
               <button
                 onClick={clearFilters}
-                className="mt-2 text-xs text-blue-600 hover:underline"
+                className="mt-5 inline-flex items-center rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
               >
                 필터 초기화
               </button>
@@ -355,7 +415,7 @@ export default function NotificationsPage() {
           <div
             key={n.id}
             onClick={() => handleItemClick(n)}
-            className={`flex items-start gap-3 border-b border-gray-100 px-4 py-3.5 transition-colors hover:bg-gray-50 cursor-pointer ${
+            className={`flex cursor-pointer items-start gap-3 border-b border-gray-100 px-4 py-3.5 transition-colors hover:bg-gray-50 ${
               !n.isRead ? "bg-blue-50/30" : ""
             }`}
           >
@@ -372,31 +432,43 @@ export default function NotificationsPage() {
 
             {/* Content */}
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 mb-0.5">
+              <div className="mb-0.5 flex items-center gap-2">
                 {n.title && (
-                  <span className={`text-[13px] truncate ${!n.isRead ? "font-semibold text-gray-900" : "font-medium text-gray-700"}`}>
+                  <span
+                    className={`truncate text-[13px] ${!n.isRead ? "font-semibold text-gray-900" : "font-medium text-gray-700"}`}
+                  >
                     {n.title.replace("Intelligence Alert: ", "")}
                   </span>
                 )}
                 {!n.isRead && (
-                  <span className="shrink-0 h-2 w-2 rounded-full bg-blue-500" />
+                  <span className="h-2 w-2 shrink-0 rounded-full bg-blue-500" />
                 )}
               </div>
-              <p className={`text-[12px] leading-relaxed ${!n.isRead ? "text-gray-700" : "text-gray-500"}`}>
+              <p
+                className={`text-[12px] leading-relaxed ${!n.isRead ? "text-gray-700" : "text-gray-500"}`}
+              >
                 {n.message}
               </p>
               <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                <span className="text-[10px] text-gray-400">{formatTime(n.createdAt)}</span>
-                {n.priority && n.priority !== "NORMAL" && n.priority !== "LOW" && (
-                  <span className={`rounded px-1.5 py-0.5 text-[9px] font-medium ${
-                    n.priority === "URGENT" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"
-                  }`}>
-                    {n.priority === "URGENT" ? "긴급" : "중요"}
-                  </span>
-                )}
+                <span className="text-[10px] text-gray-400">
+                  {formatTime(n.createdAt)}
+                </span>
+                {n.priority &&
+                  n.priority !== "NORMAL" &&
+                  n.priority !== "LOW" && (
+                    <span
+                      className={`rounded px-1.5 py-0.5 text-[9px] font-medium ${
+                        n.priority === "URGENT"
+                          ? "bg-red-100 text-red-700"
+                          : "bg-amber-100 text-amber-700"
+                      }`}
+                    >
+                      {n.priority === "URGENT" ? "긴급" : "중요"}
+                    </span>
+                  )}
                 {n.sourceType === "intelligence_alert" && (
                   <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-[9px] font-medium text-indigo-600">
-                    Intelligence
+                    인텔리전스
                   </span>
                 )}
                 {n.actionUrl && (
@@ -456,7 +528,10 @@ export default function NotificationsPage() {
                       key={opt.minutes}
                       onClick={(e) => {
                         e.stopPropagation();
-                        snoozeMutation.mutate({ id: n.id, minutes: opt.minutes });
+                        snoozeMutation.mutate({
+                          id: n.id,
+                          minutes: opt.minutes,
+                        });
                         setSnoozeMenuId(null);
                       }}
                       className="block w-full px-3 py-1.5 text-left text-[11px] text-gray-600 hover:bg-gray-50"
@@ -502,7 +577,8 @@ export default function NotificationsPage() {
       {/* Summary */}
       <div className="mt-4 text-center">
         <p className="text-[11px] text-gray-400">
-          분석하면서 경고 증가, 신뢰도 변화, 기준 점수 하락 같은 중요한 변화가 감지되면 알림을 보내드려요.
+          분석하면서 경고 증가, 신뢰도 변화, 기준 점수 하락 같은 중요한 변화가
+          감지되면 알림을 보내드려요.
         </p>
       </div>
     </div>

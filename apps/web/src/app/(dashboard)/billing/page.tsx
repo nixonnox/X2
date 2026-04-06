@@ -8,28 +8,23 @@ const PLANS = [
   {
     name: "Free",
     price: "$0",
-    period: "forever",
-    description: "Get started with basic analytics",
-    features: [
-      "1 Channel",
-      "Basic analytics",
-      "7-day data retention",
-      "Community support",
-    ],
+    period: "무료",
+    description: "기본 분석 기능으로 시작하세요",
+    features: ["채널 1개", "기본 분석", "7일 데이터 보관", "커뮤니티 지원"],
     current: true,
   },
   {
     name: "Pro",
     price: "$29",
-    period: "/month",
-    description: "For creators and small teams",
+    period: "/월",
+    description: "크리에이터 및 소규모 팀을 위한 플랜",
     features: [
-      "10 Channels",
-      "Advanced analytics",
-      "30-day data retention",
-      "AI insights",
-      "Comment analysis",
-      "Priority support",
+      "채널 10개",
+      "고급 분석",
+      "30일 데이터 보관",
+      "AI 인사이트",
+      "댓글 분석",
+      "우선 지원",
     ],
     current: false,
     popular: true,
@@ -37,16 +32,16 @@ const PLANS = [
   {
     name: "Business",
     price: "$99",
-    period: "/month",
-    description: "For agencies and enterprises",
+    period: "/월",
+    description: "에이전시 및 기업을 위한 플랜",
     features: [
-      "Unlimited channels",
-      "Full analytics suite",
-      "Unlimited data retention",
-      "AI strategy reports",
-      "Competitor analysis",
-      "API access",
-      "Dedicated support",
+      "무제한 채널",
+      "전체 분석 기능",
+      "무제한 데이터 보관",
+      "AI 전략 리포트",
+      "경쟁사 분석",
+      "API 접근",
+      "전담 지원",
     ],
     current: false,
   },
@@ -75,7 +70,7 @@ export default function BillingPage() {
           >
             {plan.popular && (
               <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-md bg-[var(--foreground)] px-2.5 py-0.5 text-[11px] font-medium text-white">
-                Popular
+                인기
               </span>
             )}
             <h3 className="text-[15px] font-semibold">{plan.name}</h3>
@@ -104,7 +99,7 @@ export default function BillingPage() {
               }`}
               disabled={plan.current}
             >
-              {plan.current ? "Current Plan" : "Upgrade"}
+              {plan.current ? "현재 플랜" : "업그레이드"}
             </button>
           </div>
         ))}

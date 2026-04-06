@@ -12,9 +12,6 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  LineChart,
-  Line,
-  Legend,
 } from "recharts";
 import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -35,7 +32,6 @@ import {
   buildDashboardSummary,
   buildSentimentDistribution,
   buildTopicDistribution,
-  buildCommentVolumeSeries,
   extractFaqs,
 } from "@/lib/comments";
 import { useCommentsData } from "@/hooks/use-comments-data";
@@ -55,6 +51,12 @@ const SENTIMENT_COLORS: Record<string, string> = {
 };
 
 const TOPIC_COLOR = "#171717";
+
+const SENTIMENT_LABELS_KO: Record<string, string> = {
+  positive: "긍정",
+  neutral: "중립",
+  negative: "부정",
+};
 
 export default function CommentsPage() {
   const t = useTranslations("comments");
@@ -93,14 +95,6 @@ export default function CommentsPage() {
     [allComments],
   );
 
-  if (isLoading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-[var(--muted-foreground)]" />
-      </div>
-    );
-  }
-
   const summary = useMemo(
     () => buildDashboardSummary(filteredComments),
     [filteredComments],
@@ -113,14 +107,18 @@ export default function CommentsPage() {
     () => buildTopicDistribution(filteredComments),
     [filteredComments],
   );
-  const volumeSeries = useMemo(() => buildCommentVolumeSeries(), []);
   const faqs = useMemo(() => extractFaqs(allComments), [allComments]);
 
-  // Generate simple flat trends from current values (no historical data available yet)
-  const val = summary.totalComments;
-  const trendTotal = Array.from({ length: 12 }, (_, i) =>
-    Math.max(0, Math.round(val * (0.7 + 0.3 * (i / 11)))),
-  );
+  if (isLoading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-[var(--muted-foreground)]" />
+      </div>
+    );
+  }
+
+  // Flat sparklines — no historical data available yet
+  const trendTotal = Array.from({ length: 12 }, () => summary.totalComments);
   const trendPositive = Array.from({ length: 12 }, () => summary.positiveRatio);
   const trendNegative = Array.from({ length: 12 }, () => summary.negativeRatio);
   const trendHighRisk = Array.from({ length: 12 }, () => summary.highRiskCount);
@@ -131,7 +129,7 @@ export default function CommentsPage() {
 
   // Sentiment pie data
   const sentimentPieData = sentimentDist.map((s) => ({
-    name: s.label.charAt(0).toUpperCase() + s.label.slice(1),
+    name: SENTIMENT_LABELS_KO[s.label] ?? s.label,
     value: s.count,
     color: SENTIMENT_COLORS[s.label],
   }));
@@ -142,11 +140,35 @@ export default function CommentsPage() {
     return `${sign}${diff}${suffix}`;
   }
 
+  // 데이터가 없으면 깔끔한 빈 상태 화면만 표시
+  if (!isLoading && allComments.length === 0) {
+    return (
+      <div className="space-y-5">
+        <PageHeader title={t("title")} description={t("description")} />
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[var(--border)] bg-[var(--secondary)] py-20">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[var(--muted)]">
+            <span className="text-2xl">💬</span>
+          </div>
+          <h3 className="mt-4 text-[15px] font-semibold text-[var(--foreground)]">
+            아직 수집된 댓글이 없어요
+          </h3>
+          <p className="mt-2 max-w-sm text-center text-[13px] text-[var(--muted-foreground)]">
+            채널을 등록하면 댓글이 자동으로 수집되고, 감성 분석 · 위험도 ·
+            주제별 분류 결과를 확인할 수 있어요.
+          </p>
+          <a
+            href="/channels/new"
+            className="btn-primary mt-5 inline-flex items-center px-5 py-2.5 text-sm font-medium transition-colors"
+          >
+            채널 등록하기
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5">
-      {allComments.length === 0 && (
-        <DemoBanner message="댓글 데이터가 없습니다. 채널을 연동하고 데이터를 수집하면 댓글 분석을 확인할 수 있습니다." />
-      )}
       <PageHeader
         title={t("title")}
         description={t("description")}
@@ -229,10 +251,7 @@ export default function CommentsPage() {
       {/* Charts */}
       <div className="grid gap-3 lg:grid-cols-3">
         {/* Sentiment Distribution */}
-        <ChartCard
-          title="Sentiment Distribution"
-          description="Overall comment sentiment breakdown"
-        >
+        <ChartCard title="감성 분포" description="전체 댓글 감성 분석 결과">
           <div className="flex h-52 items-center">
             <div className="h-full w-1/2">
               <ResponsiveContainer width="100%" height="100%">
@@ -263,8 +282,8 @@ export default function CommentsPage() {
                     className="h-2.5 w-2.5 flex-shrink-0 rounded-sm"
                     style={{ backgroundColor: SENTIMENT_COLORS[s.label] }}
                   />
-                  <span className="flex-1 text-[12px] capitalize">
-                    {s.label}
+                  <span className="flex-1 text-[12px]">
+                    {SENTIMENT_LABELS_KO[s.label] ?? s.label}
                   </span>
                   <span className="text-[12px] font-medium">{s.count}</span>
                   <span className="w-8 text-right text-[11px] text-[var(--muted-foreground)]">
@@ -277,10 +296,7 @@ export default function CommentsPage() {
         </ChartCard>
 
         {/* Topic Distribution */}
-        <ChartCard
-          title="Topic Distribution"
-          description="Comment topics breakdown"
-        >
+        <ChartCard title="주제 분포" description="댓글 주제별 분석">
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={topicDist} layout="vertical">
@@ -301,7 +317,7 @@ export default function CommentsPage() {
                   dataKey="count"
                   fill={TOPIC_COLOR}
                   radius={[0, 3, 3, 0]}
-                  name="Comments"
+                  name="댓글"
                 />
               </BarChart>
             </ResponsiveContainer>
@@ -309,47 +325,11 @@ export default function CommentsPage() {
         </ChartCard>
 
         {/* Volume Trend */}
-        <ChartCard
-          title="Comment Volume"
-          description="Daily comment volume by sentiment"
-        >
-          <div className="h-52">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={volumeSeries}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="var(--border-subtle)"
-                />
-                <XAxis dataKey="date" tick={TICK_STYLE} />
-                <YAxis tick={TICK_STYLE} />
-                <Tooltip contentStyle={TOOLTIP_STYLE} />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Line
-                  type="monotone"
-                  dataKey="total"
-                  stroke="#171717"
-                  strokeWidth={2}
-                  dot={{ r: 2 }}
-                  name="Total"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="positive"
-                  stroke="#16a34a"
-                  strokeWidth={1.5}
-                  dot={{ r: 2 }}
-                  name="Positive"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="negative"
-                  stroke="#dc2626"
-                  strokeWidth={1.5}
-                  dot={{ r: 2 }}
-                  name="Negative"
-                />
-              </LineChart>
-            </ResponsiveContainer>
+        <ChartCard title="댓글 추이" description="일별 감성별 댓글 수">
+          <div className="flex h-52 items-center justify-center">
+            <p className="text-[13px] text-[var(--muted-foreground)]">
+              댓글이 지속적으로 수집되면 일별 추이 차트가 자동으로 표시됩니다.
+            </p>
           </div>
         </ChartCard>
       </div>

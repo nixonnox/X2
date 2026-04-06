@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo } from "react";
-import Link from "next/link";
-import { Loader2, FolderOpen, ArrowRight } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useCurrentProject } from "@/hooks/use-current-project";
 import { ChannelsListView } from "./channels-list-view";
+import { getPlatformLabel } from "@/lib/channels";
 import type { Channel, ChannelSnapshot } from "@/lib/channels/types";
 
 export default function ChannelsPage() {
@@ -23,7 +23,9 @@ export default function ChannelsPage() {
     return channels.map((ch: any) => ({
       id: ch.id,
       platformCode: ch.platform?.toLowerCase() ?? "youtube",
-      platformLabel: ch.platform ?? "YouTube",
+      platformLabel: getPlatformLabel(
+        (ch.platform?.toLowerCase() ?? "youtube") as any,
+      ),
       analysisMode:
         ch.connectionType === "CONNECTED" ? "api_advanced" : "url_basic",
       name: ch.name,
@@ -48,13 +50,13 @@ export default function ChannelsPage() {
       result[ch.id] = {
         channelId: ch.id,
         snapshotDate: new Date().toISOString(),
-        audienceCount: ch.subscriberCount ?? 0,
+        audienceCount: ch.subscriberCount ?? null,
         audienceLabel: "구독자",
-        totalContents: ch.contentCount ?? 0,
-        totalViewsOrReach: 0,
-        engagementRate: 0,
-        growthRate30d: 0,
-        uploads30d: 0,
+        totalContents: ch.contentCount ?? null,
+        totalViewsOrReach: null,
+        engagementRate: ch.avgEngagement ?? null,
+        growthRate30d: null,
+        uploads30d: null,
       };
     }
     return result;
@@ -68,26 +70,25 @@ export default function ChannelsPage() {
     );
   }
 
-  // 프로젝트 없을 때 안내
-  if (!projLoading && !projectId) {
+  if (mapped.length === 0) {
     return (
-      <div className="flex h-64 flex-col items-center justify-center gap-4 text-center">
-        <FolderOpen className="h-12 w-12 text-amber-400" />
-        <div>
-          <p className="text-[15px] font-semibold text-[var(--foreground)]">
-            먼저 프로젝트를 만들어주세요
-          </p>
-          <p className="mt-1 text-[13px] text-[var(--muted-foreground)]">
-            채널을 관리하려면 프로젝트가 필요합니다
-          </p>
+      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-300 bg-gray-50/50 py-20">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
+          <span className="text-2xl">📺</span>
         </div>
-        <Link
-          href="/settings"
-          className="flex items-center gap-1.5 rounded-md bg-amber-600 px-4 py-2 text-[13px] font-medium text-white hover:bg-amber-700"
+        <h3 className="mt-4 text-[15px] font-semibold text-gray-900">
+          등록된 채널이 없어요
+        </h3>
+        <p className="mt-2 max-w-sm text-center text-[13px] text-gray-500">
+          YouTube, Instagram, TikTok 등 분석하고 싶은 채널을 등록하면 성과
+          데이터를 자동으로 수집해요.
+        </p>
+        <a
+          href="/channels/new"
+          className="mt-5 inline-flex items-center rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
         >
-          설정에서 프로젝트 만들기
-          <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
+          채널 등록하기
+        </a>
       </div>
     );
   }

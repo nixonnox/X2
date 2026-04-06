@@ -22,9 +22,9 @@ import type {
 } from "@/lib/channels";
 
 const ANALYSIS_MODES: { value: AnalysisMode; label: string }[] = [
-  { value: "url_basic", label: "URL 기본" },
-  { value: "api_advanced", label: "API 고급" },
-  { value: "custom_manual", label: "수동" },
+  { value: "url_basic", label: "기본 분석" },
+  { value: "api_advanced", label: "고급 분석" },
+  { value: "custom_manual", label: "수동 입력" },
 ];
 
 const STATUSES: { value: ChannelStatus; label: string }[] = [
@@ -130,7 +130,7 @@ export function ChannelsListView({ initialChannels, snapshots }: Props) {
           onChange={(e) => setModeFilter(e.target.value as AnalysisMode | "")}
           className="input h-7 text-[12px]"
         >
-          <option value="">전체 모드</option>
+          <option value="">전체 분석 방식</option>
           {ANALYSIS_MODES.map((m) => (
             <option key={m.value} value={m.value}>
               {m.label}
@@ -199,7 +199,7 @@ export function ChannelsListView({ initialChannels, snapshots }: Props) {
                     플랫폼
                   </th>
                   <th className="px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]">
-                    모드
+                    분석 방식
                   </th>
                   <th className="px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]">
                     상태
@@ -254,16 +254,22 @@ export function ChannelsListView({ initialChannels, snapshots }: Props) {
                         <ChannelTypeBadge type={ch.channelType} />
                       </td>
                       <td className="px-4 py-2.5 text-right font-medium">
-                        {snap ? formatCount(snap.audienceCount) : "-"}
+                        {snap && snap.audienceCount != null
+                          ? formatCount(snap.audienceCount)
+                          : "\u2014"}
                       </td>
                       <td className="px-4 py-2.5 text-right text-[var(--muted-foreground)]">
-                        {snap ? formatCount(snap.totalContents) : "-"}
+                        {snap && snap.totalContents != null
+                          ? formatCount(snap.totalContents)
+                          : "\u2014"}
                       </td>
                       <td className="px-4 py-2.5 text-[var(--muted-foreground)]">
-                        {snap?.snapshotDate ?? "-"}
+                        {snap?.snapshotDate ?? "\u2014"}
                       </td>
                       <td className="px-4 py-2.5 text-right text-[var(--muted-foreground)]">
-                        {snap ? `${snap.engagementRate}%` : "-"}
+                        {snap && snap.engagementRate != null
+                          ? `${snap.engagementRate}%`
+                          : "\u2014"}
                       </td>
                       <td className="px-4 py-2.5 text-right">
                         <Link

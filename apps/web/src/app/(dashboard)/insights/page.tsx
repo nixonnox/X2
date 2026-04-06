@@ -10,15 +10,10 @@ import {
   TrendingUp,
   Target,
   ArrowRight,
-  Clock,
-  Shield,
-  HelpCircle,
   BarChart3,
   FileText,
   Zap,
-  ChevronRight,
   Filter,
-  MessageSquare,
 } from "lucide-react";
 
 // Insight categories matching backend InsightCategory type
@@ -182,131 +177,68 @@ export default function InsightsPage() {
 
 function InsightEmptyState() {
   return (
-    <div className="card p-8 text-center">
-      <Sparkles className="mx-auto mb-3 h-10 w-10 text-amber-400" />
-      <h3 className="mb-1 text-[15px] font-semibold text-[var(--foreground)]">
-        인사이트가 준비되면 여기에 표시됩니다
+    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-300 bg-gray-50/50 py-20">
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
+        <span className="text-2xl">✨</span>
+      </div>
+      <h3 className="mt-4 text-[15px] font-semibold text-gray-900">
+        아직 분석된 인사이트가 없어요
       </h3>
-      <p className="mx-auto mb-4 max-w-md text-[13px] text-[var(--muted-foreground)]">
-        채널을 등록하고 데이터가 수집되면, AI가 자동으로 핵심 발견, 기회, 위험
-        요소를 분석합니다. 각 인사이트에는 근거 데이터가 함께 제공됩니다.
+      <p className="mt-2 max-w-sm text-center text-[13px] text-gray-500">
+        채널을 등록하고 데이터가 수집되면, AI가 자동으로 핵심 발견과 기회를
+        분석해요.
       </p>
-      <div className="flex justify-center gap-3">
-        <Link
-          href="/start"
-          className="btn-primary inline-flex items-center gap-2 px-4 py-2 text-[13px]"
-        >
-          분석 시작하기 <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
-      </div>
-
-      {/* Structure Preview */}
-      <div className="mx-auto mt-6 grid max-w-2xl gap-3 sm:grid-cols-3">
-        {Object.entries(CATEGORY_CONFIG)
-          .slice(0, 3)
-          .map(([key, config]) => (
-            <div
-              key={key}
-              className="rounded-lg border border-dashed border-[var(--border)] p-4 opacity-60"
-            >
-              <div
-                className={`flex h-8 w-8 items-center justify-center rounded-lg ${config.bgColor} mx-auto mb-2`}
-              >
-                <config.icon className={`h-4 w-4 ${config.color}`} />
-              </div>
-              <p className="text-[12px] font-medium text-[var(--muted-foreground)]">
-                {config.label}
-              </p>
-            </div>
-          ))}
-      </div>
+      <a
+        href="/channels/new"
+        className="mt-5 inline-flex items-center rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+      >
+        분석 시작하기
+      </a>
     </div>
   );
 }
 
 function ActionsEmptyState() {
   return (
-    <div className="card p-8 text-center">
-      <Zap className="mx-auto mb-3 h-10 w-10 text-blue-400" />
-      <h3 className="mb-1 text-[15px] font-semibold text-[var(--foreground)]">
-        추천 액션이 준비되면 여기에 표시됩니다
-      </h3>
-      <p className="mx-auto mb-4 max-w-md text-[13px] text-[var(--muted-foreground)]">
-        분석 결과를 바탕으로 실행 가능한 액션을 자동 생성합니다. 각 액션에는
-        우선순위, 담당자 제안, 예상 효과가 포함됩니다.
-      </p>
-
-      {/* Action Structure Preview */}
-      <div className="mx-auto mt-4 max-w-lg space-y-2">
-        {["콘텐츠 제작", "커뮤니티 대응", "SEO 최적화"].map((action, i) => (
-          <div
-            key={action}
-            className="flex items-center gap-3 rounded-lg border border-dashed border-[var(--border)] p-3 opacity-60"
-          >
-            <div
-              className={`badge ${i === 0 ? "bg-red-100 text-red-600" : i === 1 ? "bg-orange-100 text-orange-600" : "bg-yellow-100 text-yellow-600"}`}
-            >
-              {i === 0 ? "높음" : i === 1 ? "높음" : "보통"}
-            </div>
-            <span className="text-[13px] text-[var(--muted-foreground)]">
-              {action}
-            </span>
-            <ChevronRight className="ml-auto h-4 w-4 text-[var(--muted-foreground)]" />
-          </div>
-        ))}
+    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-300 bg-gray-50/50 py-20">
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
+        <span className="text-2xl">⚡</span>
       </div>
+      <h3 className="mt-4 text-[15px] font-semibold text-gray-900">
+        추천 액션이 아직 없어요
+      </h3>
+      <p className="mt-2 max-w-sm text-center text-[13px] text-gray-500">
+        분석이 완료되면 실행 가능한 액션을 우선순위별로 추천해드려요.
+      </p>
+      <a
+        href="/channels/new"
+        className="mt-5 inline-flex items-center rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+      >
+        분석 시작하기
+      </a>
     </div>
   );
 }
 
 function EvidenceEmptyState() {
   return (
-    <div className="card p-8 text-center">
-      <FileText className="mx-auto mb-3 h-10 w-10 text-emerald-400" />
-      <h3 className="mb-1 text-[15px] font-semibold text-[var(--foreground)]">
-        근거 자료가 준비되면 여기에 표시됩니다
+    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-300 bg-gray-50/50 py-20">
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
+        <span className="text-2xl">📄</span>
+      </div>
+      <h3 className="mt-4 text-[15px] font-semibold text-gray-900">
+        근거 자료가 아직 없어요
       </h3>
-      <p className="mx-auto mb-4 max-w-md text-[13px] text-[var(--muted-foreground)]">
-        차트, 원문 댓글, FAQ 예시, 리스크 사례 등을 보고서/PPT에 바로 활용할 수
-        있는 형태로 제공합니다. 각 근거 항목의 요약 문장은 슬라이드 설명에
-        그대로 사용할 수 있습니다.
+      <p className="mt-2 max-w-sm text-center text-[13px] text-gray-500">
+        분석이 완료되면 차트, 댓글, FAQ 등 보고서에 활용할 수 있는 근거 자료가
+        정리돼요.
       </p>
-
-      {/* Usage actions preview */}
-      <div className="mb-6 flex justify-center gap-3">
-        <Link
-          href="/insights/reports/new"
-          className="btn-primary inline-flex items-center gap-2 px-4 py-2 text-[13px]"
-        >
-          근거 기반 리포트 생성 <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
-      </div>
-
-      <div className="mx-auto mt-4 grid max-w-xl gap-3 sm:grid-cols-4">
-        {[
-          {
-            icon: BarChart3,
-            label: "차트 데이터",
-            hint: "LINE_CHART / PIE_CHART",
-          },
-          { icon: MessageSquare, label: "대표 댓글", hint: "QUOTE_LIST" },
-          { icon: HelpCircle, label: "FAQ 예시", hint: "TABLE" },
-          { icon: Shield, label: "리스크 사례", hint: "KPI_CARD" },
-        ].map((item) => (
-          <div
-            key={item.label}
-            className="rounded-lg border border-dashed border-[var(--border)] p-3 opacity-60"
-          >
-            <item.icon className="mx-auto mb-1 h-5 w-5 text-[var(--muted-foreground)]" />
-            <p className="text-[11px] font-medium text-[var(--muted-foreground)]">
-              {item.label}
-            </p>
-            <p className="mt-0.5 text-[10px] text-[var(--muted-foreground)]">
-              {item.hint}
-            </p>
-          </div>
-        ))}
-      </div>
+      <a
+        href="/insights/reports/new"
+        className="mt-5 inline-flex items-center rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+      >
+        리포트 생성하기
+      </a>
     </div>
   );
 }

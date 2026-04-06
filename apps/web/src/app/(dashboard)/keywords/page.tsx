@@ -12,15 +12,6 @@ import {
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { PageHeader, ChartCard, EmptyState } from "@/components/shared";
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-} from "recharts";
 import type {
   IntentGraphData,
   IntentCategory,
@@ -55,8 +46,6 @@ const TREND_COLOR = {
   stable: "text-[var(--muted-foreground)]",
 } as const;
 
-const TICK_STYLE = { fontSize: 11, fill: "var(--muted-foreground)" };
-
 const INTENT_BADGE: Record<IntentCategory, string> = {
   discovery: "bg-blue-50 text-blue-700",
   comparison: "bg-amber-50 text-amber-700",
@@ -70,35 +59,6 @@ function fmtVolume(n: number): string {
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
   return String(n);
 }
-
-function buildTrendChartData(data: IntentGraphData) {
-  // Use top-3 keywords by search volume and their nodes' trend info
-  const topNodes = [...data.nodes]
-    .sort((a, b) => b.searchVolume - a.searchVolume)
-    .slice(0, 3);
-
-  if (topNodes.length === 0) return [];
-
-  // Simulate a 6-week trend based on trendScore for visualization
-  return Array.from({ length: 6 }, (_, i) => {
-    const week = `W${i + 1}`;
-    const entry: Record<string, string | number> = { week };
-    for (const node of topNodes) {
-      // Trend grows/declines based on trendScore direction
-      const base = node.searchVolume * 0.6;
-      const growth = node.searchVolume * 0.4 * ((i + 1) / 6);
-      const trendMultiplier = node.isRising
-        ? 1
-        : node.gapScore > 50
-          ? 0.8
-          : 0.6;
-      entry[node.name] = Math.round(base + growth * trendMultiplier);
-    }
-    return entry;
-  });
-}
-
-const CHART_COLORS = ["#171717", "#16a34a", "#737373", "#3b82f6", "#f59e0b"];
 
 // ── Component ──
 
@@ -193,17 +153,6 @@ export default function KeywordsPage() {
   const sortedKeywords = [...classifiedKeywords].sort(
     (a, b) => b.searchVolume - a.searchVolume,
   );
-
-  const trendChartData =
-    analysis.status === "success" ? buildTrendChartData(analysis.data) : [];
-
-  const topChartKeys =
-    analysis.status === "success"
-      ? [...analysis.data.nodes]
-          .sort((a, b) => b.searchVolume - a.searchVolume)
-          .slice(0, 3)
-          .map((n) => n.name)
-      : [];
 
   return (
     <div className="space-y-5">
@@ -312,48 +261,6 @@ export default function KeywordsPage() {
               </p>
             </div>
           </div>
-
-          {/* Trend Chart */}
-          {trendChartData.length > 0 && topChartKeys.length > 0 && (
-            <ChartCard
-              title="키워드 트렌드"
-              description={`상위 ${topChartKeys.length}개 키워드의 주간 검색량 추이`}
-            >
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={trendChartData}>
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      stroke="var(--border-subtle)"
-                    />
-                    <XAxis dataKey="week" tick={TICK_STYLE} />
-                    <YAxis
-                      tick={TICK_STYLE}
-                      tickFormatter={(v) => fmtVolume(v)}
-                    />
-                    <Tooltip
-                      formatter={(v) => Number(v).toLocaleString()}
-                      contentStyle={{
-                        fontSize: 12,
-                        borderRadius: 6,
-                        border: "1px solid var(--border)",
-                      }}
-                    />
-                    {topChartKeys.map((key, i) => (
-                      <Line
-                        key={key}
-                        type="monotone"
-                        dataKey={key}
-                        stroke={CHART_COLORS[i % CHART_COLORS.length]}
-                        strokeWidth={1.5}
-                        dot={{ r: 2 }}
-                      />
-                    ))}
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </ChartCard>
-          )}
 
           {/* Keywords Table */}
           <div className="card overflow-hidden">

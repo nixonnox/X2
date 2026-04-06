@@ -121,12 +121,12 @@ export function ChannelDetailView({
             </div>
             <div>
               <h3 className="text-[14px] font-semibold text-blue-900">
-                데이터 수집 중입니다
+                데이터를 수집하고 있어요
               </h3>
               <p className="mt-1 text-[13px] text-blue-700">
-                채널이 성공적으로 등록되었습니다. 구독자, 조회수, 참여율 등의
-                데이터를 수집하고 있습니다. 초기 분석 결과는 잠시 후 이
-                페이지에서 확인하실 수 있습니다.
+                채널이 등록되었어요. 구독자, 조회수, 참여율 등의 데이터를
+                수집하고 있어요. 초기 분석 결과는 잠시 후 이 페이지에서 확인할
+                수 있어요.
               </p>
               <SyncButton channelId={channel.id} />
             </div>
@@ -177,8 +177,8 @@ export function ChannelDetailView({
         <div className="space-y-3">
           <div className="grid gap-3 lg:grid-cols-2">
             <ChartCard
-              title={`${labels.audience} Growth`}
-              description="Trend over recent months"
+              title={`${labels.audience} 성장 추이`}
+              description="최근 월별 추이"
             >
               <div className="h-60">
                 <ResponsiveContainer width="100%" height="100%">
@@ -211,8 +211,8 @@ export function ChannelDetailView({
             </ChartCard>
 
             <ChartCard
-              title={`${labels.views} & Engagement`}
-              description={`${labels.views} trend with engagement rate overlay`}
+              title={`${labels.views} & 참여율`}
+              description={`${labels.views} 추이와 참여율 오버레이`}
             >
               <div className="h-60">
                 <ResponsiveContainer width="100%" height="100%">
@@ -251,7 +251,7 @@ export function ChannelDetailView({
                       stroke="#16a34a"
                       strokeWidth={2}
                       dot={{ r: 3, fill: "#16a34a" }}
-                      name="Engagement %"
+                      name="참여율 %"
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -262,8 +262,8 @@ export function ChannelDetailView({
           <div className="grid gap-3 lg:grid-cols-2">
             {contentTypeDist.length > 0 && (
               <ChartCard
-                title="Content Type Distribution"
-                description="Breakdown by content format"
+                title="콘텐츠 유형 분포"
+                description="콘텐츠 형식별 비율"
               >
                 <div className="flex h-56 items-center">
                   <div className="h-full w-1/2">
@@ -331,10 +331,7 @@ export function ChannelDetailView({
             )}
 
             {uploadFreqData.some((d) => d.uploads > 0) && (
-              <ChartCard
-                title="Upload Frequency"
-                description="Posting frequency over recent months"
-              >
+              <ChartCard title="업로드 빈도" description="최근 월별 게시 빈도">
                 <div className="h-56">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={uploadFreqData}>
@@ -390,18 +387,18 @@ export function ChannelDetailView({
       <div className="card flex items-center justify-between border-violet-200 bg-violet-50/50 p-4">
         <div>
           <p className="text-[13px] font-semibold text-[var(--foreground)]">
-            Competitive Analysis
+            경쟁사 분석
           </p>
           <p className="text-[12px] text-[var(--muted-foreground)]">
-            Compare this channel with competitors to discover growth
-            opportunities and strategic insights.
+            이 채널과 경쟁 채널을 비교해서 성장 기회와 전략적 인사이트를 발견해
+            보세요.
           </p>
         </div>
         <Link
           href="/competitors"
           className="btn-secondary flex-shrink-0 text-[12px]"
         >
-          View Competitors
+          경쟁사 보기
         </Link>
       </div>
 
@@ -437,21 +434,19 @@ export function ChannelDetailView({
 // ── 에러 메시지 한글 변환 ──
 
 function getErrorMessage(error?: string): string {
-  if (!error) return "데이터 수집에 실패했습니다.";
+  if (!error) return "데이터 수집에 실패했어요. 잠시 후 다시 시도해 주세요.";
   if (error.includes("not configured")) {
-    const match = error.match(/Set (\w+)/);
-    const envVar = match?.[1] || "API_KEY";
-    return `API 키가 설정되지 않았습니다. .env.local 파일에 ${envVar}를 추가해주세요.`;
+    return "플랫폼 연동 설정이 완료되지 않았어요. 관리자에게 문의해 주세요.";
   }
   if (error.includes("not found"))
-    return "채널을 찾을 수 없습니다. URL을 확인해주세요.";
+    return "채널을 찾을 수 없어요. URL을 다시 확인해 주세요.";
   if (error.includes("Unsupported"))
-    return "이 플랫폼은 아직 데이터 수집을 지원하지 않습니다.";
+    return "이 플랫폼은 아직 데이터 수집을 지원하지 않아요.";
   if (error.includes("Cannot extract"))
-    return "채널 URL에서 ID를 추출할 수 없습니다. URL 형식을 확인해주세요.";
+    return "채널 URL에서 정보를 가져올 수 없어요. URL 형식을 확인해 주세요.";
   if (error.includes("quota") || error.includes("rate"))
-    return "API 할당량이 초과되었습니다. 잠시 후 다시 시도해주세요.";
-  return error;
+    return "요청이 너무 많아요. 잠시 후 다시 시도해 주세요.";
+  return "알 수 없는 오류가 발생했어요. 잠시 후 다시 시도해 주세요.";
 }
 
 // ── 동기화 버튼 컴포넌트 ──
@@ -477,7 +472,7 @@ function SyncButton({ channelId }: { channelId: string }) {
         setTimeout(() => window.location.reload(), 1000);
       }
     } catch {
-      setResult({ success: false, error: "동기화 요청에 실패했습니다." });
+      setResult({ success: false, error: "동기화 요청에 실패했어요." });
     } finally {
       setSyncing(false);
     }
@@ -499,7 +494,7 @@ function SyncButton({ channelId }: { channelId: string }) {
       )}
       {result?.success && (
         <p className="mt-2 text-[12px] text-emerald-700">
-          데이터 수집 완료! 페이지를 새로고침합니다...
+          데이터 수집이 완료되었어요! 페이지를 새로고침할게요...
         </p>
       )}
     </div>

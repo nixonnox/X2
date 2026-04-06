@@ -105,10 +105,16 @@ export default function IntentFinderPage() {
       const raw = (keyword ?? inputValue).trim();
       if (!raw) return;
       // 콤마 구분 다중 키워드 지원: "AI, 마케팅, 숏폼" → 첫 번째로 분석, 나머지는 확장에 포함
-      const seeds = raw.split(/[,，]/).map((s) => s.trim()).filter(Boolean);
+      const seeds = raw
+        .split(/[,，]/)
+        .map((s) => s.trim())
+        .filter(Boolean);
       const seed = seeds[0];
       if (!seed) return;
-      setAnalysis({ status: "loading", keyword: seeds.length > 1 ? seeds.join(", ") : seed });
+      setAnalysis({
+        status: "loading",
+        keyword: seeds.length > 1 ? seeds.join(", ") : seed,
+      });
       try {
         const res = await fetch("/api/intent/analyze", {
           method: "POST",
@@ -130,7 +136,7 @@ export default function IntentFinderPage() {
         }
         const json = await res.json();
         if (!json.success || !json.data)
-          throw new Error(json.error ?? "분석 결과가 없습니다.");
+          throw new Error(json.error ?? "분석 결과가 없어요.");
         const data = json.data as IntentGraphData;
         setAnalysis({ status: "success", keyword: seed, data });
         setInputValue("");
@@ -240,7 +246,7 @@ export default function IntentFinderPage() {
       <PageHeader
         title="인텐트 파인더"
         description="검색 키워드의 사용자 의도를 자동 분류하고, 블루오션 기회와 콘텐츠 갭을 발견하세요."
-        guide="키워드를 입력하면 관련 키워드를 확장하고, 정보형/비교형/행동형/문제해결형으로 의도를 자동 분류합니다."
+        guide="키워드를 입력하면 관련 키워드를 확장하고, 정보형/비교형/행동형/문제해결형으로 의도를 자동 분류해요."
       />
 
       {/* ── Keyword Input ── */}
@@ -279,14 +285,14 @@ export default function IntentFinderPage() {
             <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
             <p className="text-[13px] text-blue-700">
               &ldquo;{analysis.keyword}&rdquo; 키워드의 의도를 분석하고
-              있습니다...
+              있어요...
             </p>
           </div>
         )}
         {analysis.status === "error" && (
           <div className="mt-3 rounded-md bg-red-50 px-3 py-2">
             <p className="text-[13px] text-red-700">
-              분석 실패: {analysis.message}
+              분석에 실패했어요: {analysis.message}
             </p>
           </div>
         )}
@@ -296,8 +302,8 @@ export default function IntentFinderPage() {
       {analysis.status === "idle" && history.length === 0 && (
         <EmptyState
           icon={Search}
-          title="검색 키워드의 사용자 의도를 분석합니다"
-          description="키워드를 입력하면 의도 분류(정보형/비교형/행동형/문제해결형), 검색 여정 단계, 콘텐츠 갭 분석 결과를 확인할 수 있습니다."
+          title="검색 키워드의 사용자 의도를 분석해요"
+          description="키워드를 입력하면 의도 분류(정보형/비교형/행동형/문제해결형), 검색 여정 단계, 콘텐츠 갭 분석 결과를 확인할 수 있어요."
         />
       )}
 
@@ -529,7 +535,7 @@ export default function IntentFinderPage() {
                           </span>
                         )}
                         <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700">
-                          Gap {bo.gapScore.toFixed(0)}
+                          갭 {bo.gapScore.toFixed(0)}
                         </span>
                       </div>
                     </div>
@@ -641,7 +647,7 @@ export default function IntentFinderPage() {
                           {kw.keyword}
                           {kw.isRising && (
                             <span className="ml-1.5 inline-flex items-center rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">
-                              HOT
+                              급상승
                             </span>
                           )}
                         </td>
@@ -653,8 +659,12 @@ export default function IntentFinderPage() {
                             className={`flex items-center justify-center gap-1 ${TREND_COLOR[trend]}`}
                           >
                             <TrendIcon className="h-3.5 w-3.5" />
-                            <span className="text-[12px] font-medium capitalize">
-                              {trend}
+                            <span className="text-[12px] font-medium">
+                              {trend === "rising"
+                                ? "상승"
+                                : trend === "declining"
+                                  ? "하락"
+                                  : "유지"}
                             </span>
                           </div>
                         </td>

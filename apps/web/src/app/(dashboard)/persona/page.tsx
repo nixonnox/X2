@@ -36,8 +36,14 @@ import { PERSONA_ARCHETYPE_LABELS } from "@/lib/persona-cluster-engine";
 // ── Colors ──
 
 const PERSONA_COLORS = [
-  "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899",
-  "#06b6d4", "#84cc16",
+  "#3b82f6",
+  "#10b981",
+  "#f59e0b",
+  "#ef4444",
+  "#8b5cf6",
+  "#ec4899",
+  "#06b6d4",
+  "#84cc16",
 ];
 
 // ── Component ──
@@ -85,7 +91,11 @@ export default function PersonaViewPage() {
         return {
           name: a.label,
           count: a.count,
-          fill: key ? PERSONA_ARCHETYPE_LABELS[key[0] as keyof typeof PERSONA_ARCHETYPE_LABELS].color : "#6b7280",
+          fill: key
+            ? PERSONA_ARCHETYPE_LABELS[
+                key[0] as keyof typeof PERSONA_ARCHETYPE_LABELS
+              ].color
+            : "#6b7280",
         };
       });
   }, [summary]);
@@ -94,8 +104,8 @@ export default function PersonaViewPage() {
     <div className="space-y-5">
       <PageHeader
         title="페르소나 뷰"
-        description="검색 의도 기반으로 소비자 유형을 자동 분류하고, 각 페르소나의 니즈와 행동 패턴을 분석합니다."
-        guide="키워드를 분석하면 검색 패턴을 분석하여 소비자 그룹을 자동으로 세분화합니다."
+        description="검색 의도 기반으로 소비자 유형을 자동 분류하고, 각 페르소나의 니즈와 행동 패턴을 분석해요."
+        guide="키워드를 분석하면 검색 패턴을 분석하여 소비자 그룹을 자동으로 세분화해요."
       />
 
       {/* Input */}
@@ -132,7 +142,7 @@ export default function PersonaViewPage() {
         <ScreenStatePanel
           state={screenState}
           keyword={keyword}
-          loadingMessage="소비자 페르소나를 분석하고 있습니다..."
+          loadingMessage="소비자 페르소나를 분석하고 있어요..."
         />
       </div>
 
@@ -141,7 +151,7 @@ export default function PersonaViewPage() {
         <EmptyState
           icon={Users}
           title="검색 의도 기반 소비자 페르소나"
-          description="키워드를 입력하면 검색 패턴을 분석하여 소비자 유형을 자동으로 분류합니다. 각 페르소나의 관심사, 질문, 콘텐츠 전략을 확인하세요."
+          description="키워드를 입력하면 검색 패턴을 분석하여 소비자 유형을 자동으로 분류해요. 각 페르소나의 관심사, 질문, 콘텐츠 전략을 확인하세요."
         />
       )}
 
@@ -151,7 +161,9 @@ export default function PersonaViewPage() {
           {/* Meta info */}
           {screenState.durationMs != null && (
             <p className="text-[11px] text-[var(--muted-foreground)]">
-              분석 완료 · {summary?.totalPersonas}개 페르소나 · {summary?.totalClusters}개 클러스터 · {summary?.totalKeywords}개 키워드 · {(screenState.durationMs / 1000).toFixed(1)}초
+              분석 완료 · {summary?.totalPersonas}개 페르소나 ·{" "}
+              {summary?.totalClusters}개 클러스터 · {summary?.totalKeywords}개
+              키워드 · {(screenState.durationMs / 1000).toFixed(1)}초
             </p>
           )}
 
@@ -226,7 +238,11 @@ export default function PersonaViewPage() {
                         border: "1px solid var(--border)",
                       }}
                     />
-                    <Bar dataKey="count" name="페르소나 수" radius={[3, 3, 0, 0]}>
+                    <Bar
+                      dataKey="count"
+                      name="페르소나 수"
+                      radius={[3, 3, 0, 0]}
+                    >
                       {archetypeBarData.map((entry, i) => (
                         <Cell key={i} fill={entry.fill} />
                       ))}
@@ -289,7 +305,9 @@ export default function PersonaViewPage() {
                   <div className="flex items-start gap-2 rounded-md bg-orange-50 px-3 py-2">
                     <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-orange-400" />
                     <p className="text-[11px] text-orange-700">
-                      이 페르소나의 신뢰도가 낮습니다 (신뢰도: {Math.round(selectedPersonaData.confidence * 100)}%). 데이터가 더 축적되면 정확도가 향상됩니다.
+                      이 페르소나의 신뢰도가 낮아요 (신뢰도:{" "}
+                      {Math.round(selectedPersonaData.confidence * 100)}%).
+                      데이터가 더 축적되면 정확도가 높아져요.
                     </p>
                   </div>
                 )}

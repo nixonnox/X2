@@ -395,7 +395,11 @@ function PathGraph({
           <p className="text-[12px] font-semibold">{tooltipInfo.node.label}</p>
           <div className="mt-1 space-y-0.5 text-[11px] text-[var(--muted-foreground)]">
             <p>의도: {tooltipInfo.node.intentLabel}</p>
-            <p>방향: {DIRECTION_LABELS[tooltipInfo.node.direction] ?? tooltipInfo.node.direction}</p>
+            <p>
+              방향:{" "}
+              {DIRECTION_LABELS[tooltipInfo.node.direction] ??
+                tooltipInfo.node.direction}
+            </p>
             {tooltipInfo.node.stageLabel && (
               <p>여정 단계: {tooltipInfo.node.stageLabel}</p>
             )}
@@ -432,17 +436,12 @@ function PathGraph({
 export default function PathfinderPage() {
   const [inputValue, setInputValue] = useState("");
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
-  const [directionFilter, setDirectionFilter] = useState<DirectionFilter>("all");
+  const [directionFilter, setDirectionFilter] =
+    useState<DirectionFilter>("all");
   const [intentFilter, setIntentFilter] = useState<IntentFilter>("all");
 
-  const {
-    nodes,
-    edges,
-    paths,
-    summary,
-    screenState,
-    analyze,
-  } = usePathfinderQuery();
+  const { nodes, edges, paths, summary, screenState, analyze } =
+    usePathfinderQuery();
 
   const handleAnalyze = useCallback(
     async (keyword?: string) => {
@@ -515,7 +514,9 @@ export default function PathfinderPage() {
     }
 
     return {
-      before: before.sort((a, b) => b.searchVolume - a.searchVolume).slice(0, 10),
+      before: before
+        .sort((a, b) => b.searchVolume - a.searchVolume)
+        .slice(0, 10),
       after: after.sort((a, b) => b.searchVolume - a.searchVolume).slice(0, 10),
     };
   }, [selectedNode, nodes, edges]);
@@ -536,8 +537,8 @@ export default function PathfinderPage() {
     <div className="space-y-5">
       <PageHeader
         title="패스파인더"
-        description="검색어의 전후 맥락을 네트워크 그래프로 시각화합니다. 소비자의 검색 여정을 추적하세요."
-        guide="키워드를 입력하면 해당 키워드 검색 전/후에 사람들이 어떤 키워드를 검색하는지 네트워크로 보여줍니다."
+        description="검색어의 전후 맥락을 네트워크 그래프로 시각화해요. 소비자의 검색 여정을 추적하세요."
+        guide="키워드를 입력하면 해당 키워드 검색 전/후에 사람들이 어떤 키워드를 검색하는지 네트워크로 보여줘요."
       />
 
       {/* Input */}
@@ -574,7 +575,7 @@ export default function PathfinderPage() {
         <JourneyScreenStatePanel
           state={screenState}
           keyword={summary?.seedKeyword}
-          loadingMessage="검색 여정을 분석하고 있습니다..."
+          loadingMessage="검색 여정을 분석하고 있어요..."
         />
       </div>
 
@@ -582,8 +583,8 @@ export default function PathfinderPage() {
       {screenState.status === "idle" && (
         <EmptyState
           icon={GitBranch}
-          title="검색 여정을 시각화합니다"
-          description="키워드를 입력하면 해당 키워드 검색 전/후의 검색 흐름을 네트워크 그래프로 보여줍니다. 소비자가 어떤 경로로 정보를 탐색하는지 파악하세요."
+          title="검색 여정을 시각화해요"
+          description="키워드를 입력하면 검색 전/후의 검색 흐름을 네트워크 그래프로 보여줘요. 소비자가 어떤 경로로 정보를 탐색하는지 파악하세요."
         />
       )}
 
@@ -593,49 +594,73 @@ export default function PathfinderPage() {
           {/* KPI */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
             <div className="card p-3">
-              <p className="text-[11px] text-[var(--muted-foreground)]">시드 키워드</p>
+              <p className="text-[11px] text-[var(--muted-foreground)]">
+                시드 키워드
+              </p>
               <p className="mt-0.5 truncate text-[14px] font-semibold">
                 {summary.seedKeyword}
               </p>
             </div>
             <div className="card p-3">
-              <p className="text-[11px] text-[var(--muted-foreground)]">전체 노드</p>
-              <p className="mt-0.5 text-[14px] font-semibold">{summary.totalNodes}</p>
+              <p className="text-[11px] text-[var(--muted-foreground)]">
+                전체 노드
+              </p>
+              <p className="mt-0.5 text-[14px] font-semibold">
+                {summary.totalNodes}
+              </p>
             </div>
             <div className="card p-3">
-              <p className="text-[11px] text-[var(--muted-foreground)]">연결 수</p>
-              <p className="mt-0.5 text-[14px] font-semibold">{summary.totalEdges}</p>
+              <p className="text-[11px] text-[var(--muted-foreground)]">
+                연결 수
+              </p>
+              <p className="mt-0.5 text-[14px] font-semibold">
+                {summary.totalEdges}
+              </p>
             </div>
             <div className="card p-3">
-              <p className="text-[11px] text-[var(--muted-foreground)]">경로 수</p>
-              <p className="mt-0.5 text-[14px] font-semibold">{summary.totalPaths}</p>
+              <p className="text-[11px] text-[var(--muted-foreground)]">
+                경로 수
+              </p>
+              <p className="mt-0.5 text-[14px] font-semibold">
+                {summary.totalPaths}
+              </p>
             </div>
             <div className="card p-3">
-              <p className="text-[11px] text-[var(--muted-foreground)]">평균 갭 스코어</p>
-              <p className="mt-0.5 text-[14px] font-semibold">{summary.avgGapScore}</p>
+              <p className="text-[11px] text-[var(--muted-foreground)]">
+                평균 갭 스코어
+              </p>
+              <p className="mt-0.5 text-[14px] font-semibold">
+                {summary.avgGapScore}
+              </p>
             </div>
           </div>
 
           {/* Filters */}
           <div className="flex flex-wrap items-center gap-2">
             <Filter className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
-            <span className="text-[11px] text-[var(--muted-foreground)]">방향:</span>
-            {(["all", "before", "seed", "after"] as DirectionFilter[]).map((f) => (
-              <button
-                key={f}
-                onClick={() => setDirectionFilter(f)}
-                className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                  directionFilter === f
-                    ? "bg-blue-100 text-blue-700"
-                    : "hover:bg-[var(--secondary)]/80 bg-[var(--secondary)] text-[var(--muted-foreground)]"
-                }`}
-              >
-                {f === "all" ? "전체" : DIRECTION_LABELS[f] ?? f}
-              </button>
-            ))}
+            <span className="text-[11px] text-[var(--muted-foreground)]">
+              방향:
+            </span>
+            {(["all", "before", "seed", "after"] as DirectionFilter[]).map(
+              (f) => (
+                <button
+                  key={f}
+                  onClick={() => setDirectionFilter(f)}
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                    directionFilter === f
+                      ? "bg-blue-100 text-blue-700"
+                      : "hover:bg-[var(--secondary)]/80 bg-[var(--secondary)] text-[var(--muted-foreground)]"
+                  }`}
+                >
+                  {f === "all" ? "전체" : (DIRECTION_LABELS[f] ?? f)}
+                </button>
+              ),
+            )}
             {uniqueIntents.length > 0 && (
               <>
-                <span className="ml-2 text-[11px] text-[var(--muted-foreground)]">의도:</span>
+                <span className="ml-2 text-[11px] text-[var(--muted-foreground)]">
+                  의도:
+                </span>
                 <button
                   onClick={() => setIntentFilter("all")}
                   className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${
@@ -668,7 +693,8 @@ export default function PathfinderPage() {
             <div className="border-b border-[var(--border)] px-4 py-3">
               <h3 className="text-[13px] font-semibold">검색 여정 네트워크</h3>
               <p className="text-[11px] text-[var(--muted-foreground)]">
-                노드를 클릭하면 연결된 검색어를 확인할 수 있습니다. 드래그로 이동, 스크롤로 확대/축소할 수 있습니다.
+                노드를 클릭하면 연결된 검색어를 확인할 수 있어요. 드래그로 이동,
+                스크롤로 확대/축소할 수 있어요.
               </p>
             </div>
             <div className="h-[480px]">
@@ -711,7 +737,9 @@ export default function PathfinderPage() {
                             className="h-2 w-2 rounded-full"
                             style={{ backgroundColor: n.intentColor }}
                           />
-                          <span className="flex-1 truncate text-[12px]">{n.label}</span>
+                          <span className="flex-1 truncate text-[12px]">
+                            {n.label}
+                          </span>
                           <span className="text-[10px] text-[var(--muted-foreground)]">
                             {n.searchVolume.toLocaleString()}
                           </span>
@@ -733,26 +761,37 @@ export default function PathfinderPage() {
                   <div className="grid grid-cols-2 gap-2 text-[11px]">
                     <div>
                       <p className="text-[var(--muted-foreground)]">의도</p>
-                      <p className="font-medium">{selectedNodeData.intentLabel}</p>
+                      <p className="font-medium">
+                        {selectedNodeData.intentLabel}
+                      </p>
                     </div>
                     <div>
                       <p className="text-[var(--muted-foreground)]">방향</p>
                       <p className="font-medium">
-                        {DIRECTION_LABELS[selectedNodeData.direction] ?? selectedNodeData.direction}
+                        {DIRECTION_LABELS[selectedNodeData.direction] ??
+                          selectedNodeData.direction}
                       </p>
                     </div>
                     <div>
                       <p className="text-[var(--muted-foreground)]">검색량</p>
-                      <p className="font-medium">{selectedNodeData.searchVolume.toLocaleString()}</p>
+                      <p className="font-medium">
+                        {selectedNodeData.searchVolume.toLocaleString()}
+                      </p>
                     </div>
                     <div>
-                      <p className="text-[var(--muted-foreground)]">갭 스코어</p>
+                      <p className="text-[var(--muted-foreground)]">
+                        갭 스코어
+                      </p>
                       <p className="font-medium">{selectedNodeData.gapScore}</p>
                     </div>
                     {selectedNodeData.stageLabel && (
                       <div className="col-span-2">
-                        <p className="text-[var(--muted-foreground)]">여정 단계</p>
-                        <p className="font-medium">{selectedNodeData.stageLabel}</p>
+                        <p className="text-[var(--muted-foreground)]">
+                          여정 단계
+                        </p>
+                        <p className="font-medium">
+                          {selectedNodeData.stageLabel}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -775,7 +814,9 @@ export default function PathfinderPage() {
                             className="h-2 w-2 rounded-full"
                             style={{ backgroundColor: n.intentColor }}
                           />
-                          <span className="flex-1 truncate text-[12px]">{n.label}</span>
+                          <span className="flex-1 truncate text-[12px]">
+                            {n.label}
+                          </span>
                           <span className="text-[10px] text-[var(--muted-foreground)]">
                             {n.searchVolume.toLocaleString()}
                           </span>
@@ -801,10 +842,24 @@ export default function PathfinderPage() {
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={stageDistData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
-                    <XAxis dataKey="label" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
-                    <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
-                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 6, border: "1px solid var(--border)" }} />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="var(--border-subtle)"
+                    />
+                    <XAxis
+                      dataKey="label"
+                      tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        fontSize: 12,
+                        borderRadius: 6,
+                        border: "1px solid var(--border)",
+                      }}
+                    />
                     <Bar dataKey="count" name="키워드 수" radius={[3, 3, 0, 0]}>
                       {stageDistData.map((entry, i) => (
                         <Cell key={i} fill={entry.color} />
@@ -822,10 +877,24 @@ export default function PathfinderPage() {
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={intentDistData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
-                    <XAxis dataKey="label" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
-                    <YAxis tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} />
-                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 6, border: "1px solid var(--border)" }} />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="var(--border-subtle)"
+                    />
+                    <XAxis
+                      dataKey="label"
+                      tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        fontSize: 12,
+                        borderRadius: 6,
+                        border: "1px solid var(--border)",
+                      }}
+                    />
                     <Bar dataKey="count" name="키워드 수" radius={[3, 3, 0, 0]}>
                       {intentDistData.map((entry, i) => (
                         <Cell key={i} fill={entry.color} />
@@ -851,12 +920,20 @@ export default function PathfinderPage() {
                   .sort((a, b) => b.pathScore - a.pathScore)
                   .slice(0, 10)
                   .map((path) => (
-                    <div key={path.id} className="flex items-center gap-3 px-4 py-2.5">
+                    <div
+                      key={path.id}
+                      className="flex items-center gap-3 px-4 py-2.5"
+                    >
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-[12px] font-medium">{path.pathLabel}</p>
+                        <p className="truncate text-[12px] font-medium">
+                          {path.pathLabel}
+                        </p>
                         <div className="mt-0.5 flex flex-wrap gap-1">
                           {path.steps.slice(0, 5).map((step, si) => (
-                            <span key={si} className="flex items-center gap-1 text-[10px] text-[var(--muted-foreground)]">
+                            <span
+                              key={si}
+                              className="flex items-center gap-1 text-[10px] text-[var(--muted-foreground)]"
+                            >
                               {si > 0 && <ArrowRight className="h-2.5 w-2.5" />}
                               <span className="truncate">{step.keyword}</span>
                             </span>
@@ -902,11 +979,16 @@ export default function PathfinderPage() {
               </div>
               <div className="divide-y divide-[var(--border)]">
                 {summary.topBlueOceans.slice(0, 5).map((opp, i) => (
-                  <div key={opp.keyword} className="flex items-center gap-3 px-4 py-2.5">
+                  <div
+                    key={opp.keyword}
+                    className="flex items-center gap-3 px-4 py-2.5"
+                  >
                     <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-50 text-[10px] font-bold text-blue-700">
                       {i + 1}
                     </span>
-                    <span className="flex-1 truncate text-[12px] font-medium">{opp.keyword}</span>
+                    <span className="flex-1 truncate text-[12px] font-medium">
+                      {opp.keyword}
+                    </span>
                     <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
                       갭 {opp.gapScore}
                     </span>

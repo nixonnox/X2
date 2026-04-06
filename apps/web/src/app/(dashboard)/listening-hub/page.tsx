@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PageHeader } from "@/components/shared";
+import { PageHeader, ErrorBoundary } from "@/components/shared";
 import { ListeningHubLayout } from "@/components/listening-hub/ListeningHubLayout";
 import { IntentSummarySection } from "@/components/listening-hub/IntentSummarySection";
 import { ClusterSection } from "@/components/listening-hub/ClusterSection";
@@ -16,11 +16,7 @@ import type {
   SearchIntelligenceResult,
   EngineExecutionResult,
 } from "@/services/search-intelligence";
-import {
-  Search,
-  Loader2,
-  AlertTriangle,
-} from "lucide-react";
+import { Search, Loader2, AlertTriangle } from "lucide-react";
 
 /**
  * API 응답은 SearchIntelligenceResult + 추가 통합 엔진 결과.
@@ -51,18 +47,31 @@ export default function ListeningHubPage() {
       const res = await fetch("/api/search-intelligence/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ keyword: seedKeyword.trim() }),
+        body: JSON.stringify({ seedKeyword: seedKeyword.trim() }),
+        redirect: "manual",
       });
 
-      if (!res.ok) {
-        throw new Error(`분석 실패 (${res.status})`);
+      // 리다이렉트 감지 (미들웨어에서 로그인 페이지로 보내는 경우)
+      if (
+        res.type === "opaqueredirect" ||
+        res.status === 307 ||
+        res.status === 302
+      ) {
+        throw new Error(
+          "세션이 만료되었어요. 페이지를 새로고침하고 다시 시도해 주세요.",
+        );
       }
 
-      const data = await res.json();
-      setResult(data);
+      if (!res.ok) {
+        const body = await res.text();
+        throw new Error("분석에 실패했어요. 잠시 후 다시 시도해 주세요.");
+      }
+
+      const json = await res.json();
+      setResult(json.data ?? json);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다"
+        err instanceof Error ? err.message : "알 수 없는 오류가 발생했어요",
       );
     } finally {
       setIsAnalyzing(false);
@@ -75,7 +84,7 @@ export default function ListeningHubPage() {
     <div className="space-y-5">
       <PageHeader
         title="리스닝 허브"
-        description="검색 인텔리전스 기반 통합 분석 — 의도 → 클러스터 → 검색 경로 → 사용자 여정 → 페르소나 → 인사이트 → 액션"
+        description="키워드 하나로 의도, 클러스터, 검색 경로, 페르소나, 인사이트를 한눈에 파악하세요."
       />
 
       {/* Search Input */}
@@ -121,12 +130,16 @@ export default function ListeningHubPage() {
       )}
 
       {/* Status Bar */}
-      {hasResult && (
+      {hasResult && result.trace && (
         <SearchIntelligenceStatusBar
           status={{
             seedKeyword: result.seedKeyword,
-            confidence: Math.round(result.trace.confidence * 100),
-            freshness: result.trace.freshness as "fresh" | "stale" | "unknown" | undefined,
+            confidence: Math.round((result.trace.confidence ?? 0) * 100),
+            freshness: result.trace.freshness as
+              | "fresh"
+              | "stale"
+              | "unknown"
+              | undefined,
             analyzedAt: result.analyzedAt,
             isMockOnly: result.trace.isMockOnly,
             isPartial: result.trace.isPartial,
@@ -138,28 +151,44 @@ export default function ListeningHubPage() {
       {/* Main Content */}
       <ListeningHubLayout hasResult={hasResult}>
         {/* Section 1: Overview / Intent */}
-        <IntentSummarySection result={result} />
+        <ErrorBoundary>
+          <IntentSummarySection result={result} />
+        </ErrorBoundary>
 
         {/* Section 2: Clusters */}
-        <ClusterSection clusterResult={result?.cluster} />
+        <ErrorBoundary>
+          <ClusterSection clusterResult={result?.cluster} />
+        </ErrorBoundary>
 
         {/* Section 3: Pathfinder */}
-        <PathfinderSection pathfinderResult={result?.pathfinder} />
+        <ErrorBoundary>
+          <PathfinderSection pathfinderResult={result?.pathfinder} />
+        </ErrorBoundary>
 
         {/* Section 4: Road View */}
-        <RoadViewSection roadviewResult={result?.roadview} />
+        <ErrorBoundary>
+          <RoadViewSection roadviewResult={result?.roadview} />
+        </ErrorBoundary>
 
         {/* Section 5: Persona */}
-        <PersonaSection personaResult={result?.persona} />
+        <ErrorBoundary>
+          <PersonaSection personaResult={result?.persona} />
+        </ErrorBoundary>
 
         {/* Section 6: Insights */}
-        <SearchInsightSection result={result} />
+        <ErrorBoundary>
+          <SearchInsightSection result={result} />
+        </ErrorBoundary>
 
         {/* Section 7: Actions */}
-        <SearchActionSection actionResult={result?.action} />
+        <ErrorBoundary>
+          <SearchActionSection actionResult={result?.action} />
+        </ErrorBoundary>
 
         {/* Section 8: Evidence */}
-        <SearchEvidenceSection evidenceResult={result?.evidence} />
+        <ErrorBoundary>
+          <SearchEvidenceSection evidenceResult={result?.evidence} />
+        </ErrorBoundary>
       </ListeningHubLayout>
     </div>
   );

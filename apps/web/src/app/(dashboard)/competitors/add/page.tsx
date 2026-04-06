@@ -14,8 +14,10 @@ import {
 import { useTranslations } from "next-intl";
 import { PageHeader } from "@/components/shared";
 import { PlatformSelector } from "@/components/channels";
-import { competitorService, COMPETITOR_TYPE_LABELS } from "@/lib/competitors";
+import { COMPETITOR_TYPE_LABELS } from "@/lib/competitors";
 import type { CompetitorType, CompetitorFormInput } from "@/lib/competitors";
+import { trpc } from "@/lib/trpc";
+import { useCurrentProject } from "@/hooks/use-current-project";
 import type { PlatformCode } from "@/lib/channels";
 import { resolveChannelUrl, getPlatformLabel } from "@/lib/channels";
 import type {
@@ -31,27 +33,27 @@ const COMPETITOR_TYPES: {
 }[] = [
   {
     value: "direct_competitor",
-    labelEn: "Direct Competitor",
+    labelEn: "직접 경쟁",
     labelKo: "직접 경쟁",
-    desc: "Directly competes in same market",
+    desc: "같은 시장에서 직접 경쟁하는 채널",
   },
   {
     value: "similar_channel",
-    labelEn: "Similar Channel",
+    labelEn: "유사 채널",
     labelKo: "유사 채널",
-    desc: "Similar content or audience",
+    desc: "유사한 콘텐츠 또는 타겟 오디언스",
   },
   {
     value: "inspiration_channel",
-    labelEn: "Inspiration",
+    labelEn: "영감 채널",
     labelKo: "영감 채널",
-    desc: "Inspiring content or strategy",
+    desc: "영감을 주는 콘텐츠 또는 전략",
   },
   {
     value: "benchmark_channel",
-    labelEn: "Benchmark",
+    labelEn: "벤치마크",
     labelKo: "벤치마크",
-    desc: "Performance benchmark target",
+    desc: "성과 벤치마크 대상 채널",
   },
 ];
 
@@ -72,6 +74,8 @@ const SEVERITY_STYLES: Record<
 export default function AddCompetitorPage() {
   const router = useRouter();
   const t = useTranslations("competitors");
+  const { projectId } = useCurrentProject();
+  const addMutation = trpc.competitor.add.useMutation();
 
   const [form, setForm] = useState<CompetitorFormInput>({
     platform: "youtube",
@@ -134,16 +138,16 @@ export default function AddCompetitorPage() {
     validateUrl(url);
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const errs: Record<string, string> = {};
 
-    if (!form.url.trim()) errs.url = "URL is required";
-    if (!form.channelName.trim()) errs.channelName = "Channel name is required";
+    if (!form.url.trim()) errs.url = "URL을 입력해 주세요";
+    if (!form.channelName.trim())
+      errs.channelName = "채널 이름을 입력해 주세요";
     if (urlValidation && !urlValidation.shouldAllowProceed)
       errs.url = urlValidation.validationMessage;
-    if (competitorService.isDuplicate(form.url))
-      errs.url = "This channel URL is already registered";
+    if (!projectId) errs.url = "프로젝트를 먼저 생성해 주세요";
 
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
@@ -151,8 +155,23 @@ export default function AddCompetitorPage() {
     }
 
     setSubmitting(true);
-    competitorService.addCompetitor(form);
-    router.push("/competitors");
+    try {
+      await addMutation.mutateAsync({
+        projectId: projectId!,
+        platform: form.platform,
+        platformChannelId: form.url,
+        name: form.channelName,
+        url: form.url,
+      });
+      router.push("/competitors");
+    } catch (err: any) {
+      if (err?.data?.code === "CONFLICT") {
+        setErrors({ url: "이미 등록된 채널 URL입니다" });
+      } else {
+        setErrors({ url: err?.message ?? "등록에 실패했습니다" });
+      }
+      setSubmitting(false);
+    }
   }
 
   const urlBorderClass = urlValidation
@@ -176,8 +195,8 @@ export default function AddCompetitorPage() {
       </Link>
 
       <PageHeader
-        title="Add Competitor"
-        description="Register a competitor or similar channel for comparison analysis."
+        title="경쟁사 추가"
+        description="비교 분석을 위한 경쟁 채널 또는 유사 채널을 등록하세요."
       />
 
       <div className="grid gap-5 lg:grid-cols-3">
@@ -191,13 +210,13 @@ export default function AddCompetitorPage() {
 
             {/* URL */}
             <div>
-              <label className="text-[13px] font-medium">Channel URL</label>
+              <label className="text-[13px] font-medium">채널 URL</label>
               <div className="relative mt-1">
                 <input
                   type="text"
                   value={form.url}
                   onChange={(e) => handleUrlChange(e.target.value)}
-                  placeholder="https://youtube.com/@channel"
+                  placeholder="채널 URL을 붙여넣으세요 (예: youtube.com/@채널명)"
                   className={`input w-full pr-8 ${urlBorderClass}`}
                 />
                 {validating && (
@@ -230,7 +249,7 @@ export default function AddCompetitorPage() {
                       {urlValidation.isValid &&
                         urlValidation.detectedPlatformCode && (
                           <p className="mt-1 text-[12px] text-[var(--muted-foreground)]">
-                            Platform:{" "}
+                            플랫폼:{" "}
                             <span className="font-medium text-[var(--foreground)]">
                               {getPlatformLabel(
                                 urlValidation.detectedPlatformCode,
@@ -252,12 +271,12 @@ export default function AddCompetitorPage() {
 
             {/* Name */}
             <div>
-              <label className="text-[13px] font-medium">Channel Name</label>
+              <label className="text-[13px] font-medium">채널 이름</label>
               <input
                 type="text"
                 value={form.channelName}
                 onChange={(e) => updateField("channelName", e.target.value)}
-                placeholder="Competitor channel display name"
+                placeholder="경쟁 채널 표시 이름"
                 className="input mt-1 w-full"
               />
               {errors.channelName && (
@@ -270,7 +289,7 @@ export default function AddCompetitorPage() {
 
           {/* Competitor Type */}
           <div className="card space-y-3 p-4">
-            <h3 className="text-[13px] font-semibold">Competitor Type</h3>
+            <h3 className="text-[13px] font-semibold">경쟁사 유형</h3>
             <div className="grid grid-cols-2 gap-2">
               {COMPETITOR_TYPES.map((ct) => (
                 <button
@@ -304,10 +323,10 @@ export default function AddCompetitorPage() {
               }
               className="btn-primary disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {submitting ? "Registering..." : "Register Competitor"}
+              {submitting ? "등록 중..." : "경쟁사 등록"}
             </button>
             <Link href="/competitors" className="btn-secondary">
-              Cancel
+              취소
             </Link>
           </div>
         </form>
@@ -319,30 +338,30 @@ export default function AddCompetitorPage() {
               <div className="flex h-6 w-6 items-center justify-center rounded-md bg-blue-50">
                 <Info className="h-3.5 w-3.5 text-blue-600" />
               </div>
-              <h3 className="text-[13px] font-semibold">After Registration</h3>
+              <h3 className="text-[13px] font-semibold">등록 후 제공 기능</h3>
             </div>
             <ul className="space-y-1 text-[13px] text-[var(--muted-foreground)]">
               <li className="flex items-start gap-2">
                 <span className="mt-1.5 h-1 w-1 flex-shrink-0 rounded-full bg-[var(--muted-foreground)]" />
-                KPI comparison dashboard
+                KPI 비교 대시보드
               </li>
               <li className="flex items-start gap-2">
                 <span className="mt-1.5 h-1 w-1 flex-shrink-0 rounded-full bg-[var(--muted-foreground)]" />
-                Audience growth trend comparison
+                구독자 성장 추이 비교
               </li>
               <li className="flex items-start gap-2">
                 <span className="mt-1.5 h-1 w-1 flex-shrink-0 rounded-full bg-[var(--muted-foreground)]" />
-                Content strategy analysis
+                콘텐츠 전략 분석
               </li>
               <li className="flex items-start gap-2">
                 <span className="mt-1.5 h-1 w-1 flex-shrink-0 rounded-full bg-[var(--muted-foreground)]" />
-                AI-powered competitive insights
+                AI 기반 경쟁 인사이트
               </li>
             </ul>
           </div>
 
           <div className="card border-dashed p-4">
-            <h3 className="mb-1 text-[13px] font-semibold">Competitor Types</h3>
+            <h3 className="mb-1 text-[13px] font-semibold">경쟁사 유형 안내</h3>
             <div className="space-y-2">
               {COMPETITOR_TYPES.map((ct) => (
                 <div key={ct.value}>

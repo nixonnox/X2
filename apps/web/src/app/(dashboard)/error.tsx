@@ -25,6 +25,9 @@ export default function DashboardError({
         <p className="mt-2 text-[13px] text-[var(--muted-foreground)]">
           데이터를 불러오는 중 문제가 발생했습니다.
         </p>
+        <p className="mt-1 break-all text-[11px] text-red-400">
+          {error.message}
+        </p>
         {error.digest && (
           <p className="mt-1 text-[11px] text-[var(--muted-foreground)]">
             코드: {error.digest}
