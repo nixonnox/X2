@@ -3,6 +3,11 @@ import { auth } from "@x2/auth";
 import { db } from "@x2/db";
 
 export async function GET() {
+  // SECURITY: production에서는 절대 노출되면 안 됨 (정찰 정보 유출 방지).
+  if (process.env.NODE_ENV === "production") {
+    return new NextResponse(null, { status: 404 });
+  }
+
   const session = await auth();
 
   let workspaces: any[] = [];

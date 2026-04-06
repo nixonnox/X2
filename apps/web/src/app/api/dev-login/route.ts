@@ -4,6 +4,12 @@ import { encode } from "next-auth/jwt";
 import { db } from "@x2/db";
 
 export async function GET(request: Request) {
+  // SECURITY: production에서는 절대 노출되면 안 됨.
+  // middleware PUBLIC_PATHS에서도 제거하지만, defense-in-depth로 라우트 자체에도 가드.
+  if (process.env.NODE_ENV === "production") {
+    return new NextResponse(null, { status: 404 });
+  }
+
   const email = "dev@x2.local";
   const secret = process.env.AUTH_SECRET;
   if (!secret) {
