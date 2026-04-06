@@ -29,7 +29,7 @@ export function CompetitorInsightCard({ insight }: CompetitorInsightCardProps) {
           <div className="mb-2 flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-emerald-500" />
             <h4 className="text-[12px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
-              Growth Analysis
+              성장 분석
             </h4>
           </div>
           <p className="text-[13px] leading-relaxed text-[var(--foreground)]">
@@ -42,7 +42,7 @@ export function CompetitorInsightCard({ insight }: CompetitorInsightCardProps) {
           <div className="mb-2 flex items-center gap-2">
             <Target className="h-4 w-4 text-blue-500" />
             <h4 className="text-[12px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
-              Content Strategy
+              콘텐츠 전략
             </h4>
           </div>
           <p className="text-[13px] leading-relaxed text-[var(--foreground)]">
@@ -55,7 +55,7 @@ export function CompetitorInsightCard({ insight }: CompetitorInsightCardProps) {
           <div className="mb-2 flex items-center gap-2">
             <Lightbulb className="h-4 w-4 text-amber-500" />
             <h4 className="text-[12px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
-              Recommendation
+              전략 추천
             </h4>
           </div>
           <p className="text-[13px] leading-relaxed text-[var(--foreground)]">
@@ -70,7 +70,7 @@ export function CompetitorInsightCard({ insight }: CompetitorInsightCardProps) {
           <div className="mb-3 flex items-center gap-2">
             <Zap className="h-4 w-4 text-emerald-500" />
             <h4 className="text-[12px] font-semibold text-[var(--foreground)]">
-              Our Strengths
+              우리의 강점
             </h4>
           </div>
           {insight.strengths.length > 0 ? (
@@ -87,7 +87,7 @@ export function CompetitorInsightCard({ insight }: CompetitorInsightCardProps) {
             </ul>
           ) : (
             <p className="text-[13px] text-[var(--muted-foreground)]">
-              No significant advantages identified
+              특별한 강점이 발견되지 않았습니다
             </p>
           )}
         </div>
@@ -96,7 +96,7 @@ export function CompetitorInsightCard({ insight }: CompetitorInsightCardProps) {
           <div className="mb-3 flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 text-amber-500" />
             <h4 className="text-[12px] font-semibold text-[var(--foreground)]">
-              Areas to Improve
+              개선이 필요한 부분
             </h4>
           </div>
           {insight.weaknesses.length > 0 ? (
@@ -113,7 +113,7 @@ export function CompetitorInsightCard({ insight }: CompetitorInsightCardProps) {
             </ul>
           ) : (
             <p className="text-[13px] text-[var(--muted-foreground)]">
-              No significant gaps identified
+              특별한 약점이 발견되지 않았습니다
             </p>
           )}
         </div>
@@ -123,7 +123,7 @@ export function CompetitorInsightCard({ insight }: CompetitorInsightCardProps) {
       {insight.recommendedActions.length > 0 && (
         <div className="card border-dashed p-4">
           <h4 className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
-            Recommended Actions
+            추천 액션
           </h4>
           <div className="flex flex-wrap gap-2">
             {insight.recommendedActions.map((a, i) => (

@@ -38,7 +38,7 @@ export function CompetitorSelector({
               <p
                 className={`text-[11px] ${isActive ? "text-white/70" : "text-[var(--muted-foreground)]"}`}
               >
-                {typeLabel?.en ?? c.competitorType}
+                {typeLabel?.ko ?? c.competitorType}
               </p>
             </div>
           </button>

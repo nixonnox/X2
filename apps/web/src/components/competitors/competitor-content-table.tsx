@@ -79,19 +79,19 @@ export function CompetitorContentTable({
               <tr className="border-b border-[var(--border)]">
                 <th className="px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]" />
                 <th className="px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]">
-                  Title
+                  제목
                 </th>
                 <th className="px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]">
-                  Type
+                  유형
                 </th>
                 <th className="px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]">
-                  Date
+                  날짜
                 </th>
                 <th className="px-3 py-2 text-right text-[11px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]">
-                  Views
+                  조회수
                 </th>
                 <th className="px-3 py-2 text-right text-[11px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]">
-                  Eng.
+                  참여율
                 </th>
               </tr>
             </thead>
@@ -117,19 +117,19 @@ export function CompetitorContentTable({
               <tr className="border-b border-[var(--border)]">
                 <th className="px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]" />
                 <th className="px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]">
-                  Title
+                  제목
                 </th>
                 <th className="px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]">
-                  Type
+                  유형
                 </th>
                 <th className="px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]">
-                  Date
+                  날짜
                 </th>
                 <th className="px-3 py-2 text-right text-[11px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]">
-                  Views
+                  조회수
                 </th>
                 <th className="px-3 py-2 text-right text-[11px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]">
-                  Eng.
+                  참여율
                 </th>
               </tr>
             </thead>

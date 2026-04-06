@@ -51,8 +51,8 @@ export function CompetitorTopContentCard({
                 {content.contentTitle}
               </p>
               <p className="text-[11px] text-[var(--muted-foreground)]">
-                {fmt(content.views)} views &middot; {content.engagementRate}%
-                eng.
+                {fmt(content.views)} 조회 &middot; {content.engagementRate}%
+                참여
               </p>
             </div>
           </div>
