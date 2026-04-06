@@ -1,85 +1,38 @@
 "use client";
 
 import { useState } from "react";
-
-type ActionItem = {
-  id: string;
-  action: string;
-  reason: string;
-  priority: "critical" | "high" | "medium" | "low";
-  deadline: string;
-  completed: boolean;
-};
-
-const MOCK_ACTIONS: ActionItem[] = [
-  {
-    id: "1",
-    action: "고위험 댓글 3건 즉시 대응",
-    reason: "부정적 확산 방지",
-    priority: "critical",
-    deadline: "오늘",
-    completed: false,
-  },
-  {
-    id: "2",
-    action: "쇼츠 콘텐츠 주 2회 발행",
-    reason: "쇼츠 조회수가 긴 영상 대비 2.3배",
-    priority: "high",
-    deadline: "이번 주",
-    completed: false,
-  },
-  {
-    id: "3",
-    action: "수/목 오후 3시 업로드 최적화",
-    reason: "데이터 기반 최적 참여율 시간대",
-    priority: "medium",
-    deadline: "다음 주",
-    completed: true,
-  },
-  {
-    id: "4",
-    action: "튜토리얼 시리즈 기획",
-    reason: "경쟁사 대비 차별화 기회",
-    priority: "high",
-    deadline: "2주 내",
-    completed: false,
-  },
-  {
-    id: "5",
-    action: "가격 FAQ 고정 댓글 추가",
-    reason: "가격 문의 댓글 45% 증가",
-    priority: "medium",
-    deadline: "이번 주",
-    completed: true,
-  },
-  {
-    id: "6",
-    action: "Instagram 릴스 테스트 시작",
-    reason: "릴스 알고리즘 노출 확대",
-    priority: "low",
-    deadline: "이번 달",
-    completed: false,
-  },
-];
+import { Loader2, CheckCircle2, Circle, Zap } from "lucide-react";
+import { trpc } from "@/lib/trpc";
+import { useCurrentProject } from "@/hooks";
 
 const PRIO_STYLE: Record<string, { label: string; cls: string }> = {
-  critical: { label: "긴급", cls: "bg-red-50 text-red-600" },
-  high: { label: "높음", cls: "bg-orange-50 text-orange-600" },
-  medium: { label: "보통", cls: "bg-blue-50 text-blue-600" },
-  low: { label: "낮음", cls: "bg-gray-50 text-gray-600" },
+  HIGH: { label: "높음", cls: "bg-orange-50 text-orange-600" },
+  MEDIUM: { label: "보통", cls: "bg-blue-50 text-blue-600" },
+  LOW: { label: "낮음", cls: "bg-gray-50 text-gray-600" },
 };
 
 export default function InsightActionsPage() {
-  const [actions, setActions] = useState(MOCK_ACTIONS);
+  const { projectId, isLoading: projectLoading } = useCurrentProject();
+  const utils = trpc.useUtils();
 
-  const toggleComplete = (id: string) => {
-    setActions((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, completed: !a.completed } : a)),
-    );
+  const { data, isLoading } = trpc.insight.listActions.useQuery(
+    { projectId: projectId!, pageSize: 50 },
+    { enabled: !!projectId },
+  );
+
+  const updateMutation = trpc.insight.updateAction.useMutation({
+    onSuccess: () => utils.insight.listActions.invalidate(),
+  });
+
+  const toggleComplete = (id: string, currentStatus: string) => {
+    updateMutation.mutate({
+      id,
+      status: currentStatus === "COMPLETED" ? "PENDING" : "COMPLETED",
+    });
   };
 
-  const pending = actions.filter((a) => !a.completed);
-  const completed = actions.filter((a) => a.completed);
+  const actions = data?.items ?? [];
+  const loading = projectLoading || isLoading;
 
   return (
     <div className="space-y-6">
@@ -88,95 +41,69 @@ export default function InsightActionsPage() {
           추천 액션
         </h1>
         <p className="mt-0.5 text-[13px] text-[var(--muted-foreground)]">
-          AI가 분석한 실행 가능한 행동 목록입니다.
+          AI가 분석한 데이터를 기반으로 실행 가능한 액션 아이템을 제안합니다.
         </p>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
-        <div className="card p-4">
-          <p className="text-[11px] text-[var(--muted-foreground)]">
-            전체 액션
+      {loading ? (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="h-6 w-6 animate-spin text-[var(--muted-foreground)]" />
+        </div>
+      ) : actions.length === 0 ? (
+        <div className="card flex flex-col items-center justify-center py-16 text-center">
+          <Zap className="mb-3 h-10 w-10 text-[var(--muted-foreground)]" />
+          <p className="text-[14px] font-medium text-[var(--foreground)]">
+            아직 추천 액션이 없어요
           </p>
-          <p className="mt-1 text-[22px] font-semibold text-[var(--foreground)]">
-            {actions.length}
+          <p className="mt-1 text-[12px] text-[var(--muted-foreground)]">
+            AI 분석이 완료되면 실행 가능한 액션이 자동으로 생성됩니다.
           </p>
         </div>
-        <div className="card p-4">
-          <p className="text-[11px] text-[var(--muted-foreground)]">진행 중</p>
-          <p className="mt-1 text-[22px] font-semibold text-orange-600">
-            {pending.length}
-          </p>
-        </div>
-        <div className="card p-4">
-          <p className="text-[11px] text-[var(--muted-foreground)]">완료</p>
-          <p className="mt-1 text-[22px] font-semibold text-emerald-600">
-            {completed.length}
-          </p>
-        </div>
-      </div>
-
-      {/* Pending Actions */}
-      <div>
-        <h2 className="mb-3 text-[14px] font-semibold text-[var(--foreground)]">
-          진행 필요
-        </h2>
+      ) : (
         <div className="space-y-2">
-          {pending.map((a) => {
-            const style = PRIO_STYLE[a.priority]!;
+          {actions.map((a: any) => {
+            const completed = a.status === "COMPLETED";
+            const prio =
+              PRIO_STYLE[a.priority ?? "MEDIUM"] ?? PRIO_STYLE["MEDIUM"]!;
             return (
-              <div key={a.id} className="card flex items-start gap-3 p-4">
-                <input
-                  type="checkbox"
-                  checked={a.completed}
-                  onChange={() => toggleComplete(a.id)}
-                  className="mt-0.5 rounded border-[var(--border)]"
-                />
+              <div
+                key={a.id}
+                className={`card flex items-start gap-3 p-4 transition-opacity ${completed ? "opacity-60" : ""}`}
+              >
+                <button
+                  onClick={() => toggleComplete(a.id, a.status)}
+                  disabled={updateMutation.isPending}
+                  className="mt-0.5 shrink-0"
+                >
+                  {completed ? (
+                    <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                  ) : (
+                    <Circle className="h-5 w-5 text-[var(--muted-foreground)]" />
+                  )}
+                </button>
                 <div className="flex-1">
-                  <p className="text-[13px] font-medium text-[var(--foreground)]">
-                    {a.action}
+                  <p
+                    className={`text-[13px] font-medium ${completed ? "text-[var(--muted-foreground)] line-through" : "text-[var(--foreground)]"}`}
+                  >
+                    {a.title}
                   </p>
-                  <p className="mt-0.5 text-[11px] text-[var(--muted-foreground)]">
-                    {a.reason}
-                  </p>
+                  {a.description && (
+                    <p className="mt-0.5 text-[12px] text-[var(--muted-foreground)]">
+                      {a.description}
+                    </p>
+                  )}
+                  {a.report && (
+                    <p className="mt-1 text-[11px] text-[var(--muted-foreground)]">
+                      출처: {a.report.title}
+                    </p>
+                  )}
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <span className={`badge text-[9px] ${style.cls}`}>
-                    {style.label}
-                  </span>
-                  <span className="text-[11px] text-[var(--muted-foreground)]">
-                    {a.deadline}
-                  </span>
-                </div>
+                <span className={`badge text-[10px] ${prio.cls}`}>
+                  {prio.label}
+                </span>
               </div>
             );
           })}
-        </div>
-      </div>
-
-      {/* Completed */}
-      {completed.length > 0 && (
-        <div>
-          <h2 className="mb-3 text-[14px] font-semibold text-[var(--muted-foreground)]">
-            완료됨
-          </h2>
-          <div className="space-y-2">
-            {completed.map((a) => (
-              <div
-                key={a.id}
-                className="card flex items-start gap-3 p-4 opacity-60"
-              >
-                <input
-                  type="checkbox"
-                  checked={a.completed}
-                  onChange={() => toggleComplete(a.id)}
-                  className="mt-0.5 rounded border-[var(--border)]"
-                />
-                <p className="flex-1 text-[13px] text-[var(--muted-foreground)] line-through">
-                  {a.action}
-                </p>
-              </div>
-            ))}
-          </div>
         </div>
       )}
     </div>

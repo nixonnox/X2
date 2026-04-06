@@ -1,44 +1,36 @@
 "use client";
 
-const MOCK_MENTIONS = [
-  {
-    keyword: "X2 분석",
-    count: 342,
-    sentiment: 72,
-    trend: "+15%",
-    source: "YouTube, 블로그",
-  },
-  {
-    keyword: "소셜 리스닝",
-    count: 218,
-    sentiment: 68,
-    trend: "+8%",
-    source: "블로그, 커뮤니티",
-  },
-  {
-    keyword: "브랜드명",
-    count: 1240,
-    sentiment: 71,
-    trend: "+22%",
-    source: "전체 플랫폼",
-  },
-  {
-    keyword: "경쟁사 비교",
-    count: 89,
-    sentiment: 54,
-    trend: "-3%",
-    source: "YouTube, 커뮤니티",
-  },
-  {
-    keyword: "제품 리뷰",
-    count: 456,
-    sentiment: 65,
-    trend: "+12%",
-    source: "YouTube, Instagram",
-  },
-];
+import { Loader2, Hash } from "lucide-react";
+import { trpc } from "@/lib/trpc";
+import { useCurrentProject } from "@/hooks";
 
 export default function MentionAnalysisPage() {
+  const { projectId, isLoading: projectLoading } = useCurrentProject();
+
+  const { data: keywords, isLoading } = trpc.keyword.list.useQuery(
+    { projectId: projectId! },
+    { enabled: !!projectId },
+  );
+
+  const loading = projectLoading || isLoading;
+  const kws = keywords ?? [];
+
+  // 통계 계산
+  const totalMentions = kws.reduce((s: number, k: any) => {
+    const latest = k.metrics?.[0];
+    return s + (latest?.mentionCount ?? 0);
+  }, 0);
+
+  const avgSentiment =
+    kws.length > 0
+      ? Math.round(
+          kws.reduce((s: number, k: any) => {
+            const latest = k.metrics?.[0];
+            return s + (latest?.positiveRate ?? 0);
+          }, 0) / kws.length,
+        )
+      : 0;
+
   return (
     <div className="space-y-6">
       <div>
@@ -50,95 +42,110 @@ export default function MentionAnalysisPage() {
         </p>
       </div>
 
-      {/* Summary */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="card p-4">
-          <p className="text-[11px] text-[var(--muted-foreground)]">
-            총 언급량
-          </p>
-          <p className="mt-1 text-[22px] font-semibold text-[var(--foreground)]">
-            2,345
-          </p>
-          <p className="mt-0.5 text-[11px] text-emerald-600">전주 대비 +18%</p>
+      {loading ? (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="h-6 w-6 animate-spin text-[var(--muted-foreground)]" />
         </div>
-        <div className="card p-4">
-          <p className="text-[11px] text-[var(--muted-foreground)]">
-            긍정 감성 비율
+      ) : kws.length === 0 ? (
+        <div className="card flex flex-col items-center justify-center py-16 text-center">
+          <Hash className="mb-3 h-10 w-10 text-[var(--muted-foreground)]" />
+          <p className="text-[14px] font-medium text-[var(--foreground)]">
+            등록된 키워드가 없어요
           </p>
-          <p className="mt-1 text-[22px] font-semibold text-emerald-600">71%</p>
-          <p className="mt-0.5 text-[11px] text-emerald-600">+3%p 상승</p>
-        </div>
-        <div className="card p-4">
-          <p className="text-[11px] text-[var(--muted-foreground)]">
-            추적 키워드
-          </p>
-          <p className="mt-1 text-[22px] font-semibold text-[var(--foreground)]">
-            5
-          </p>
-          <p className="mt-0.5 text-[11px] text-[var(--muted-foreground)]">
-            활성 키워드
+          <p className="mt-1 text-[12px] text-[var(--muted-foreground)]">
+            키워드를 먼저 등록해야 언급량 분석이 시작됩니다.
           </p>
         </div>
-      </div>
+      ) : (
+        <>
+          {/* 요약 카드 */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="card p-4">
+              <p className="text-[11px] text-[var(--muted-foreground)]">
+                총 언급량
+              </p>
+              <p className="mt-1 text-[22px] font-semibold text-[var(--foreground)]">
+                {totalMentions > 0 ? totalMentions.toLocaleString() : "-"}
+              </p>
+            </div>
+            <div className="card p-4">
+              <p className="text-[11px] text-[var(--muted-foreground)]">
+                평균 긍정 비율
+              </p>
+              <p className="mt-1 text-[22px] font-semibold text-emerald-600">
+                {avgSentiment > 0 ? `${avgSentiment}%` : "-"}
+              </p>
+            </div>
+            <div className="card p-4">
+              <p className="text-[11px] text-[var(--muted-foreground)]">
+                추적 키워드
+              </p>
+              <p className="mt-1 text-[22px] font-semibold text-[var(--foreground)]">
+                {kws.length}
+              </p>
+              <p className="mt-0.5 text-[11px] text-[var(--muted-foreground)]">
+                활성 키워드
+              </p>
+            </div>
+          </div>
 
-      {/* Trend Chart Placeholder */}
-      <div className="card p-6">
-        <h2 className="mb-4 text-[14px] font-semibold text-[var(--foreground)]">
-          언급량 추이
-        </h2>
-        <div className="flex h-48 items-center justify-center rounded-lg bg-[var(--secondary)]">
-          <p className="text-[13px] text-[var(--muted-foreground)]">
-            언급량 추이 차트 (Recharts 연동 예정)
-          </p>
-        </div>
-      </div>
-
-      {/* Keywords Table */}
-      <div className="card overflow-hidden">
-        <table className="w-full text-[13px]">
-          <thead>
-            <tr className="border-b border-[var(--border)] bg-[var(--secondary)]">
-              <th className="px-4 py-2.5 text-left font-medium text-[var(--muted-foreground)]">
-                키워드
-              </th>
-              <th className="px-4 py-2.5 text-right font-medium text-[var(--muted-foreground)]">
-                언급 수
-              </th>
-              <th className="px-4 py-2.5 text-right font-medium text-[var(--muted-foreground)]">
-                긍정 비율
-              </th>
-              <th className="px-4 py-2.5 text-right font-medium text-[var(--muted-foreground)]">
-                추세
-              </th>
-              <th className="px-4 py-2.5 text-left font-medium text-[var(--muted-foreground)]">
-                주요 소스
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {MOCK_MENTIONS.map((m) => (
-              <tr
-                key={m.keyword}
-                className="border-b border-[var(--border-subtle)] transition-colors hover:bg-[var(--secondary)]"
-              >
-                <td className="px-4 py-2.5 font-medium">{m.keyword}</td>
-                <td className="px-4 py-2.5 text-right">
-                  {m.count.toLocaleString()}
-                </td>
-                <td className="px-4 py-2.5 text-right">{m.sentiment}%</td>
-                <td
-                  className={`px-4 py-2.5 text-right ${m.trend.startsWith("+") ? "text-emerald-600" : "text-red-600"}`}
-                >
-                  {m.trend}
-                </td>
-                <td className="px-4 py-2.5 text-[var(--muted-foreground)]">
-                  {m.source}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          {/* 키워드 테이블 */}
+          <div className="card overflow-hidden">
+            <table className="w-full text-[13px]">
+              <thead>
+                <tr className="border-b border-[var(--border)] bg-[var(--secondary)]">
+                  <th className="px-4 py-2.5 text-left font-medium text-[var(--muted-foreground)]">
+                    키워드
+                  </th>
+                  <th className="px-4 py-2.5 text-right font-medium text-[var(--muted-foreground)]">
+                    언급 수
+                  </th>
+                  <th className="px-4 py-2.5 text-right font-medium text-[var(--muted-foreground)]">
+                    긍정 비율
+                  </th>
+                  <th className="px-4 py-2.5 text-right font-medium text-[var(--muted-foreground)]">
+                    검색량
+                  </th>
+                  <th className="px-4 py-2.5 text-left font-medium text-[var(--muted-foreground)]">
+                    카테고리
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {kws.map((k: any) => {
+                  const latest = k.metrics?.[0];
+                  return (
+                    <tr
+                      key={k.id}
+                      className="border-b border-[var(--border-subtle)] transition-colors hover:bg-[var(--secondary)]"
+                    >
+                      <td className="px-4 py-2.5 font-medium">{k.keyword}</td>
+                      <td className="px-4 py-2.5 text-right">
+                        {latest?.mentionCount != null
+                          ? latest.mentionCount.toLocaleString()
+                          : "-"}
+                      </td>
+                      <td className="px-4 py-2.5 text-right">
+                        {latest?.positiveRate != null
+                          ? `${Math.round(latest.positiveRate)}%`
+                          : "-"}
+                      </td>
+                      <td className="px-4 py-2.5 text-right">
+                        {latest?.searchVolume != null
+                          ? latest.searchVolume.toLocaleString()
+                          : "-"}
+                      </td>
+                      <td className="px-4 py-2.5 text-[var(--muted-foreground)]">
+                        {k.category ?? "-"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
     </div>
   );
 }

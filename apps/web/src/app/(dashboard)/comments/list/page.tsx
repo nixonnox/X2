@@ -1,71 +1,37 @@
 "use client";
 
 import { useState } from "react";
-
-const MOCK_COMMENTS = [
-  {
-    id: "1",
-    author: "user123",
-    content: "이 영상 정말 유익해요! 감사합니다.",
-    platform: "YouTube",
-    sentiment: "positive",
-    date: "2026-03-07",
-  },
-  {
-    id: "2",
-    author: "viewer_k",
-    content: "가격이 너무 비싼 것 같아요. 할인은 없나요?",
-    platform: "YouTube",
-    sentiment: "negative",
-    date: "2026-03-07",
-  },
-  {
-    id: "3",
-    author: "fan_01",
-    content: "다음 영상은 언제 올라오나요?",
-    platform: "Instagram",
-    sentiment: "neutral",
-    date: "2026-03-06",
-  },
-  {
-    id: "4",
-    author: "새싹유저",
-    content: "튜토리얼 시리즈 더 만들어주세요!",
-    platform: "YouTube",
-    sentiment: "positive",
-    date: "2026-03-06",
-  },
-  {
-    id: "5",
-    author: "critic99",
-    content: "음질이 좀 아쉽네요. 마이크 바꾸시는게...",
-    platform: "TikTok",
-    sentiment: "negative",
-    date: "2026-03-05",
-  },
-  {
-    id: "6",
-    author: "happyfan",
-    content: "매번 퀄리티가 좋아지고 있어요",
-    platform: "Instagram",
-    sentiment: "positive",
-    date: "2026-03-05",
-  },
-];
+import { Loader2, MessageSquare } from "lucide-react";
+import { trpc } from "@/lib/trpc";
+import { useCurrentProject } from "@/hooks";
 
 const SENTIMENT_STYLE: Record<string, { label: string; cls: string }> = {
-  positive: { label: "긍정", cls: "bg-emerald-50 text-emerald-600" },
-  negative: { label: "부정", cls: "bg-red-50 text-red-600" },
-  neutral: { label: "중립", cls: "bg-gray-50 text-gray-600" },
+  POSITIVE: { label: "긍정", cls: "bg-emerald-50 text-emerald-600" },
+  NEGATIVE: { label: "부정", cls: "bg-red-50 text-red-600" },
+  NEUTRAL: { label: "중립", cls: "bg-gray-50 text-gray-600" },
+  MIXED: { label: "혼합", cls: "bg-amber-50 text-amber-600" },
 };
 
-export default function CommentListPage() {
-  const [filter, setFilter] = useState<string>("all");
+type SentimentFilter = "all" | "POSITIVE" | "NEGATIVE" | "NEUTRAL";
 
-  const filtered =
-    filter === "all"
-      ? MOCK_COMMENTS
-      : MOCK_COMMENTS.filter((c) => c.sentiment === filter);
+export default function CommentListPage() {
+  const [filter, setFilter] = useState<SentimentFilter>("all");
+  const { projectId, isLoading: projectLoading } = useCurrentProject();
+
+  const { data, isLoading } = trpc.comment.listByProject.useQuery(
+    {
+      projectId: projectId!,
+      pageSize: 50,
+      sentiment:
+        filter === "all"
+          ? undefined
+          : (filter as "POSITIVE" | "NEGATIVE" | "NEUTRAL"),
+    },
+    { enabled: !!projectId },
+  );
+
+  const comments = data?.items ?? [];
+  const loading = projectLoading || isLoading;
 
   return (
     <div className="space-y-6">
@@ -79,12 +45,14 @@ export default function CommentListPage() {
       </div>
 
       <div className="flex items-center gap-2">
-        {[
-          { key: "all", label: "전체" },
-          { key: "positive", label: "긍정" },
-          { key: "negative", label: "부정" },
-          { key: "neutral", label: "중립" },
-        ].map((tab) => (
+        {(
+          [
+            { key: "all", label: "전체" },
+            { key: "POSITIVE", label: "긍정" },
+            { key: "NEGATIVE", label: "부정" },
+            { key: "NEUTRAL", label: "중립" },
+          ] as { key: SentimentFilter; label: string }[]
+        ).map((tab) => (
           <button
             key={tab.key}
             onClick={() => setFilter(tab.key)}
@@ -99,57 +67,78 @@ export default function CommentListPage() {
         ))}
       </div>
 
-      <div className="card overflow-hidden">
-        <table className="w-full text-[13px]">
-          <thead>
-            <tr className="border-b border-[var(--border)] bg-[var(--secondary)]">
-              <th className="px-4 py-2.5 text-left font-medium text-[var(--muted-foreground)]">
-                작성자
-              </th>
-              <th className="px-4 py-2.5 text-left font-medium text-[var(--muted-foreground)]">
-                댓글 내용
-              </th>
-              <th className="px-4 py-2.5 text-left font-medium text-[var(--muted-foreground)]">
-                플랫폼
-              </th>
-              <th className="px-4 py-2.5 text-left font-medium text-[var(--muted-foreground)]">
-                감성
-              </th>
-              <th className="px-4 py-2.5 text-left font-medium text-[var(--muted-foreground)]">
-                날짜
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((c) => {
-              const style =
-                SENTIMENT_STYLE[c.sentiment] ?? SENTIMENT_STYLE.neutral!;
-              return (
-                <tr
-                  key={c.id}
-                  className="border-b border-[var(--border-subtle)] transition-colors hover:bg-[var(--secondary)]"
-                >
-                  <td className="px-4 py-2.5 font-medium">{c.author}</td>
-                  <td className="max-w-xs truncate px-4 py-2.5 text-[var(--foreground)]">
-                    {c.content}
-                  </td>
-                  <td className="px-4 py-2.5 text-[var(--muted-foreground)]">
-                    {c.platform}
-                  </td>
-                  <td className="px-4 py-2.5">
-                    <span className={`badge text-[10px] ${style.cls}`}>
-                      {style.label}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2.5 text-[12px] text-[var(--muted-foreground)]">
-                    {c.date}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      {loading ? (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="h-6 w-6 animate-spin text-[var(--muted-foreground)]" />
+        </div>
+      ) : comments.length === 0 ? (
+        <div className="card flex flex-col items-center justify-center py-16 text-center">
+          <MessageSquare className="mb-3 h-10 w-10 text-[var(--muted-foreground)]" />
+          <p className="text-[14px] font-medium text-[var(--foreground)]">
+            아직 수집된 댓글이 없어요
+          </p>
+          <p className="mt-1 text-[12px] text-[var(--muted-foreground)]">
+            채널을 등록하고 수집을 시작해 보세요.
+          </p>
+        </div>
+      ) : (
+        <div className="card overflow-hidden">
+          <table className="w-full text-[13px]">
+            <thead>
+              <tr className="border-b border-[var(--border)] bg-[var(--secondary)]">
+                <th className="px-4 py-2.5 text-left font-medium text-[var(--muted-foreground)]">
+                  작성자
+                </th>
+                <th className="px-4 py-2.5 text-left font-medium text-[var(--muted-foreground)]">
+                  댓글 내용
+                </th>
+                <th className="px-4 py-2.5 text-left font-medium text-[var(--muted-foreground)]">
+                  플랫폼
+                </th>
+                <th className="px-4 py-2.5 text-left font-medium text-[var(--muted-foreground)]">
+                  감성
+                </th>
+                <th className="px-4 py-2.5 text-left font-medium text-[var(--muted-foreground)]">
+                  날짜
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {comments.map((c: any) => {
+                const sentiment = c.analysis?.sentiment ?? "NEUTRAL";
+                const style =
+                  SENTIMENT_STYLE[sentiment] ?? SENTIMENT_STYLE["NEUTRAL"]!;
+                return (
+                  <tr
+                    key={c.id}
+                    className="border-b border-[var(--border-subtle)] transition-colors hover:bg-[var(--secondary)]"
+                  >
+                    <td className="px-4 py-2.5 font-medium">
+                      {c.authorName ?? "-"}
+                    </td>
+                    <td className="max-w-xs truncate px-4 py-2.5 text-[var(--foreground)]">
+                      {c.text}
+                    </td>
+                    <td className="px-4 py-2.5 text-[var(--muted-foreground)]">
+                      {c.content?.channelId ?? "-"}
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <span className={`badge text-[10px] ${style.cls}`}>
+                        {style.label}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5 text-[12px] text-[var(--muted-foreground)]">
+                      {c.publishedAt
+                        ? new Date(c.publishedAt).toLocaleDateString("ko-KR")
+                        : "-"}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
