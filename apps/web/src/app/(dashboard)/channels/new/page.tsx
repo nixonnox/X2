@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { trpc } from "@/lib/trpc";
+import { useCurrentProject } from "@/hooks";
 import {
   ArrowLeft,
   Info,
@@ -46,17 +48,31 @@ const COUNTRIES = [
 ];
 
 const CATEGORIES = [
-  "기술",
+  "뷰티/패션",
   "엔터테인먼트",
-  "교육",
-  "디자인",
-  "마케팅",
-  "게임",
   "음악",
+  "게임",
+  "교육",
+  "기술/IT",
   "라이프스타일",
-  "비즈니스",
+  "푸드/요리",
+  "여행",
+  "스포츠",
+  "비즈니스/마케팅",
+  "디자인",
   "기타",
 ];
+
+// 플랫폼별 기본 태그
+const PLATFORM_DEFAULT_TAGS: Record<string, string[]> = {
+  youtube: ["유튜브", "영상"],
+  instagram: ["인스타그램", "사진"],
+  tiktok: ["틱톡", "숏폼"],
+  x: ["트위터", "X"],
+  threads: ["스레드"],
+  facebook: ["페이스북"],
+  custom: ["커스텀"],
+};
 
 const CHANNEL_TYPES: {
   value: ChannelType;
@@ -84,14 +100,24 @@ const SEVERITY_STYLES: Record<
 
 export default function NewChannelPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const initialUrl = searchParams.get("url") ?? "";
+  const { projectId } = useCurrentProject();
+
+  const utils = trpc.useUtils();
+  const registerChannel = trpc.channel.register.useMutation({
+    onSuccess: () => {
+      // 채널 목록 캐시 무효화
+      utils.channel.list.invalidate();
+    },
+  });
 
   const [form, setForm] = useState<ChannelFormInput>({
     platformCode: "youtube",
     url: initialUrl,
     name: "",
     country: "KR",
-    category: "기술",
+    category: "기타",
     tags: [],
     channelType: "owned",
     isCompetitor: false,
@@ -142,66 +168,64 @@ export default function NewChannelPage() {
       setUrlValidation(result);
       setValidating(false);
 
-      // Auto-detect platform from URL
-      if (
-        result.detectedPlatformCode &&
-        result.detectedPlatformCode !== "custom"
-      ) {
-        setForm((prev) => ({
-          ...prev,
-          platformCode: result.detectedPlatformCode as PlatformCode,
-        }));
-      }
+      // 모든 자동완성을 한 번의 setForm으로 처리 (race condition 방지)
+      setForm((prev) => {
+        const next = { ...prev };
 
-      // Auto-set suggested mode
-      if (result.suggestedMode) {
-        setForm((prev) => ({
-          ...prev,
-          analysisMode: result.suggestedMode as AnalysisMode,
-        }));
-      }
-
-      // Auto-fill name from channel identifier
-      if (result.channelIdentifier) {
-        setForm((prev) => {
-          if (!prev.name) {
-            // custom URL이면 hostname 말고 path의 마지막 세그먼트 사용
-            let name = result.channelIdentifier!;
-            if (result.detectedPlatformCode === "custom") {
-              try {
-                const u = new URL(result.normalizedUrl || "");
-                const seg = u.pathname
-                  .replace(/\/$/, "")
-                  .split("/")
-                  .filter(Boolean)
-                  .pop();
-                if (seg) name = seg;
-              } catch {
-                // keep original
-              }
-            }
-            return { ...prev, name };
-          }
-          return prev;
-        });
-      }
-
-      // Auto-detect category from platform
-      const platformCode = result.detectedPlatformCode;
-      if (platformCode) {
-        const categoryMap: Record<string, string> = {
-          youtube: "엔터테인먼트",
-          instagram: "라이프스타일",
-          tiktok: "엔터테인먼트",
-          x: "미디어",
-          naver_blog: "라이프스타일",
-          website: "비즈니스",
-        };
-        const autoCategory = categoryMap[platformCode];
-        if (autoCategory) {
-          setForm((prev) => ({ ...prev, category: autoCategory }));
+        // 1. 플랫폼 자동 감지 (custom 포함)
+        if (result.detectedPlatformCode) {
+          next.platformCode = result.detectedPlatformCode as PlatformCode;
         }
-      }
+
+        // 2. 분석 모드 자동 설정
+        if (result.suggestedMode) {
+          next.analysisMode = result.suggestedMode as AnalysisMode;
+        }
+
+        // 3. 채널 이름 자동완성 (비어있을 때만)
+        if (result.channelIdentifier && !prev.name) {
+          let name = result.channelIdentifier;
+          if (result.detectedPlatformCode === "custom") {
+            try {
+              const u = new URL(result.normalizedUrl || "");
+              const seg = u.pathname
+                .replace(/\/$/, "")
+                .split("/")
+                .filter(Boolean)
+                .pop();
+              if (seg) name = seg;
+            } catch {
+              // keep original
+            }
+          }
+          next.name = name;
+        }
+
+        // 4. 태그 자동완성 (비어있을 때만)
+        const detectedPlatform = result.detectedPlatformCode ?? "custom";
+        const defaultTags = PLATFORM_DEFAULT_TAGS[detectedPlatform] ?? [];
+        if (defaultTags.length > 0 && prev.tags.length === 0) {
+          next.tags = defaultTags;
+        }
+
+        // 5. 카테고리 자동 감지 (플랫폼 기반)
+        if (result.detectedPlatformCode) {
+          const categoryMap: Record<string, string> = {
+            youtube: "엔터테인먼트",
+            instagram: "라이프스타일",
+            tiktok: "엔터테인먼트",
+            x: "미디어",
+            naver_blog: "라이프스타일",
+            website: "비즈니스",
+          };
+          const autoCategory = categoryMap[result.detectedPlatformCode];
+          if (autoCategory) {
+            next.category = autoCategory;
+          }
+        }
+
+        return next;
+      });
     }, 400);
   }, []);
 
@@ -250,44 +274,59 @@ export default function NewChannelPage() {
     );
   }
 
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    // URL validation check (client-side quick check)
+    if (!form.name.trim()) {
+      setErrors({ name: "채널 이름을 입력하세요." });
+      return;
+    }
+    if (!form.url.trim()) {
+      setErrors({ url: "채널 URL을 입력하세요." });
+      return;
+    }
     if (urlValidation && !urlValidation.shouldAllowProceed) {
       setErrors({ url: urlValidation.validationMessage });
       return;
     }
+    if (!projectId) {
+      setErrors({
+        url: "프로젝트가 없습니다. 설정에서 프로젝트를 먼저 만들어주세요.",
+      });
+      return;
+    }
+
+    // form.platformCode는 URL 입력 시 자동 감지됨 (custom 포함)
+    const resolvedPlatform =
+      urlValidation?.detectedPlatformCode ?? form.platformCode;
 
     setSubmitting(true);
+    setErrors({});
     try {
-      // URL 정규화
-      let channelUrl = form.url.trim();
-      if (!/^https?:\/\//i.test(channelUrl))
-        channelUrl = `https://${channelUrl}`;
+      const result = await registerChannel.mutateAsync({
+        projectId,
+        url: form.url,
+        name: form.name,
+        platformCode: resolvedPlatform,
+        channelType: form.channelType as "owned" | "competitor" | "monitoring",
+        country: form.country,
+        category: form.category,
+        tags: form.tags,
+        analysisMode: form.analysisMode,
+        customPlatformName: form.customPlatformName || undefined,
+      });
 
-      const res = await fetch("/api/quick-add-channel", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: channelUrl }),
-      });
-      const result = await res.json();
-      if (!res.ok || !result.success) {
-        setErrors(
-          result.error
-            ? { url: result.error }
-            : { url: "등록에 실패했어요. 다시 시도해 주세요." },
-        );
-        setSubmitting(false);
-        return;
-      }
-      // 등록 성공 — 채널 상세 페이지 또는 목록으로 이동
-      const channelId = result.channel?.id;
-      window.location.href = channelId ? `/channels/${channelId}` : `/channels`;
-    } catch {
-      setErrors({
-        url: "채널 등록 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.",
-      });
+      setSuccessMsg(
+        `✅ "${form.name}" 채널이 등록되었습니다! 분석을 시작합니다...`,
+      );
+      setTimeout(() => {
+        router.push(`/channels/${result.channel.id}`);
+      }, 1200);
+    } catch (err: any) {
+      const msg = err?.message ?? "채널 등록 중 오류가 발생했습니다.";
+      setErrors({ url: msg });
       setSubmitting(false);
     }
   }
@@ -311,6 +350,13 @@ export default function NewChannelPage() {
 
   return (
     <div className="space-y-5">
+      {/* 성공 메시지 토스트 */}
+      {successMsg && (
+        <div className="fixed left-1/2 top-6 z-50 -translate-x-1/2 rounded-xl bg-emerald-600 px-6 py-3 text-[14px] font-medium text-white shadow-lg">
+          {successMsg}
+        </div>
+      )}
+
       <Link
         href="/channels"
         className="inline-flex items-center gap-1 text-[13px] text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)]"
@@ -327,6 +373,21 @@ export default function NewChannelPage() {
       <div className="grid gap-5 lg:grid-cols-3">
         {/* Left: Form */}
         <form onSubmit={handleSubmit} className="space-y-4 lg:col-span-2">
+          {/* 에러 요약 */}
+          {Object.keys(errors).length > 0 && (
+            <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3">
+              <p className="text-[13px] font-medium text-red-700">
+                등록에 실패했습니다:
+              </p>
+              <ul className="mt-1 space-y-0.5">
+                {Object.entries(errors).map(([k, v]) => (
+                  <li key={k} className="text-[12px] text-red-600">
+                    • {v}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           {/* Step 1: URL Input — the primary action */}
           <div className="card space-y-4 p-5">
             <div className="mb-1 flex items-center gap-2">
@@ -540,7 +601,7 @@ export default function NewChannelPage() {
                       onChange={(e) =>
                         updateField("customPlatformName", e.target.value)
                       }
-                      placeholder="예: 네이버 블로그, 브런치, 티스토리..."
+                      placeholder="예: 네이버 블로그, Substack..."
                       className="input mt-1 w-full"
                     />
                     {errors.customPlatformName && (
@@ -588,7 +649,11 @@ export default function NewChannelPage() {
                 {/* Tags */}
                 <div>
                   <label className="text-[13px] font-medium">태그</label>
-                  <div className="mt-1 flex items-center gap-2">
+                  <p className="mt-0.5 text-[11px] text-[var(--muted-foreground)]">
+                    채널을 분류할 태그입니다. URL 입력 시 플랫폼 태그가 자동으로
+                    추가됩니다.
+                  </p>
+                  <div className="mt-1.5 flex items-center gap-2">
                     <input
                       type="text"
                       value={tagInput}
@@ -599,7 +664,7 @@ export default function NewChannelPage() {
                           addTag();
                         }
                       }}
-                      placeholder="태그를 입력하고 엔터를 누르세요"
+                      placeholder="태그 입력 후 Enter (예: 뷰티, 패션)"
                       className="input flex-1"
                     />
                     <button
@@ -634,19 +699,16 @@ export default function NewChannelPage() {
                 {/* Analysis Mode */}
                 <div>
                   <label className="text-[13px] font-medium">분석 모드</label>
-                  {urlValidation?.suggestedMode && (
-                    <span className="ml-2 text-[11px] text-[var(--muted-foreground)]">
-                      (추천: {getAnalysisModeLabel(urlValidation.suggestedMode)}
-                      )
-                    </span>
-                  )}
-                  <div className="mt-1 space-y-1.5">
+                  <p className="mt-0.5 text-[11px] text-[var(--muted-foreground)]">
+                    URL 입력 시 자동으로 최적 모드가 선택됩니다.
+                  </p>
+                  <div className="mt-1.5 space-y-1.5">
                     {supportedModes.map((mode) => (
                       <label
                         key={mode}
                         className={`flex cursor-pointer items-start gap-3 rounded-md border px-3 py-2 transition-colors ${
                           form.analysisMode === mode
-                            ? "border-[var(--foreground)] bg-[var(--secondary)]"
+                            ? "border-blue-500 bg-blue-50"
                             : "border-[var(--border)] hover:bg-[var(--secondary)]"
                         }`}
                       >
@@ -661,8 +723,13 @@ export default function NewChannelPage() {
                           className="mt-0.5"
                         />
                         <div>
-                          <p className="text-[13px] font-medium">
+                          <p className="flex items-center gap-2 text-[13px] font-medium">
                             {getAnalysisModeLabel(mode)}
+                            {mode === "url_basic" && (
+                              <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-600">
+                                추천
+                              </span>
+                            )}
                           </p>
                           <p className="text-[11px] text-[var(--muted-foreground)]">
                             {getAnalysisModeDescription(mode)}
@@ -682,7 +749,11 @@ export default function NewChannelPage() {
               type="submit"
               disabled={
                 submitting ||
-                (urlValidation !== null && !urlValidation.shouldAllowProceed)
+                !form.url.trim() ||
+                !form.name.trim() ||
+                (urlValidation !== null &&
+                  !urlValidation.shouldAllowProceed &&
+                  urlValidation.validationSeverity === "error")
               }
               className="btn-primary disabled:cursor-not-allowed disabled:opacity-50"
             >
