@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { trpc } from "@/lib/trpc";
 
@@ -29,13 +29,16 @@ export function useCurrentProject() {
       retry: 2,
     });
 
-  // SSR-safe localStorage read for workspace selection (paired with WorkspaceSwitcher)
-  const storedWorkspaceId = useMemo(() => {
-    if (typeof window === "undefined") return null;
+  // SSR-safe: null on server AND on client first render → mount 후 localStorage 값으로 업데이트.
+  // useMemo 대신 useState+useEffect를 써야 hydration mismatch가 안 남.
+  const [storedWorkspaceId, setStoredWorkspaceId] = useState<string | null>(
+    null,
+  );
+  useEffect(() => {
     try {
-      return window.localStorage.getItem(WORKSPACE_STORAGE_KEY);
+      setStoredWorkspaceId(window.localStorage.getItem(WORKSPACE_STORAGE_KEY));
     } catch {
-      return null;
+      // ignore storage errors
     }
   }, []);
 
@@ -58,13 +61,13 @@ export function useCurrentProject() {
     },
   );
 
-  // SSR-safe localStorage read (only on client, only after mount)
-  const storedProjectId = useMemo(() => {
-    if (typeof window === "undefined") return null;
+  // 동일 패턴: null → mount 후 localStorage 값으로 업데이트
+  const [storedProjectId, setStoredProjectId] = useState<string | null>(null);
+  useEffect(() => {
     try {
-      return window.localStorage.getItem(STORAGE_KEY);
+      setStoredProjectId(window.localStorage.getItem(STORAGE_KEY));
     } catch {
-      return null;
+      // ignore storage errors
     }
   }, []);
 
