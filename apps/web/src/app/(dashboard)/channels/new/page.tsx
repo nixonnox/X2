@@ -166,11 +166,8 @@ export default function NewChannelPage() {
       setForm((prev) => {
         const next = { ...prev };
 
-        // 1. 플랫폼 자동 감지
-        if (
-          result.detectedPlatformCode &&
-          result.detectedPlatformCode !== "custom"
-        ) {
+        // 1. 플랫폼 자동 감지 (custom 포함)
+        if (result.detectedPlatformCode) {
           next.platformCode = result.detectedPlatformCode as PlatformCode;
         }
 
@@ -279,11 +276,9 @@ export default function NewChannelPage() {
       return;
     }
 
+    // form.platformCode는 URL 입력 시 자동 감지됨 (custom 포함)
     const resolvedPlatform =
-      urlValidation?.detectedPlatformCode &&
-      urlValidation.detectedPlatformCode !== "custom"
-        ? urlValidation.detectedPlatformCode
-        : form.platformCode;
+      urlValidation?.detectedPlatformCode ?? form.platformCode;
 
     setSubmitting(true);
     setErrors({});
