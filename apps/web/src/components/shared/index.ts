@@ -1,6 +1,7 @@
 export { PageHeader } from "./page-header";
 export { StatCard } from "./stat-card";
 export { EmptyState } from "./empty-state";
+export { NoProjectEmptyState } from "./no-project-empty-state";
 export { KpiCard } from "./kpi-card";
 export { ChartCard } from "./chart-card";
 export { DataTable } from "./data-table";

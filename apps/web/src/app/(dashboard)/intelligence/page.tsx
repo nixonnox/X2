@@ -45,6 +45,7 @@ import { SentimentTermsPanel } from "@/components/intelligence/SentimentTermsPan
 import { AttributeAnalysisPanel } from "@/components/intelligence/AttributeAnalysisPanel";
 import { RankingPanel } from "@/components/intelligence/RankingPanel";
 import { RawMentionList } from "@/components/intelligence/RawMentionList";
+import { NoProjectEmptyState } from "@/components/shared";
 
 // ─── Constants ───────────────────────────────────────────────────
 
@@ -477,6 +478,26 @@ export default function IntelligencePage() {
     hasBenchmarkData: false,
     overallRichness: "MINIMAL" as const,
   };
+
+  // ─── Early guards: loading and no-project states ─────────────────
+  if (projectLoading) {
+    return (
+      <div className="mx-auto flex min-h-[60vh] max-w-[1400px] items-center justify-center px-4 py-6 sm:px-6 lg:px-8">
+        <div className="flex flex-col items-center gap-3 text-[var(--muted-foreground)]">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <p className="text-[13px]">워크스페이스를 불러오는 중…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!projectId) {
+    return (
+      <div className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8">
+        <NoProjectEmptyState description="인텔리전스 분석을 시작하려면 먼저 프로젝트를 만들어야 해요.\n설정 페이지에서 프로젝트를 생성한 뒤 다시 이 화면으로 돌아와 주세요." />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8">
