@@ -104,7 +104,13 @@ export default function NewChannelPage() {
   const initialUrl = searchParams.get("url") ?? "";
   const { projectId } = useCurrentProject();
 
-  const registerChannel = trpc.channel.register.useMutation();
+  const utils = trpc.useUtils();
+  const registerChannel = trpc.channel.register.useMutation({
+    onSuccess: () => {
+      // 채널 목록 캐시 무효화
+      utils.channel.list.invalidate();
+    },
+  });
 
   const [form, setForm] = useState<ChannelFormInput>({
     platformCode: "youtube",
