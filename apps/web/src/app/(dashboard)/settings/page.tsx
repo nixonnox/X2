@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared";
 import { trpc } from "@/lib/trpc";
 import { useCurrentProject } from "@/hooks";
@@ -16,13 +17,19 @@ export default function SettingsPage() {
   const [created, setCreated] = useState(false);
 
   const utils = trpc.useUtils();
+  const router = useRouter();
 
   const createProject = trpc.project.create.useMutation({
     onSuccess: () => {
       setCreated(true);
       setNewProjectName("");
+      // 워크스페이스 + 프로젝트 캐시 모두 무효화
       utils.project.list.invalidate();
-      setTimeout(() => setCreated(false), 2000);
+      utils.workspace.list.invalidate();
+      // 2초 후 채널 등록 페이지로 이동
+      setTimeout(() => {
+        router.push("/channels/new");
+      }, 1500);
     },
     onSettled: () => setCreating(false),
   });
