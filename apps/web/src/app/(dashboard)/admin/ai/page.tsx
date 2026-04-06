@@ -60,95 +60,6 @@ type AiDashboardData = {
 
 // ── Mock 대시보드 데이터 ──
 
-function getMockDashboardData(): AiDashboardData {
-  return {
-    totalRequests: 1247,
-    successCount: 1189,
-    failureCount: 34,
-    fallbackCount: 24,
-    avgLatencyMs: 1823,
-    totalCostUsd: 12.47,
-    isDevMode: true,
-    providers: [
-      {
-        type: "openai",
-        displayName: "OpenAI",
-        isAvailable: false,
-        isHealthy: false,
-        modelCount: 3,
-      },
-      {
-        type: "anthropic",
-        displayName: "Anthropic Claude",
-        isAvailable: false,
-        isHealthy: false,
-        modelCount: 3,
-      },
-      {
-        type: "mock",
-        displayName: "Mock (개발용)",
-        isAvailable: true,
-        isHealthy: true,
-        modelCount: 1,
-      },
-    ],
-    taskTypeUsage: [
-      {
-        taskType: "comment_sentiment_analysis",
-        displayName: "댓글 감성 분석",
-        count: 423,
-        costUsd: 1.27,
-      },
-      {
-        taskType: "strategy_insight_generation",
-        displayName: "전략 인사이트 생성",
-        count: 187,
-        costUsd: 4.12,
-      },
-      {
-        taskType: "report_summary_generation",
-        displayName: "리포트 요약 생성",
-        count: 156,
-        costUsd: 3.44,
-      },
-      {
-        taskType: "reply_suggestion_generation",
-        displayName: "댓글 답변 추천",
-        count: 134,
-        costUsd: 1.21,
-      },
-      {
-        taskType: "competitor_insight_generation",
-        displayName: "경쟁사 인사이트",
-        count: 98,
-        costUsd: 1.47,
-      },
-      {
-        taskType: "dashboard_explanation",
-        displayName: "대시보드 설명",
-        count: 89,
-        costUsd: 0.36,
-      },
-    ],
-    recentErrors: [
-      {
-        id: "err-001",
-        taskType: "strategy_insight_generation",
-        provider: "openai",
-        errorMessage: "API 키가 설정되지 않았습니다",
-        createdAt: "2026-03-09T14:23:00Z",
-      },
-      {
-        id: "err-002",
-        taskType: "report_summary_generation",
-        provider: "anthropic",
-        errorMessage: "요청 시간이 초과되었습니다 (30초)",
-        createdAt: "2026-03-09T13:45:00Z",
-      },
-    ],
-  };
-}
-
 // ── 페이지 ──
 
 export default function AdminAiPage() {
@@ -157,12 +68,37 @@ export default function AdminAiPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // TODO: 실제 API 연동 시 fetch("/api/ai/logs?type=stats")로 교체
-    const timer = setTimeout(() => {
-      setData(getMockDashboardData());
-      setLoading(false);
-    }, 300);
-    return () => clearTimeout(timer);
+    let cancelled = false;
+    setLoading(true);
+    fetch("/api/ai/logs?type=stats")
+      .then((r) => r.json())
+      .then((json) => {
+        if (cancelled) return;
+        const stats = json?.stats;
+        if (stats) {
+          setData({
+            totalRequests: stats.totalRequests ?? 0,
+            successCount: stats.successCount ?? 0,
+            failureCount: stats.failureCount ?? 0,
+            fallbackCount: stats.fallbackCount ?? 0,
+            avgLatencyMs: stats.avgLatencyMs ?? 0,
+            totalCostUsd: stats.totalCostUsd ?? 0,
+            isDevMode: stats.isDevMode ?? false,
+            providers: stats.providers ?? [],
+            taskTypeUsage: stats.taskTypeUsage ?? [],
+            recentErrors: stats.recentErrors ?? [],
+          });
+        } else {
+          setData(null);
+        }
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (loading || !data) {

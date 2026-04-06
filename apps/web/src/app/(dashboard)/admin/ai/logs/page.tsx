@@ -33,58 +33,6 @@ type LogEntry = {
 
 // ── Mock 로그 데이터 ──
 
-function generateMockLogs(): LogEntry[] {
-  const tasks = [
-    { type: "comment_sentiment_analysis", name: "댓글 감성 분석" },
-    { type: "strategy_insight_generation", name: "전략 인사이트" },
-    { type: "report_summary_generation", name: "리포트 요약" },
-    { type: "reply_suggestion_generation", name: "답변 추천" },
-    { type: "dashboard_explanation", name: "대시보드 설명" },
-    { type: "competitor_insight_generation", name: "경쟁사 인사이트" },
-  ];
-  const providers = ["mock", "mock", "mock", "openai", "anthropic"];
-  const models = [
-    "mock-v1",
-    "mock-v1",
-    "mock-v1",
-    "gpt-4o-mini",
-    "claude-sonnet-4-20250514",
-  ];
-  const statuses = [
-    "completed",
-    "completed",
-    "completed",
-    "completed",
-    "failed",
-    "fallback_used",
-  ];
-
-  return Array.from({ length: 30 }, (_, i) => {
-    const task = tasks[i % tasks.length]!;
-    const provIdx = i % providers.length;
-    const status = statuses[i % statuses.length]!;
-    const date = new Date(2026, 2, 9, 14 - Math.floor(i / 3), (i * 7) % 60);
-
-    return {
-      id: `log-${String(i + 1).padStart(3, "0")}`,
-      requestId: `req-${Date.now()}-${i}`,
-      taskType: task.type,
-      provider: providers[provIdx]!,
-      model: models[provIdx]!,
-      promptVersion: "1.0",
-      inputTokens: 200 + i * 30,
-      outputTokens: 100 + i * 15,
-      latencyMs: 400 + i * 120,
-      estimatedCostUsd: Math.round((0.001 + i * 0.0008) * 10000) / 10000,
-      status,
-      errorMessage: status === "failed" ? "API 키가 설정되지 않았습니다" : null,
-      createdAt: date.toISOString(),
-    };
-  });
-}
-
-// ── 상태 배지 ──
-
 function StatusBadge({ status }: { status: string }) {
   const config: Record<
     string,
@@ -134,11 +82,22 @@ export default function AdminAiLogsPage() {
   const [filterTask, setFilterTask] = useState<string>("all");
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setLogs(generateMockLogs());
-      setLoading(false);
-    }, 200);
-    return () => clearTimeout(timer);
+    let cancelled = false;
+    setLoading(true);
+    const params = new URLSearchParams({ type: "logs", limit: "50" });
+    fetch(`/api/ai/logs?${params}`)
+      .then((r) => r.json())
+      .then((json) => {
+        if (cancelled) return;
+        setLogs(json?.logs ?? []);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const filteredLogs = logs.filter((log) => {
