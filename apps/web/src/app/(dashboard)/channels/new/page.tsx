@@ -156,61 +156,51 @@ export default function NewChannelPage() {
       setUrlValidation(result);
       setValidating(false);
 
-      // Auto-detect platform from URL
-      if (
-        result.detectedPlatformCode &&
-        result.detectedPlatformCode !== "custom"
-      ) {
-        setForm((prev) => ({
-          ...prev,
-          platformCode: result.detectedPlatformCode as PlatformCode,
-        }));
-      }
+      // 모든 자동완성을 한 번의 setForm으로 처리 (race condition 방지)
+      setForm((prev) => {
+        const next = { ...prev };
 
-      // Auto-set suggested mode
-      if (result.suggestedMode) {
-        setForm((prev) => ({
-          ...prev,
-          analysisMode: result.suggestedMode as AnalysisMode,
-        }));
-      }
+        // 1. 플랫폼 자동 감지
+        if (
+          result.detectedPlatformCode &&
+          result.detectedPlatformCode !== "custom"
+        ) {
+          next.platformCode = result.detectedPlatformCode as PlatformCode;
+        }
 
-      // Auto-fill name from channel identifier
-      if (result.channelIdentifier) {
-        setForm((prev) => {
-          if (!prev.name) {
-            // custom URL이면 hostname 말고 path의 마지막 세그먼트 사용
-            let name = result.channelIdentifier!;
-            if (result.detectedPlatformCode === "custom") {
-              try {
-                const u = new URL(result.normalizedUrl || "");
-                const seg = u.pathname
-                  .replace(/\/$/, "")
-                  .split("/")
-                  .filter(Boolean)
-                  .pop();
-                if (seg) name = seg;
-              } catch {
-                // keep original
-              }
+        // 2. 분석 모드 자동 설정
+        if (result.suggestedMode) {
+          next.analysisMode = result.suggestedMode as AnalysisMode;
+        }
+
+        // 3. 채널 이름 자동완성 (비어있을 때만)
+        if (result.channelIdentifier && !prev.name) {
+          let name = result.channelIdentifier;
+          if (result.detectedPlatformCode === "custom") {
+            try {
+              const u = new URL(result.normalizedUrl || "");
+              const seg = u.pathname
+                .replace(/\/$/, "")
+                .split("/")
+                .filter(Boolean)
+                .pop();
+              if (seg) name = seg;
+            } catch {
+              // keep original
             }
-            return { ...prev, name };
           }
-          return prev;
-        });
-      }
+          next.name = name;
+        }
 
-      // Auto-fill tags from platform
-      const detectedPlatform = result.detectedPlatformCode ?? "custom";
-      const defaultTags = PLATFORM_DEFAULT_TAGS[detectedPlatform] ?? [];
-      if (defaultTags.length > 0) {
-        setForm((prev) => {
-          if (prev.tags.length === 0) {
-            return { ...prev, tags: defaultTags };
-          }
-          return prev;
-        });
-      }
+        // 4. 태그 자동완성 (비어있을 때만)
+        const detectedPlatform = result.detectedPlatformCode ?? "custom";
+        const defaultTags = PLATFORM_DEFAULT_TAGS[detectedPlatform] ?? [];
+        if (defaultTags.length > 0 && prev.tags.length === 0) {
+          next.tags = defaultTags;
+        }
+
+        return next;
+      });
     }, 400);
   }, []);
 
