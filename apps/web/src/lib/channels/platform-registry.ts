@@ -396,18 +396,18 @@ export function getPlatformAudienceLabel(code: PlatformCode): string {
 
 export function getAnalysisModeLabel(mode: AnalysisMode): string {
   const labels: Record<AnalysisMode, string> = {
-    url_basic: "URL Basic",
-    api_advanced: "API Advanced",
-    custom_manual: "Manual",
+    url_basic: "기본 분석 (추천)",
+    api_advanced: "API 고급 분석",
+    custom_manual: "수동 등록",
   };
   return labels[mode];
 }
 
 export function getAnalysisModeDescription(mode: AnalysisMode): string {
   const descriptions: Record<AnalysisMode, string> = {
-    url_basic: "URL 기반 공개 데이터 분석",
-    api_advanced: "공식 API 연동 상세 분석",
-    custom_manual: "수동 등록 기본 분석",
+    url_basic: "URL 기반 공개 데이터 자동 수집 — 바로 시작 가능",
+    api_advanced: "공식 API 연동 상세 분석 — API 키 필요",
+    custom_manual: "수동으로 데이터 입력 — 비공개 채널 등록 시 사용",
   };
   return descriptions[mode];
 }

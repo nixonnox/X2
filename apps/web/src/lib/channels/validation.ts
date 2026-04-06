@@ -1,5 +1,15 @@
 import type { PlatformCode, ChannelFormInput } from "./types";
 import { getPlatform } from "./platform-registry";
+import { resolveChannelUrl } from "./url";
+
+function detectPlatformFromUrl(url: string): PlatformCode {
+  try {
+    const result = resolveChannelUrl(url);
+    return (result.detectedPlatformCode as PlatformCode) ?? "custom";
+  } catch {
+    return "custom";
+  }
+}
 
 export type ValidationResult = {
   valid: boolean;
@@ -17,8 +27,16 @@ export function validateChannelForm(input: ChannelFormInput): ValidationResult {
     errors.url = "채널 URL을 입력하세요.";
   } else if (!isValidUrl(input.url)) {
     errors.url = "올바른 URL 형식이 아닙니다.";
-  } else if (!isUrlMatchingPlatform(input.url, input.platformCode)) {
-    errors.url = "선택한 플랫폼과 맞지 않는 URL입니다.";
+  } else if (
+    input.platformCode !== "custom" &&
+    !isUrlMatchingPlatform(input.url, input.platformCode)
+  ) {
+    // custom 플랫폼이거나 URL이 플랫폼에 맞으면 통과
+    // 단, 실제 플랫폼인데 URL이 전혀 다른 플랫폼인 경우만 막음
+    const urlPlatform = detectPlatformFromUrl(input.url);
+    if (urlPlatform !== "custom" && urlPlatform !== input.platformCode) {
+      errors.url = "선택한 플랫폼과 맞지 않는 URL입니다.";
+    }
   }
 
   if (!input.country.trim()) {

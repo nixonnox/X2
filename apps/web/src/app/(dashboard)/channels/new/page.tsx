@@ -46,17 +46,31 @@ const COUNTRIES = [
 ];
 
 const CATEGORIES = [
-  "기술",
+  "뷰티/패션",
   "엔터테인먼트",
-  "교육",
-  "디자인",
-  "마케팅",
-  "게임",
   "음악",
+  "게임",
+  "교육",
+  "기술/IT",
   "라이프스타일",
-  "비즈니스",
+  "푸드/요리",
+  "여행",
+  "스포츠",
+  "비즈니스/마케팅",
+  "디자인",
   "기타",
 ];
+
+// 플랫폼별 기본 태그
+const PLATFORM_DEFAULT_TAGS: Record<string, string[]> = {
+  youtube: ["유튜브", "영상"],
+  instagram: ["인스타그램", "사진"],
+  tiktok: ["틱톡", "숏폼"],
+  x: ["트위터", "X"],
+  threads: ["스레드"],
+  facebook: ["페이스북"],
+  custom: ["커스텀"],
+};
 
 const CHANNEL_TYPES: {
   value: ChannelType;
@@ -166,6 +180,18 @@ export default function NewChannelPage() {
         setForm((prev) => {
           if (!prev.name) {
             return { ...prev, name: result.channelIdentifier! };
+          }
+          return prev;
+        });
+      }
+
+      // Auto-fill tags from platform
+      const detectedPlatform = result.detectedPlatformCode ?? "custom";
+      const defaultTags = PLATFORM_DEFAULT_TAGS[detectedPlatform] ?? [];
+      if (defaultTags.length > 0) {
+        setForm((prev) => {
+          if (prev.tags.length === 0) {
+            return { ...prev, tags: defaultTags };
           }
           return prev;
         });
@@ -532,7 +558,11 @@ export default function NewChannelPage() {
                 {/* Tags */}
                 <div>
                   <label className="text-[13px] font-medium">태그</label>
-                  <div className="mt-1 flex items-center gap-2">
+                  <p className="mt-0.5 text-[11px] text-[var(--muted-foreground)]">
+                    채널을 분류할 태그입니다. URL 입력 시 플랫폼 태그가 자동으로
+                    추가됩니다.
+                  </p>
+                  <div className="mt-1.5 flex items-center gap-2">
                     <input
                       type="text"
                       value={tagInput}
@@ -543,7 +573,7 @@ export default function NewChannelPage() {
                           addTag();
                         }
                       }}
-                      placeholder="태그를 입력하고 Enter"
+                      placeholder="태그 입력 후 Enter (예: 뷰티, 패션)"
                       className="input flex-1"
                     />
                     <button
@@ -578,19 +608,16 @@ export default function NewChannelPage() {
                 {/* Analysis Mode */}
                 <div>
                   <label className="text-[13px] font-medium">분석 모드</label>
-                  {urlValidation?.suggestedMode && (
-                    <span className="ml-2 text-[11px] text-[var(--muted-foreground)]">
-                      (추천: {getAnalysisModeLabel(urlValidation.suggestedMode)}
-                      )
-                    </span>
-                  )}
-                  <div className="mt-1 space-y-1.5">
+                  <p className="mt-0.5 text-[11px] text-[var(--muted-foreground)]">
+                    URL 입력 시 자동으로 최적 모드가 선택됩니다.
+                  </p>
+                  <div className="mt-1.5 space-y-1.5">
                     {supportedModes.map((mode) => (
                       <label
                         key={mode}
                         className={`flex cursor-pointer items-start gap-3 rounded-md border px-3 py-2 transition-colors ${
                           form.analysisMode === mode
-                            ? "border-[var(--foreground)] bg-[var(--secondary)]"
+                            ? "border-blue-500 bg-blue-50"
                             : "border-[var(--border)] hover:bg-[var(--secondary)]"
                         }`}
                       >
@@ -605,8 +632,13 @@ export default function NewChannelPage() {
                           className="mt-0.5"
                         />
                         <div>
-                          <p className="text-[13px] font-medium">
+                          <p className="flex items-center gap-2 text-[13px] font-medium">
                             {getAnalysisModeLabel(mode)}
+                            {mode === "url_basic" && (
+                              <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-600">
+                                추천
+                              </span>
+                            )}
                           </p>
                           <p className="text-[11px] text-[var(--muted-foreground)]">
                             {getAnalysisModeDescription(mode)}
@@ -626,7 +658,11 @@ export default function NewChannelPage() {
               type="submit"
               disabled={
                 submitting ||
-                (urlValidation !== null && !urlValidation.shouldAllowProceed)
+                !form.url.trim() ||
+                !form.name.trim() ||
+                (urlValidation !== null &&
+                  !urlValidation.shouldAllowProceed &&
+                  urlValidation.validationSeverity === "error")
               }
               className="btn-primary disabled:cursor-not-allowed disabled:opacity-50"
             >
