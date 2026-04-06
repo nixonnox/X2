@@ -21,6 +21,18 @@ export default function LoginPage() {
 
       <LoginForm isDevLogin={isDevLogin} />
 
+      {isDevLogin && (
+        <div className="text-center">
+          <Link
+            href="/api/dev-login"
+            className="inline-flex items-center gap-2 rounded-lg border border-dashed border-[var(--border)] px-4 py-2 text-sm text-[var(--muted-foreground)] transition-colors hover:border-[var(--foreground)] hover:text-[var(--foreground)]"
+          >
+            <span className="text-base">&#128295;</span>
+            빠른 개발자 로그인 (dev@x2.local)
+          </Link>
+        </div>
+      )}
+
       <div className="space-y-2 text-center">
         <p className="text-[13px] text-[var(--muted-foreground)]">
           계정이 없으신가요?{" "}
@@ -29,14 +41,6 @@ export default function LoginPage() {
             className="font-medium text-blue-600 hover:text-blue-800"
           >
             회원가입
-          </Link>
-        </p>
-        <p className="text-[12px]">
-          <Link
-            href="/forgot-password"
-            className="text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-          >
-            비밀번호를 잊으셨나요?
           </Link>
         </p>
       </div>
@@ -56,7 +60,7 @@ export default function LoginPage() {
         >
           개인정보처리방침
         </Link>
-        에 동의합니다.
+        에 동의하게 돼요.
       </p>
     </div>
   );
