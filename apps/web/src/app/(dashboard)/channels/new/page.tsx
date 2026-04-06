@@ -259,6 +259,8 @@ export default function NewChannelPage() {
     );
   }
 
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
@@ -268,24 +270,49 @@ export default function NewChannelPage() {
       return;
     }
 
+    // custom URL이면 platformCode를 "custom"으로 자동 설정
+    const submitForm = {
+      ...form,
+      platformCode:
+        urlValidation?.detectedPlatformCode === "custom" ||
+        (!urlValidation?.detectedPlatformCode &&
+          form.platformCode === "youtube")
+          ? "custom"
+          : form.platformCode,
+      // custom 플랫폼이면 customPlatformName 기본값 채우기
+      customPlatformName:
+        urlValidation?.detectedPlatformCode === "custom" &&
+        !form.customPlatformName
+          ? (urlValidation?.channelIdentifier ?? form.name ?? "커스텀 채널")
+          : form.customPlatformName,
+    };
+
     setSubmitting(true);
+    setErrors({});
     try {
       const res = await fetch("/api/channels", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(submitForm),
       });
       const result = await res.json();
       if (!result.success) {
-        setErrors(
-          result.error
-            ? { url: result.error }
-            : { url: "등록에 실패했습니다." },
-        );
+        // 서버는 errors(복수) 또는 error(단수) 반환
+        if (result.errors && typeof result.errors === "object") {
+          setErrors(result.errors);
+        } else {
+          setErrors({ url: result.error ?? "등록에 실패했습니다." });
+        }
         setSubmitting(false);
         return;
       }
-      window.location.href = `/channels/${result.channel.id}`;
+      // 성공 메시지 표시 후 이동
+      setSuccessMsg(
+        `✅ "${submitForm.name}" 채널이 등록되었습니다! 분석을 시작합니다...`,
+      );
+      setTimeout(() => {
+        window.location.href = `/channels/${result.channel.id}`;
+      }, 1500);
     } catch {
       setErrors({ url: "채널 등록 중 오류가 발생했습니다." });
       setSubmitting(false);
@@ -311,6 +338,13 @@ export default function NewChannelPage() {
 
   return (
     <div className="space-y-5">
+      {/* 성공 메시지 토스트 */}
+      {successMsg && (
+        <div className="fixed left-1/2 top-6 z-50 -translate-x-1/2 rounded-xl bg-emerald-600 px-6 py-3 text-[14px] font-medium text-white shadow-lg">
+          {successMsg}
+        </div>
+      )}
+
       <Link
         href="/channels"
         className="inline-flex items-center gap-1 text-[13px] text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)]"
@@ -327,6 +361,21 @@ export default function NewChannelPage() {
       <div className="grid gap-5 lg:grid-cols-3">
         {/* Left: Form */}
         <form onSubmit={handleSubmit} className="space-y-4 lg:col-span-2">
+          {/* 에러 요약 */}
+          {Object.keys(errors).length > 0 && (
+            <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3">
+              <p className="text-[13px] font-medium text-red-700">
+                등록에 실패했습니다:
+              </p>
+              <ul className="mt-1 space-y-0.5">
+                {Object.entries(errors).map(([k, v]) => (
+                  <li key={k} className="text-[12px] text-red-600">
+                    • {v}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           {/* Step 1: URL Input — the primary action */}
           <div className="card space-y-4 p-5">
             <div className="mb-1 flex items-center gap-2">
