@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { CategoryEntryEngine } from "@x2/api/services/engines/category-entry-engine";
+import { CategoryEntryEngine } from "@x2/api/services/engines/category-entry-engine.ts";
 
 export async function POST(req: NextRequest) {
   try {

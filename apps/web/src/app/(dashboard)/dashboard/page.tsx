@@ -56,7 +56,8 @@ export default function DashboardPage() {
     channels.length > 0
       ? (
           channels.reduce(
-            (sum, ch) => sum + (ch.lastSnapshot?.avgEngagement ?? 0),
+            (sum: number, ch: any) =>
+              sum + (ch.lastSnapshot?.avgEngagement ?? 0),
             0,
           ) / channels.length
         ).toFixed(1)
@@ -67,7 +68,7 @@ export default function DashboardPage() {
       label: "총 조회수",
       value: formatCount(
         channels.reduce(
-          (s, c) => s + Number(c.lastSnapshot?.totalViews ?? 0),
+          (s: number, c: any) => s + Number(c.lastSnapshot?.totalViews ?? 0),
           0,
         ),
       ),

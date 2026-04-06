@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
 } from "recharts";
 import { TrendingUp, Calendar } from "lucide-react";
 
@@ -27,13 +33,17 @@ const GRANULARITY_OPTIONS = [
 ];
 
 export function MentionTrendChart({
-  dataPoints, granularity, hasData, warnings, onGranularityChange,
+  dataPoints,
+  granularity,
+  hasData,
+  warnings,
+  onGranularityChange,
 }: Props) {
   if (!hasData) {
     return (
       <div className="flex min-h-[200px] items-center justify-center rounded-lg border-2 border-dashed border-gray-300 p-8">
         <div className="text-center">
-          <Calendar className="mx-auto h-6 w-6 text-gray-300 mb-2" />
+          <Calendar className="mx-auto mb-2 h-6 w-6 text-gray-300" />
           <p className="text-sm text-gray-400">
             {warnings[0] ?? "소셜 반응 추이 데이터가 아직 없어요"}
           </p>
@@ -75,18 +85,39 @@ export function MentionTrendChart({
           <YAxis tick={{ fontSize: 10 }} />
           <Tooltip
             contentStyle={{ fontSize: 12, borderRadius: 8 }}
-            formatter={(value: number, name: string) => {
+            formatter={(value: any, name: any) => {
               const labels: Record<string, string> = {
                 totalCount: "전체",
                 positiveCount: "긍정",
                 negativeCount: "부정",
               };
-              return [value, labels[name] ?? name];
+              return [value as number, labels[name as string] ?? name] as any;
             }}
           />
-          <Area type="monotone" dataKey="totalCount" stroke="#7c3aed" fill="#7c3aed" fillOpacity={0.1} strokeWidth={2} />
-          <Area type="monotone" dataKey="positiveCount" stroke="#22c55e" fill="#22c55e" fillOpacity={0.05} strokeWidth={1} />
-          <Area type="monotone" dataKey="negativeCount" stroke="#ef4444" fill="#ef4444" fillOpacity={0.05} strokeWidth={1} />
+          <Area
+            type="monotone"
+            dataKey="totalCount"
+            stroke="#7c3aed"
+            fill="#7c3aed"
+            fillOpacity={0.1}
+            strokeWidth={2}
+          />
+          <Area
+            type="monotone"
+            dataKey="positiveCount"
+            stroke="#22c55e"
+            fill="#22c55e"
+            fillOpacity={0.05}
+            strokeWidth={1}
+          />
+          <Area
+            type="monotone"
+            dataKey="negativeCount"
+            stroke="#ef4444"
+            fill="#ef4444"
+            fillOpacity={0.05}
+            strokeWidth={1}
+          />
         </AreaChart>
       </ResponsiveContainer>
     </div>

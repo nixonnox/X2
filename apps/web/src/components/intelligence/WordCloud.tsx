@@ -26,7 +26,12 @@ const SENTIMENT_COLORS = {
  * Words are sized by value and colored by sentiment.
  * Uses spiral placement algorithm for natural distribution.
  */
-export function WordCloud({ words, width = 600, height = 400, maxWords = 60 }: Props) {
+export function WordCloud({
+  words,
+  width = 600,
+  height = 400,
+  maxWords = 60,
+}: Props) {
   const placed = useMemo(() => {
     const sorted = [...words]
       .sort((a, b) => b.value - a.value)
@@ -34,7 +39,7 @@ export function WordCloud({ words, width = 600, height = 400, maxWords = 60 }: P
 
     if (sorted.length === 0) return [];
 
-    const maxVal = sorted[0].value;
+    const maxVal = sorted[0]!.value;
     const minVal = sorted[sorted.length - 1]?.value ?? 1;
     const range = maxVal - minVal || 1;
 
@@ -42,61 +47,64 @@ export function WordCloud({ words, width = 600, height = 400, maxWords = 60 }: P
     const cy = height / 2;
     const occupied: { x: number; y: number; w: number; h: number }[] = [];
 
-    return sorted.map((word, i) => {
-      // Font size: 12-48px based on value
-      const ratio = (word.value - minVal) / range;
-      const fontSize = Math.round(12 + ratio * 36);
-      const estWidth = word.text.length * fontSize * 0.55;
-      const estHeight = fontSize * 1.2;
+    return sorted
+      .map((word, i) => {
+        // Font size: 12-48px based on value
+        const ratio = (word.value - minVal) / range;
+        const fontSize = Math.round(12 + ratio * 36);
+        const estWidth = word.text.length * fontSize * 0.55;
+        const estHeight = fontSize * 1.2;
 
-      // Spiral placement
-      let x = cx;
-      let y = cy;
-      let angle = 0;
-      const step = 0.3;
-      const radiusStep = 2;
-      let found = false;
+        // Spiral placement
+        let x = cx;
+        let y = cy;
+        let angle = 0;
+        const step = 0.3;
+        const radiusStep = 2;
+        let found = false;
 
-      for (let t = 0; t < 500 && !found; t++) {
-        angle = t * step;
-        const r = t * radiusStep * 0.15;
-        x = cx + Math.cos(angle) * r;
-        y = cy + Math.sin(angle) * r;
+        for (let t = 0; t < 500 && !found; t++) {
+          angle = t * step;
+          const r = t * radiusStep * 0.15;
+          x = cx + Math.cos(angle) * r;
+          y = cy + Math.sin(angle) * r;
 
-        // Bounds check
-        if (x - estWidth / 2 < 10 || x + estWidth / 2 > width - 10) continue;
-        if (y - estHeight / 2 < 10 || y + estHeight / 2 > height - 10) continue;
+          // Bounds check
+          if (x - estWidth / 2 < 10 || x + estWidth / 2 > width - 10) continue;
+          if (y - estHeight / 2 < 10 || y + estHeight / 2 > height - 10)
+            continue;
 
-        // Collision check
-        const collides = occupied.some(
-          (o) =>
-            Math.abs(x - o.x) < (estWidth + o.w) / 2 + 4 &&
-            Math.abs(y - o.y) < (estHeight + o.h) / 2 + 2,
-        );
+          // Collision check
+          const collides = occupied.some(
+            (o) =>
+              Math.abs(x - o.x) < (estWidth + o.w) / 2 + 4 &&
+              Math.abs(y - o.y) < (estHeight + o.h) / 2 + 2,
+          );
 
-        if (!collides) {
-          found = true;
-          occupied.push({ x, y, w: estWidth, h: estHeight });
+          if (!collides) {
+            found = true;
+            occupied.push({ x, y, w: estWidth, h: estHeight });
+          }
         }
-      }
 
-      if (!found) return null;
+        if (!found) return null;
 
-      const color = word.sentiment
-        ? SENTIMENT_COLORS[word.sentiment]
-        : `hsl(${(i * 37) % 360}, 55%, 45%)`;
+        const color = word.sentiment
+          ? SENTIMENT_COLORS[word.sentiment]
+          : `hsl(${(i * 37) % 360}, 55%, 45%)`;
 
-      return {
-        text: word.text,
-        x,
-        y,
-        fontSize,
-        color,
-        opacity: 0.7 + ratio * 0.3,
-        value: word.value,
-        sentiment: word.sentiment,
-      };
-    }).filter(Boolean);
+        return {
+          text: word.text,
+          x,
+          y,
+          fontSize,
+          color,
+          opacity: 0.7 + ratio * 0.3,
+          value: word.value,
+          sentiment: word.sentiment,
+        };
+      })
+      .filter(Boolean);
   }, [words, width, height, maxWords]);
 
   return (
@@ -124,7 +132,13 @@ export function WordCloud({ words, width = 600, height = 400, maxWords = 60 }: P
         </text>
       ))}
       {placed.length === 0 && (
-        <text x={width / 2} y={height / 2} textAnchor="middle" fontSize={14} fill="#9ca3af">
+        <text
+          x={width / 2}
+          y={height / 2}
+          textAnchor="middle"
+          fontSize={14}
+          fill="#9ca3af"
+        >
           데이터 없음
         </text>
       )}

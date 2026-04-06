@@ -42,14 +42,26 @@ function UsageMeter({
   color?: string;
 }) {
   const colorMap: Record<string, { bar: string; bg: string; text: string }> = {
-    indigo: { bar: "bg-indigo-500", bg: "bg-indigo-50", text: "text-indigo-700" },
-    emerald: { bar: "bg-emerald-500", bg: "bg-emerald-50", text: "text-emerald-700" },
+    indigo: {
+      bar: "bg-indigo-500",
+      bg: "bg-indigo-50",
+      text: "text-indigo-700",
+    },
+    emerald: {
+      bar: "bg-emerald-500",
+      bg: "bg-emerald-50",
+      text: "text-emerald-700",
+    },
     amber: { bar: "bg-amber-500", bg: "bg-amber-50", text: "text-amber-700" },
     rose: { bar: "bg-rose-500", bg: "bg-rose-50", text: "text-rose-700" },
     sky: { bar: "bg-sky-500", bg: "bg-sky-50", text: "text-sky-700" },
-    violet: { bar: "bg-violet-500", bg: "bg-violet-50", text: "text-violet-700" },
+    violet: {
+      bar: "bg-violet-500",
+      bg: "bg-violet-50",
+      text: "text-violet-700",
+    },
   };
-  const c = colorMap[color] ?? colorMap.indigo;
+  const c = colorMap[color] ?? colorMap["indigo"]!;
   const isWarning = percent >= 80;
   const barColor = isWarning ? "bg-red-500" : c.bar;
 
@@ -224,11 +236,17 @@ export default function UsageDashboardPage() {
           <div className="mt-4 flex flex-wrap items-center gap-4 rounded-lg bg-gray-50 px-4 py-3">
             <div className="flex items-center gap-1.5 text-xs text-gray-500">
               <Download className="h-3.5 w-3.5" />
-              내보내기: <span className="font-medium text-gray-700">{status.thisMonth.exports.used}건</span>
+              내보내기:{" "}
+              <span className="font-medium text-gray-700">
+                {status.thisMonth.exports.used}건
+              </span>
             </div>
             <div className="flex items-center gap-1.5 text-xs text-gray-500">
               <TrendingUp className="h-3.5 w-3.5" />
-              AI 비용: <span className="font-medium text-gray-700">${status.thisMonth.aiCost}</span>
+              AI 비용:{" "}
+              <span className="font-medium text-gray-700">
+                ${status.thisMonth.aiCost}
+              </span>
             </div>
           </div>
         )}
@@ -302,8 +320,8 @@ export default function UsageDashboardPage() {
       {/* Footer */}
       <div className="text-center">
         <p className="text-[11px] text-gray-400">
-          사용량은 실시간으로 집계되며, 한도 초과 시 일부 기능이 제한될 수 있어요.
-          플랜을 업그레이드하면 한도를 늘릴 수 있어요.
+          사용량은 실시간으로 집계되며, 한도 초과 시 일부 기능이 제한될 수
+          있어요. 플랜을 업그레이드하면 한도를 늘릴 수 있어요.
         </p>
       </div>
     </div>
