@@ -5,7 +5,7 @@
  * JWT 세션 검증만 수행한다.
  */
 
-import NextAuth from "next-auth";
+import NextAuth, { type NextAuthResult } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 
@@ -95,7 +95,8 @@ if (
   );
 }
 
-export const { auth: authEdge } = NextAuth({
+// 명시적 NextAuthResult 타입 annotation으로 TS2742 회피 (config.ts와 동일).
+const result: NextAuthResult = NextAuth({
   providers,
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
@@ -110,3 +111,5 @@ export const { auth: authEdge } = NextAuth({
     },
   },
 });
+
+export const authEdge: NextAuthResult["auth"] = result.auth;

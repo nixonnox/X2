@@ -1,5 +1,5 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import NextAuth from "next-auth";
+import NextAuth, { type NextAuthResult } from "next-auth";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import { db } from "@x2/db";
@@ -125,7 +125,10 @@ const hasOAuth =
   process.env.AUTH_NAVER_ID ||
   process.env.AUTH_KAKAO_ID;
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+// 명시적 NextAuthResult 타입 annotation으로 TS2742 (portable types) 회피.
+// destructure export를 쓰면 inferred type이 next-auth 내부 경로를 참조해서
+// 컴포지트 빌드에서 portable하지 않다는 에러가 남.
+const result: NextAuthResult = NextAuth({
   ...(hasOAuth ? { adapter: PrismaAdapter(db) as any } : {}),
   providers,
   trustHost: true,
@@ -160,3 +163,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
 });
+
+export const handlers: NextAuthResult["handlers"] = result.handlers;
+export const auth: NextAuthResult["auth"] = result.auth;
+export const signIn: NextAuthResult["signIn"] = result.signIn;
+export const signOut: NextAuthResult["signOut"] = result.signOut;
