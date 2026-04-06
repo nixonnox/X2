@@ -19,8 +19,10 @@ export default function ReportsPage() {
 
   const summary = {
     total,
-    ready: reports.filter((r) => r.status === "PUBLISHED").length,
-    sent: reports.filter((r) => r.status === "ARCHIVED").length,
+    ready: reports.filter((r: { status: string }) => r.status === "PUBLISHED")
+      .length,
+    sent: reports.filter((r: { status: string }) => r.status === "ARCHIVED")
+      .length,
   };
 
   const isLoading = projectLoading || reportsQuery.isLoading;
@@ -109,8 +111,7 @@ export default function ReportsPage() {
                 href="/insights/reports/new"
                 className="mt-4 flex items-center gap-1.5 rounded-md bg-blue-600 px-4 py-2 text-[12px] font-medium text-white transition-colors hover:bg-blue-700"
               >
-                <Plus className="h-3.5 w-3.5" />
-                첫 리포트 생성
+                <Plus className="h-3.5 w-3.5" />첫 리포트 생성
               </Link>
             </div>
           ) : (

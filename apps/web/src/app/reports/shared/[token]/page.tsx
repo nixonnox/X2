@@ -12,10 +12,11 @@ export default function SharedReportPage({
 }) {
   const { token } = use(params);
 
-  const { data: report, isLoading, error } = trpc.report.getShared.useQuery(
-    { shareToken: token },
-    { retry: false },
-  );
+  const {
+    data: report,
+    isLoading,
+    error,
+  } = trpc.report.getShared.useQuery({ shareToken: token }, { retry: false });
 
   if (isLoading) {
     return (
@@ -33,7 +34,8 @@ export default function SharedReportPage({
             리포트를 찾을 수 없습니다
           </h1>
           <p className="text-[13px] text-[var(--muted-foreground)]">
-            {error?.message ?? "링크가 만료되었거나 비활성화되었을 수 있습니다."}
+            {error?.message ??
+              "링크가 만료되었거나 비활성화되었을 수 있습니다."}
           </p>
         </div>
       </div>
@@ -104,7 +106,7 @@ export default function SharedReportPage({
         {/* Sections */}
         {report.sections.length > 0 && (
           <div className="space-y-3">
-            {report.sections.map((section) => (
+            {report.sections.map((section: any) => (
               <ReportSectionCard key={section.id} section={section} />
             ))}
           </div>
