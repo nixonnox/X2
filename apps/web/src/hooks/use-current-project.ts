@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { trpc } from "@/lib/trpc";
 
 const STORAGE_KEY = "x2_current_project";
+const WORKSPACE_STORAGE_KEY = "x2_current_workspace";
 
 /**
  * 현재 사용자의 프로젝트를 해석하는 훅.
@@ -28,12 +29,30 @@ export function useCurrentProject() {
       retry: 2,
     });
 
-  const firstWorkspace = workspaces?.[0];
+  // SSR-safe localStorage read for workspace selection (paired with WorkspaceSwitcher)
+  const storedWorkspaceId = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      return window.localStorage.getItem(WORKSPACE_STORAGE_KEY);
+    } catch {
+      return null;
+    }
+  }, []);
+
+  // Resolve active workspace: stored selection (if still valid) → first workspace
+  const activeWorkspace = useMemo(() => {
+    if (!workspaces?.length) return null;
+    if (storedWorkspaceId) {
+      const match = workspaces.find((w) => w.id === storedWorkspaceId);
+      if (match) return match;
+    }
+    return workspaces[0] ?? null;
+  }, [workspaces, storedWorkspaceId]);
 
   const { data: projects, isLoading: projLoading } = trpc.project.list.useQuery(
-    { workspaceId: firstWorkspace?.id ?? "" },
+    { workspaceId: activeWorkspace?.id ?? "" },
     {
-      enabled: !!firstWorkspace?.id,
+      enabled: !!activeWorkspace?.id,
       staleTime: 60_000,
       retry: 2,
     },
@@ -83,11 +102,11 @@ export function useCurrentProject() {
   }, [resolvedProject?.id]);
 
   return {
-    workspace: firstWorkspace ?? null,
-    workspaceId: firstWorkspace?.id ?? null,
+    workspace: activeWorkspace,
+    workspaceId: activeWorkspace?.id ?? null,
     project: resolvedProject,
     projectId: resolvedProject?.id ?? null,
-    isLoading: wsLoading || (!!firstWorkspace?.id && projLoading),
+    isLoading: wsLoading || (!!activeWorkspace?.id && projLoading),
     hasData: !!resolvedProject,
   };
 }

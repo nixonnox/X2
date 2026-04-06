@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import {
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+  useEffect,
+  useDeferredValue,
+} from "react";
 import { trpc } from "@/lib/trpc";
 import { useCurrentProject } from "@/hooks/use-current-project";
 import {
@@ -102,6 +109,10 @@ export default function IntelligencePage() {
 
   // Input state
   const [seedKeyword, setSeedKeyword] = useState("");
+  // Deferred copy for query inputs — prevents per-keystroke history refetch.
+  // React applies the update during idle time so rapid typing only triggers
+  // a single historyQuery once the user pauses.
+  const deferredSeedKeyword = useDeferredValue(seedKeyword);
   const [selectedIndustry, setSelectedIndustry] = useState<
     "BEAUTY" | "FNB" | "FINANCE" | "ENTERTAINMENT" | undefined
   >(undefined);
@@ -140,7 +151,9 @@ export default function IntelligencePage() {
 
   // The active keyword for history/compare — either from analysis result or user input
   const activeKeywordForHistory =
-    analyzeMutation.data?.seedKeyword || seedKeyword.trim() || undefined;
+    analyzeMutation.data?.seedKeyword ||
+    deferredSeedKeyword.trim() ||
+    undefined;
 
   // Analysis history — shows all runs when no keyword is active, filtered when one is
   const historyQuery = trpc.intelligence.history.useQuery(

@@ -48,6 +48,7 @@ import {
   NAV_ACCOUNT,
   NAV_ADMIN,
 } from "@/lib/constants";
+import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Home,
@@ -161,17 +162,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         </div>
 
         {/* Workspace switcher */}
-        <div className="mx-3 mb-3">
-          <button className="flex w-full items-center gap-2 rounded-md border border-[var(--border)] px-2.5 py-1.5 text-[13px] transition-colors hover:bg-[var(--sidebar-hover)]">
-            <div className="flex h-5 w-5 items-center justify-center rounded bg-gradient-to-br from-violet-500 to-blue-500 text-[9px] font-bold text-white">
-              W
-            </div>
-            <span className="flex-1 truncate text-left font-medium">
-              {t("nav.workspace")}
-            </span>
-            <ChevronDown className="h-3 w-3 text-[var(--muted-foreground)]" />
-          </button>
-        </div>
+        <WorkspaceSwitcher />
 
         {/* Main Navigation */}
         <nav className="flex-1 overflow-y-auto px-3">
