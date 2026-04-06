@@ -35,6 +35,7 @@ import {
   Globe,
   Brain,
   GitCompareArrows,
+  FolderOpen,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
@@ -103,6 +104,7 @@ function QuickAddChannel() {
   const [validating, setValidating] = useState(false);
   const [detected, setDetected] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { projectId, isLoading: projectLoading } = useCurrentProject();
 
   useEffect(() => {
     return () => {
@@ -136,6 +138,73 @@ function QuickAddChannel() {
     if (url.trim()) {
       router.push(`/channels/new?url=${encodeURIComponent(url.trim())}`);
     }
+  }
+
+  // 프로젝트 없을 때 친절한 안내
+  if (!projectLoading && !projectId) {
+    return (
+      <div className="card border-amber-200 bg-amber-50/50 p-4">
+        <div className="flex items-start gap-3">
+          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-amber-100">
+            <FolderOpen className="h-4 w-4 text-amber-600" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-[14px] font-semibold text-[var(--foreground)]">
+              먼저 프로젝트를 만들어주세요
+            </h3>
+            <p className="mt-0.5 text-[12px] text-[var(--muted-foreground)]">
+              채널을 등록하려면 프로젝트가 필요해요. 프로젝트는 분석할 채널들을
+              묶는 단위입니다.
+            </p>
+            <div className="mt-3 flex items-center gap-2">
+              <Link
+                href="/onboarding"
+                className="inline-flex items-center gap-1.5 rounded-md bg-amber-600 px-3 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-amber-700"
+              >
+                프로젝트 만들기
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+              <Link
+                href="/start"
+                className="inline-flex items-center gap-1.5 rounded-md bg-[var(--secondary)] px-3 py-1.5 text-[12px] font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--secondary-hover)]"
+              >
+                시작 가이드 보기
+              </Link>
+            </div>
+          </div>
+        </div>
+        {/* 플로우 안내 */}
+        <div className="mt-4 flex items-center gap-2 rounded-md bg-white/70 px-3 py-2">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 text-[10px] font-bold text-amber-700">
+            1
+          </span>
+          <span className="text-[11px] text-[var(--muted-foreground)]">
+            워크스페이스 생성
+          </span>
+          <span className="text-[10px] text-[var(--muted-foreground)]">→</span>
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 text-[10px] font-bold text-amber-700">
+            2
+          </span>
+          <span className="text-[11px] text-[var(--muted-foreground)]">
+            프로젝트 생성
+          </span>
+          <span className="text-[10px] text-[var(--muted-foreground)]">→</span>
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-600 text-[10px] font-bold text-white">
+            3
+          </span>
+          <span className="text-[11px] font-medium text-amber-700">
+            채널 등록
+          </span>
+          <span className="text-[10px] text-[var(--muted-foreground)]">→</span>
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--secondary)] text-[10px] font-bold text-[var(--muted-foreground)]">
+            4
+          </span>
+          <span className="text-[11px] text-[var(--muted-foreground)]">
+            분석 시작
+          </span>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -482,10 +551,9 @@ function IntelligenceSummaryCard() {
   );
 
   // Source of truth: actual Notification unreadCount (same as Bell badge)
-  const unreadCountQuery = trpc.notification.unreadCount.useQuery(
-    undefined,
-    { refetchInterval: 30000 },
-  );
+  const unreadCountQuery = trpc.notification.unreadCount.useQuery(undefined, {
+    refetchInterval: 30000,
+  });
   const unreadAlertCount = (unreadCountQuery.data as any)?.count ?? 0;
 
   const keywords = keywordsQuery.data?.keywords ?? [];
@@ -549,14 +617,16 @@ function IntelligenceSummaryCard() {
                 key={kw.id}
                 className="flex items-center justify-between rounded-lg border border-[var(--border-subtle)] px-3 py-2"
               >
-                <div className="flex items-center gap-2.5 min-w-0">
+                <div className="flex min-w-0 items-center gap-2.5">
                   {/* Signal hint dot */}
                   <span
                     className={`h-2 w-2 flex-shrink-0 rounded-full ${
                       kw.lastSignalHint?.toLowerCase().includes("warning") ||
                       kw.lastSignalHint?.toLowerCase().includes("risk")
                         ? "bg-amber-400"
-                        : kw.lastSignalHint?.toLowerCase().includes("opportunity")
+                        : kw.lastSignalHint
+                              ?.toLowerCase()
+                              .includes("opportunity")
                           ? "bg-emerald-400"
                           : "bg-blue-400"
                     }`}
@@ -594,8 +664,7 @@ function IntelligenceSummaryCard() {
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 text-[12px] text-emerald-600">
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                새 알림이 없어요
+                <CheckCircle2 className="h-3.5 w-3.5" />새 알림이 없어요
               </span>
             )}
             <Link
