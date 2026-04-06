@@ -16,10 +16,10 @@ export function RiskCommentCard({ comments, onSelect }: Props) {
           <div className="flex h-6 w-6 items-center justify-center rounded-md bg-emerald-50">
             <ShieldAlert className="h-3.5 w-3.5 text-emerald-600" />
           </div>
-          <h3 className="text-[13px] font-semibold">High-Risk Comments</h3>
+          <h3 className="text-[13px] font-semibold">고위험 댓글</h3>
         </div>
         <p className="text-[12px] text-[var(--muted-foreground)]">
-          No high-risk comments detected.
+          고위험 댓글이 감지되지 않았습니다.
         </p>
       </div>
     );
@@ -31,7 +31,7 @@ export function RiskCommentCard({ comments, onSelect }: Props) {
         <div className="flex h-6 w-6 items-center justify-center rounded-md bg-red-50">
           <ShieldAlert className="h-3.5 w-3.5 text-red-600" />
         </div>
-        <h3 className="text-[13px] font-semibold">High-Risk Comments</h3>
+        <h3 className="text-[13px] font-semibold">고위험 댓글</h3>
         <span className="badge bg-red-50 text-[10px] text-red-700">
           {comments.length}
         </span>

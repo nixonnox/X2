@@ -22,37 +22,37 @@ const PLATFORMS: { value: PlatformCode; label: string }[] = [
   { value: "instagram", label: "Instagram" },
   { value: "tiktok", label: "TikTok" },
   { value: "x", label: "X" },
-  { value: "custom", label: "Custom" },
+  { value: "custom", label: "커스텀" },
 ];
 
 const SENTIMENTS: { value: SentimentLabel; label: string }[] = [
-  { value: "positive", label: "Positive" },
-  { value: "neutral", label: "Neutral" },
-  { value: "negative", label: "Negative" },
+  { value: "positive", label: "긍정" },
+  { value: "neutral", label: "중립" },
+  { value: "negative", label: "부정" },
 ];
 
 const RISK_LEVELS: { value: RiskLevel; label: string }[] = [
-  { value: "low", label: "Low" },
-  { value: "medium", label: "Medium" },
-  { value: "high", label: "High" },
+  { value: "low", label: "낮음" },
+  { value: "medium", label: "보통" },
+  { value: "high", label: "높음" },
 ];
 
 const RESPONSE_STATUSES: { value: ResponseStatus; label: string }[] = [
-  { value: "unanswered", label: "Unanswered" },
-  { value: "reviewing", label: "Reviewing" },
-  { value: "responded", label: "Responded" },
-  { value: "dismissed", label: "Dismissed" },
+  { value: "unanswered", label: "미답변" },
+  { value: "reviewing", label: "검토 중" },
+  { value: "responded", label: "답변 완료" },
+  { value: "dismissed", label: "무시됨" },
 ];
 
 const TOPICS: { value: TopicLabel; label: string }[] = [
-  { value: "price", label: "Price" },
-  { value: "quality", label: "Quality" },
-  { value: "delivery", label: "Delivery" },
-  { value: "schedule", label: "Schedule" },
-  { value: "inquiry", label: "Inquiry" },
-  { value: "support", label: "Support" },
-  { value: "spam", label: "Spam" },
-  { value: "other", label: "Other" },
+  { value: "price", label: "가격" },
+  { value: "quality", label: "품질" },
+  { value: "delivery", label: "배송" },
+  { value: "schedule", label: "일정" },
+  { value: "inquiry", label: "문의" },
+  { value: "support", label: "고객지원" },
+  { value: "spam", label: "스팸" },
+  { value: "other", label: "기타" },
 ];
 
 export function CommentFilterBar({ filters, onChange, channels }: Props) {
@@ -80,7 +80,7 @@ export function CommentFilterBar({ filters, onChange, channels }: Props) {
             type="text"
             value={filters.search ?? ""}
             onChange={(e) => update({ search: e.target.value || undefined })}
-            placeholder="Search comments..."
+            placeholder="댓글 검색..."
             className="input h-8 w-full pl-8 text-[12px]"
           />
         </div>
@@ -96,7 +96,7 @@ export function CommentFilterBar({ filters, onChange, channels }: Props) {
           }
           className="input h-8 w-[120px] text-[12px]"
         >
-          <option value="">All Platforms</option>
+          <option value="">전체 플랫폼</option>
           {PLATFORMS.map((p) => (
             <option key={p.value} value={p.value}>
               {p.label}
@@ -115,7 +115,7 @@ export function CommentFilterBar({ filters, onChange, channels }: Props) {
           }
           className="input h-8 w-[120px] text-[12px]"
         >
-          <option value="">All Sentiment</option>
+          <option value="">전체 감성</option>
           {SENTIMENTS.map((s) => (
             <option key={s.value} value={s.value}>
               {s.label}
@@ -132,7 +132,7 @@ export function CommentFilterBar({ filters, onChange, channels }: Props) {
           }
           className="input h-8 w-[110px] text-[12px]"
         >
-          <option value="">All Risk</option>
+          <option value="">전체 위험도</option>
           {RISK_LEVELS.map((r) => (
             <option key={r.value} value={r.value}>
               {r.label}
@@ -146,7 +146,7 @@ export function CommentFilterBar({ filters, onChange, channels }: Props) {
           className="btn-secondary h-8 gap-1 px-2.5 text-[12px]"
         >
           <SlidersHorizontal className="h-3 w-3" />
-          {expanded ? "Less" : "More"}
+          {expanded ? "접기" : "더보기"}
         </button>
 
         {hasFilters && (
@@ -156,7 +156,7 @@ export function CommentFilterBar({ filters, onChange, channels }: Props) {
             className="btn-secondary h-8 gap-1 px-2.5 text-[12px] text-[var(--destructive)]"
           >
             <X className="h-3 w-3" />
-            Clear
+            초기화
           </button>
         )}
       </div>
@@ -169,7 +169,7 @@ export function CommentFilterBar({ filters, onChange, channels }: Props) {
             onChange={(e) => update({ channelId: e.target.value || undefined })}
             className="input h-8 w-[160px] text-[12px]"
           >
-            <option value="">All Channels</option>
+            <option value="">전체 채널</option>
             {channels.map((ch) => (
               <option key={ch.id} value={ch.id}>
                 {ch.name}
@@ -186,7 +186,7 @@ export function CommentFilterBar({ filters, onChange, channels }: Props) {
             }
             className="input h-8 w-[120px] text-[12px]"
           >
-            <option value="">All Topics</option>
+            <option value="">전체 주제</option>
             {TOPICS.map((t) => (
               <option key={t.value} value={t.value}>
                 {t.label}
@@ -205,7 +205,7 @@ export function CommentFilterBar({ filters, onChange, channels }: Props) {
             }
             className="input h-8 w-[130px] text-[12px]"
           >
-            <option value="">All Status</option>
+            <option value="">전체 상태</option>
             {RESPONSE_STATUSES.map((s) => (
               <option key={s.value} value={s.value}>
                 {s.label}

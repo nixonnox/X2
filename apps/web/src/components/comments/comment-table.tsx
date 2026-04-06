@@ -20,7 +20,7 @@ export function CommentTable({ comments, onSelect, selectedId }: Props) {
     return (
       <div className="card border-dashed p-8 text-center">
         <p className="text-[13px] text-[var(--muted-foreground)]">
-          No comments match the current filters.
+          현재 필터에 해당하는 댓글이 없습니다.
         </p>
       </div>
     );
@@ -33,28 +33,28 @@ export function CommentTable({ comments, onSelect, selectedId }: Props) {
           <thead>
             <tr className="border-b border-[var(--border)]">
               <th className="px-3 py-2.5 text-left text-[11px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]">
-                Date
+                날짜
               </th>
               <th className="px-3 py-2.5 text-left text-[11px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]">
-                Platform
+                플랫폼
               </th>
               <th className="px-3 py-2.5 text-left text-[11px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]">
-                Author
+                작성자
               </th>
               <th className="px-3 py-2.5 text-left text-[11px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]">
-                Comment
+                댓글
               </th>
               <th className="px-3 py-2.5 text-center text-[11px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]">
-                Sentiment
+                감성
               </th>
               <th className="px-3 py-2.5 text-center text-[11px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]">
-                Topic
+                주제
               </th>
               <th className="px-3 py-2.5 text-center text-[11px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]">
-                Risk
+                위험도
               </th>
               <th className="px-3 py-2.5 text-center text-[11px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]">
-                Status
+                상태
               </th>
             </tr>
           </thead>
@@ -101,7 +101,7 @@ export function CommentTable({ comments, onSelect, selectedId }: Props) {
         </table>
       </div>
       <div className="border-t border-[var(--border)] px-3 py-2 text-[11px] text-[var(--muted-foreground)]">
-        Showing {comments.length} comments
+        {comments.length}개의 댓글 표시 중
       </div>
     </div>
   );
@@ -110,7 +110,7 @@ export function CommentTable({ comments, onSelect, selectedId }: Props) {
 function formatShortDate(dateStr: string): string {
   try {
     const d = new Date(dateStr);
-    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    return d.toLocaleDateString("ko-KR", { month: "short", day: "numeric" });
   } catch {
     return dateStr;
   }

@@ -23,9 +23,9 @@ type Props = {
 };
 
 const TONE_LABELS = {
-  formal: "Formal",
-  friendly: "Friendly",
-  "brand-safe": "Brand-safe",
+  formal: "격식체",
+  friendly: "친근한",
+  "brand-safe": "브랜드 안전",
 };
 
 export function CommentDetailPanel({ comment, onClose }: Props) {
@@ -35,7 +35,7 @@ export function CommentDetailPanel({ comment, onClose }: Props) {
     <div className="card h-full overflow-y-auto">
       {/* Header */}
       <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[var(--border)] bg-white px-4 py-3">
-        <h3 className="text-[14px] font-semibold">Comment Detail</h3>
+        <h3 className="text-[14px] font-semibold">댓글 상세</h3>
         <button onClick={onClose} className="btn-secondary h-6 w-6 p-0">
           <X className="h-3.5 w-3.5" />
         </button>
@@ -73,7 +73,7 @@ export function CommentDetailPanel({ comment, onClose }: Props) {
         {/* Source info */}
         <div className="space-y-1.5">
           <h4 className="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
-            Source
+            출처
           </h4>
           <div className="flex items-center gap-2">
             <PlatformBadge code={comment.platformCode} />
@@ -90,43 +90,43 @@ export function CommentDetailPanel({ comment, onClose }: Props) {
         {/* Analysis results */}
         <div className="space-y-2">
           <h4 className="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
-            Analysis
+            분석 결과
           </h4>
           <div className="grid grid-cols-2 gap-2">
             <div className="rounded-md border border-[var(--border)] p-2.5">
               <p className="mb-1 text-[10px] text-[var(--muted-foreground)]">
-                Sentiment
+                감성
               </p>
               <SentimentBadge sentiment={analysis.sentimentLabel} />
               <p className="mt-1 text-[10px] text-[var(--muted-foreground)]">
-                Score: {analysis.sentimentScore.toFixed(2)}
+                점수: {analysis.sentimentScore.toFixed(2)}
               </p>
             </div>
             <div className="rounded-md border border-[var(--border)] p-2.5">
               <p className="mb-1 text-[10px] text-[var(--muted-foreground)]">
-                Topic
+                주제
               </p>
               <TopicBadge topic={analysis.topicLabel} />
               <p className="mt-1 text-[10px] text-[var(--muted-foreground)]">
-                Confidence: {(analysis.topicConfidence * 100).toFixed(0)}%
+                신뢰도: {(analysis.topicConfidence * 100).toFixed(0)}%
               </p>
             </div>
             <div className="rounded-md border border-[var(--border)] p-2.5">
               <p className="mb-1 text-[10px] text-[var(--muted-foreground)]">
-                Risk Level
+                위험도
               </p>
               <RiskBadge risk={analysis.riskLevel} />
               <p className="mt-1 text-[10px] text-[var(--muted-foreground)]">
-                Score: {analysis.riskScore}/100
+                점수: {analysis.riskScore}/100
               </p>
             </div>
             <div className="rounded-md border border-[var(--border)] p-2.5">
               <p className="mb-1 text-[10px] text-[var(--muted-foreground)]">
-                Response Status
+                응답 상태
               </p>
               <ResponseStatusBadge status={comment.status} />
               <p className="mt-1 text-[10px] text-[var(--muted-foreground)]">
-                Priority:{" "}
+                우선순위:{" "}
                 <span className="capitalize">{analysis.responsePriority}</span>
               </p>
             </div>
@@ -135,7 +135,7 @@ export function CommentDetailPanel({ comment, onClose }: Props) {
           {analysis.needsResponse && (
             <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2">
               <p className="text-[12px] font-medium text-amber-700">
-                Response needed — {analysis.responsePriority} priority
+                응답 필요 — {analysis.responsePriority} 우선순위
               </p>
             </div>
           )}
@@ -143,7 +143,7 @@ export function CommentDetailPanel({ comment, onClose }: Props) {
           {analysis.faqCandidate && (
             <div className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2">
               <p className="text-[12px] font-medium text-blue-700">
-                FAQ candidate — this is a frequently asked question type
+                FAQ 후보 — 자주 묻는 질문 유형입니다
               </p>
             </div>
           )}
@@ -153,7 +153,7 @@ export function CommentDetailPanel({ comment, onClose }: Props) {
         {comment.tags.length > 0 && (
           <div className="space-y-1.5">
             <h4 className="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
-              Tags
+              태그
             </h4>
             <div className="flex flex-wrap gap-1">
               {comment.tags.map((tag) => (
@@ -173,7 +173,7 @@ export function CommentDetailPanel({ comment, onClose }: Props) {
         {replySuggestions && replySuggestions.suggestions.length > 0 && (
           <div className="space-y-2">
             <h4 className="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
-              Suggested Replies
+              추천 답변
             </h4>
             {replySuggestions.suggestions.map((sug) => (
               <div
@@ -188,7 +188,7 @@ export function CommentDetailPanel({ comment, onClose }: Props) {
                   </span>
                   {sug.recommended && (
                     <span className="badge bg-blue-100 text-[9px] text-blue-700">
-                      Recommended
+                      추천
                     </span>
                   )}
                 </div>
@@ -196,7 +196,7 @@ export function CommentDetailPanel({ comment, onClose }: Props) {
                   {sug.text}
                 </p>
                 <button className="mt-2 text-[11px] font-medium text-blue-600 hover:text-blue-700">
-                  Copy reply
+                  답변 복사
                 </button>
               </div>
             ))}
@@ -206,27 +206,27 @@ export function CommentDetailPanel({ comment, onClose }: Props) {
         {/* Actions (UI only) */}
         <div className="space-y-2 border-t border-[var(--border)] pt-2">
           <h4 className="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
-            Actions
+            작업
           </h4>
           <div className="flex flex-wrap gap-1.5">
             <button className="btn-secondary h-7 px-2.5 text-[11px]">
-              Mark as Reviewed
+              검토 완료
             </button>
             <button className="btn-secondary h-7 px-2.5 text-[11px]">
-              Mark as Responded
+              답변 완료
             </button>
             <button className="btn-secondary h-7 px-2.5 text-[11px]">
-              Dismiss
+              무시
             </button>
             <button className="btn-secondary h-7 px-2.5 text-[11px]">
-              Assign
+              담당자 지정
             </button>
           </div>
           <a
             href="#"
             className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-700"
           >
-            View original comment <ExternalLink className="h-3 w-3" />
+            원본 댓글 보기 <ExternalLink className="h-3 w-3" />
           </a>
         </div>
       </div>

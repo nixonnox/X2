@@ -15,9 +15,7 @@ export function FaqSummaryCard({ faqs }: Props) {
         <div className="flex h-6 w-6 items-center justify-center rounded-md bg-blue-50">
           <HelpCircle className="h-3.5 w-3.5 text-blue-600" />
         </div>
-        <h3 className="text-[13px] font-semibold">
-          Frequently Asked Questions
-        </h3>
+        <h3 className="text-[13px] font-semibold">자주 묻는 질문</h3>
         <span className="badge bg-blue-50 text-[10px] text-blue-700">
           {faqs.length}
         </span>

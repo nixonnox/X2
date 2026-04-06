@@ -22,11 +22,26 @@ import { getTopicDisplayLabel } from "@/lib/comments";
 
 const SENTIMENT_CONFIG: Record<
   SentimentLabel,
-  { icon: typeof ThumbsUp; color: string; bg: string }
+  { icon: typeof ThumbsUp; color: string; bg: string; label: string }
 > = {
-  positive: { icon: ThumbsUp, color: "text-emerald-700", bg: "bg-emerald-50" },
-  neutral: { icon: Minus, color: "text-gray-600", bg: "bg-gray-50" },
-  negative: { icon: ThumbsDown, color: "text-red-700", bg: "bg-red-50" },
+  positive: {
+    icon: ThumbsUp,
+    color: "text-emerald-700",
+    bg: "bg-emerald-50",
+    label: "긍정",
+  },
+  neutral: {
+    icon: Minus,
+    color: "text-gray-600",
+    bg: "bg-gray-50",
+    label: "중립",
+  },
+  negative: {
+    icon: ThumbsDown,
+    color: "text-red-700",
+    bg: "bg-red-50",
+    label: "부정",
+  },
 };
 
 export function SentimentBadge({ sentiment }: { sentiment: SentimentLabel }) {
@@ -35,7 +50,7 @@ export function SentimentBadge({ sentiment }: { sentiment: SentimentLabel }) {
   return (
     <span className={`badge ${cfg.bg} ${cfg.color} gap-0.5 text-[10px]`}>
       <Icon className="h-2.5 w-2.5" />
-      <span className="capitalize">{sentiment}</span>
+      {cfg.label}
     </span>
   );
 }
@@ -54,11 +69,26 @@ export function TopicBadge({ topic }: { topic: TopicLabel }) {
 
 const RISK_CONFIG: Record<
   RiskLevel,
-  { icon: typeof Shield; color: string; bg: string }
+  { icon: typeof Shield; color: string; bg: string; label: string }
 > = {
-  low: { icon: Shield, color: "text-emerald-700", bg: "bg-emerald-50" },
-  medium: { icon: AlertTriangle, color: "text-amber-700", bg: "bg-amber-50" },
-  high: { icon: ShieldAlert, color: "text-red-700", bg: "bg-red-50" },
+  low: {
+    icon: Shield,
+    color: "text-emerald-700",
+    bg: "bg-emerald-50",
+    label: "낮음",
+  },
+  medium: {
+    icon: AlertTriangle,
+    color: "text-amber-700",
+    bg: "bg-amber-50",
+    label: "보통",
+  },
+  high: {
+    icon: ShieldAlert,
+    color: "text-red-700",
+    bg: "bg-red-50",
+    label: "높음",
+  },
 };
 
 export function RiskBadge({ risk }: { risk: RiskLevel }) {
@@ -67,7 +97,7 @@ export function RiskBadge({ risk }: { risk: RiskLevel }) {
   return (
     <span className={`badge ${cfg.bg} ${cfg.color} gap-0.5 text-[10px]`}>
       <Icon className="h-2.5 w-2.5" />
-      <span className="capitalize">{risk}</span>
+      {cfg.label}
     </span>
   );
 }
@@ -82,25 +112,25 @@ const STATUS_CONFIG: Record<
     icon: Clock,
     color: "text-amber-700",
     bg: "bg-amber-50",
-    label: "Unanswered",
+    label: "미답변",
   },
   reviewing: {
     icon: Eye,
     color: "text-blue-700",
     bg: "bg-blue-50",
-    label: "Reviewing",
+    label: "검토 중",
   },
   responded: {
     icon: CheckCircle2,
     color: "text-emerald-700",
     bg: "bg-emerald-50",
-    label: "Responded",
+    label: "답변 완료",
   },
   dismissed: {
     icon: MessageSquare,
     color: "text-gray-600",
     bg: "bg-gray-100",
-    label: "Dismissed",
+    label: "무시됨",
   },
 };
 
