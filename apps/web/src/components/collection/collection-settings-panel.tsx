@@ -45,7 +45,7 @@ export function CollectionSettingsPanel({ settings, onChange }: Props) {
               개발/테스트 모드 활성
             </p>
             <p className="mt-0.5 text-[11px] text-amber-700">
-              실제 API를 호출하지 않고 Mock 데이터로 수집 흐름을 테스트합니다.
+              실제 API를 호출하지 않고 모의 데이터로 수집 흐름을 테스트합니다.
               운영 환경에서는 이 설정을 비활성화하세요.
             </p>
           </div>
@@ -84,7 +84,7 @@ export function CollectionSettingsPanel({ settings, onChange }: Props) {
               개발 모드
             </p>
             <p className="text-[11px] text-[var(--muted-foreground)]">
-              Mock 커넥터로 수집 테스트
+              모의 커넥터로 수집 테스트
             </p>
           </div>
           <button
@@ -105,10 +105,10 @@ export function CollectionSettingsPanel({ settings, onChange }: Props) {
         <div className="flex items-center justify-between px-4 py-3">
           <div>
             <p className="text-[13px] font-medium text-[var(--foreground)]">
-              Mock 폴백
+              모의 폴백
             </p>
             <p className="text-[11px] text-[var(--muted-foreground)]">
-              API 실패 시 자동으로 Mock 데이터 사용
+              API 실패 시 자동으로 모의 데이터 사용
             </p>
           </div>
           <button

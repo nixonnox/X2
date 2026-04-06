@@ -5,7 +5,7 @@ import { Route, ArrowRight, ChevronRight, Sparkles } from "lucide-react";
 
 type PathItem = {
   pathLabel?: string;
-  steps?: string[];
+  steps?: unknown[];
   dominantIntent?: string;
   pathScore?: number;
 };
@@ -26,7 +26,7 @@ export function TopJourneyPreviewCard({
 
   return (
     <Link href="/pathfinder" className="group block">
-      <div className="card p-4 transition-colors group-hover:border-[var(--foreground)]/20">
+      <div className="card group-hover:border-[var(--foreground)]/20 p-4 transition-colors">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -76,7 +76,7 @@ export function TopJourneyPreviewCard({
                   </span>
                   <div className="flex items-center gap-1.5">
                     {path.dominantIntent && (
-                      <span className="badge bg-violet-100 text-violet-700 text-[10px]">
+                      <span className="badge bg-violet-100 text-[10px] text-violet-700">
                         {path.dominantIntent}
                       </span>
                     )}
@@ -89,16 +89,25 @@ export function TopJourneyPreviewCard({
                 </div>
                 {path.steps && path.steps.length > 0 && (
                   <div className="flex flex-wrap items-center gap-1">
-                    {path.steps.map((step, j) => (
-                      <span key={j} className="flex items-center gap-1">
-                        <span className="rounded bg-[var(--secondary)] px-1.5 py-0.5 text-[11px] text-[var(--muted-foreground)]">
-                          {step}
+                    {path.steps.map((rawStep, j) => {
+                      const stepLabel =
+                        typeof rawStep === "string"
+                          ? rawStep
+                          : ((rawStep as any)?.keyword ??
+                            (rawStep as any)?.label ??
+                            (rawStep as any)?.name ??
+                            String(rawStep));
+                      return (
+                        <span key={j} className="flex items-center gap-1">
+                          <span className="rounded bg-[var(--secondary)] px-1.5 py-0.5 text-[11px] text-[var(--muted-foreground)]">
+                            {stepLabel}
+                          </span>
+                          {j < path.steps!.length - 1 && (
+                            <ChevronRight className="text-[var(--muted-foreground)]/50 h-3 w-3" />
+                          )}
                         </span>
-                        {j < path.steps!.length - 1 && (
-                          <ChevronRight className="h-3 w-3 text-[var(--muted-foreground)]/50" />
-                        )}
-                      </span>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </li>
@@ -106,7 +115,7 @@ export function TopJourneyPreviewCard({
           </ul>
         ) : (
           <div className="mt-4 flex flex-col items-center py-6 text-center">
-            <Route className="h-6 w-6 text-[var(--muted-foreground)]/40" />
+            <Route className="text-[var(--muted-foreground)]/40 h-6 w-6" />
             <p className="mt-2 text-[12px] leading-relaxed text-[var(--muted-foreground)]">
               검색 여정 분석 후
               <br />

@@ -6,7 +6,6 @@ import { useLocale, useTranslations } from "next-intl";
 import { useSession, signOut } from "next-auth/react";
 import {
   Menu,
-  Search,
   Bell,
   User,
   Settings,
@@ -31,7 +30,10 @@ function formatNotificationTime(dateStr: string): string {
   if (hours < 24) return `${hours}시간 전`;
   const days = Math.floor(hours / 24);
   if (days < 7) return `${days}일 전`;
-  return new Date(dateStr).toLocaleDateString("ko-KR", { month: "short", day: "numeric" });
+  return new Date(dateStr).toLocaleDateString("ko-KR", {
+    month: "short",
+    day: "numeric",
+  });
 }
 
 type TopBarProps = {
@@ -70,7 +72,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
   const { data: session } = useSession();
-  const userName = session?.user?.name || "User";
+  const userName = session?.user?.name || "사용자";
   const userEmail = session?.user?.email || "";
   const userInitial = userName.charAt(0).toUpperCase();
 
@@ -96,17 +98,8 @@ export function TopBar({ onMenuClick }: TopBarProps) {
         <Menu className="h-4 w-4" />
       </button>
 
-      {/* Search */}
-      <div className="flex flex-1 items-center">
-        <div className="relative w-full max-w-sm">
-          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--muted-foreground)]" />
-          <input
-            type="text"
-            placeholder={t("common.search")}
-            className="input h-7 w-full pl-8 pr-3 text-[12px]"
-          />
-        </div>
-      </div>
+      {/* Spacer */}
+      <div className="flex-1" />
 
       {/* Right actions */}
       <div className="flex items-center gap-1">
@@ -166,7 +159,10 @@ export function TopBar({ onMenuClick }: TopBarProps) {
 
           {bellOpen && (
             <>
-              <div className="fixed inset-0 z-40" onClick={() => setBellOpen(false)} />
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setBellOpen(false)}
+              />
               <div className="absolute right-0 top-8 z-50 w-80 rounded-lg border border-[var(--border)] bg-white shadow-lg">
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-[var(--border)] px-3 py-2">
@@ -187,15 +183,19 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                   {notificationsQuery.isLoading && (
                     <div className="flex items-center justify-center py-8">
                       <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
-                      <span className="ml-2 text-[11px] text-gray-400">알림을 불러오는 중이에요</span>
+                      <span className="ml-2 text-[11px] text-gray-400">
+                        알림을 불러오는 중이에요
+                      </span>
                     </div>
                   )}
 
                   {/* Error */}
                   {notificationsQuery.isError && (
                     <div className="py-6 text-center">
-                      <AlertTriangle className="mx-auto h-5 w-5 text-red-400 mb-2" />
-                      <p className="text-[12px] text-red-500">알림을 불러오지 못했어요</p>
+                      <AlertTriangle className="mx-auto mb-2 h-5 w-5 text-red-400" />
+                      <p className="text-[12px] text-red-500">
+                        알림을 불러오지 못했어요
+                      </p>
                       <button
                         onClick={() => notificationsQuery.refetch()}
                         className="mt-2 text-[11px] text-blue-600 hover:underline"
@@ -208,68 +208,76 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                   {/* Empty */}
                   {!notificationsQuery.isLoading &&
                     !notificationsQuery.isError &&
-                    ((notificationsQuery.data as any)?.items ?? []).length === 0 && (
+                    ((notificationsQuery.data as any)?.items ?? []).length ===
+                      0 && (
                       <div className="py-8 text-center">
-                        <Bell className="mx-auto h-5 w-5 text-gray-300 mb-2" />
-                        <p className="text-[12px] text-gray-400">새로운 알림이 없어요</p>
+                        <Bell className="mx-auto mb-2 h-5 w-5 text-gray-300" />
+                        <p className="text-[12px] text-gray-400">
+                          새로운 알림이 없어요
+                        </p>
                       </div>
                     )}
 
                   {/* Items */}
-                  {((notificationsQuery.data as any)?.items ?? []).map((n: any) => (
-                    <div
-                      key={n.id}
-                      className={`flex items-start gap-2.5 border-b border-[var(--border)] px-3 py-2.5 transition-colors hover:bg-gray-50 cursor-pointer ${
-                        !n.isRead ? "bg-blue-50/40" : ""
-                      }`}
-                      onClick={() => {
-                        if (!n.isRead) markReadMutation.mutate({ id: n.id });
-                        if (n.actionUrl) {
-                          setBellOpen(false);
-                          router.push(n.actionUrl);
-                        }
-                      }}
-                    >
-                      <div className="mt-0.5 shrink-0">
-                        {n.priority === "HIGH" || n.priority === "URGENT" ? (
-                          <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
-                        ) : (
-                          <Bell className="h-3.5 w-3.5 text-gray-400" />
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        {/* Title + severity badge */}
-                        <div className="flex items-center gap-1.5 mb-0.5">
-                          {n.title && (
-                            <span className="text-[11px] font-semibold text-gray-700 truncate">
-                              {n.title.replace("Intelligence Alert: ", "")}
-                            </span>
-                          )}
-                          {(n.priority === "HIGH" || n.priority === "URGENT") && (
-                            <span className="shrink-0 rounded bg-amber-100 px-1 py-0.5 text-[9px] font-medium text-amber-700">
-                              {n.priority === "URGENT" ? "긴급" : "중요"}
-                            </span>
-                          )}
-                          {!n.isRead && (
-                            <span className="shrink-0 h-1.5 w-1.5 rounded-full bg-blue-500" />
+                  {((notificationsQuery.data as any)?.items ?? []).map(
+                    (n: any) => (
+                      <div
+                        key={n.id}
+                        className={`flex cursor-pointer items-start gap-2.5 border-b border-[var(--border)] px-3 py-2.5 transition-colors hover:bg-gray-50 ${
+                          !n.isRead ? "bg-blue-50/40" : ""
+                        }`}
+                        onClick={() => {
+                          if (!n.isRead) markReadMutation.mutate({ id: n.id });
+                          if (n.actionUrl) {
+                            setBellOpen(false);
+                            router.push(n.actionUrl);
+                          }
+                        }}
+                      >
+                        <div className="mt-0.5 shrink-0">
+                          {n.priority === "HIGH" || n.priority === "URGENT" ? (
+                            <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+                          ) : (
+                            <Bell className="h-3.5 w-3.5 text-gray-400" />
                           )}
                         </div>
-                        <p className={`text-[12px] leading-relaxed ${!n.isRead ? "text-gray-800" : "text-gray-500"}`}>
-                          {n.message}
-                        </p>
-                        <div className="mt-1 flex items-center gap-2">
-                          <span className="text-[10px] text-gray-400">
-                            {formatNotificationTime(n.createdAt)}
-                          </span>
-                          {n.sourceType === "intelligence_alert" && (
-                            <span className="rounded bg-indigo-50 px-1 py-0.5 text-[9px] text-indigo-600">
-                              Intelligence
+                        <div className="min-w-0 flex-1">
+                          {/* Title + severity badge */}
+                          <div className="mb-0.5 flex items-center gap-1.5">
+                            {n.title && (
+                              <span className="truncate text-[11px] font-semibold text-gray-700">
+                                {n.title.replace("Intelligence Alert: ", "")}
+                              </span>
+                            )}
+                            {(n.priority === "HIGH" ||
+                              n.priority === "URGENT") && (
+                              <span className="shrink-0 rounded bg-amber-100 px-1 py-0.5 text-[9px] font-medium text-amber-700">
+                                {n.priority === "URGENT" ? "긴급" : "중요"}
+                              </span>
+                            )}
+                            {!n.isRead && (
+                              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" />
+                            )}
+                          </div>
+                          <p
+                            className={`text-[12px] leading-relaxed ${!n.isRead ? "text-gray-800" : "text-gray-500"}`}
+                          >
+                            {n.message}
+                          </p>
+                          <div className="mt-1 flex items-center gap-2">
+                            <span className="text-[10px] text-gray-400">
+                              {formatNotificationTime(n.createdAt)}
                             </span>
-                          )}
+                            {n.sourceType === "intelligence_alert" && (
+                              <span className="rounded bg-indigo-50 px-1 py-0.5 text-[9px] text-indigo-600">
+                                Intelligence
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ),
+                  )}
                 </div>
 
                 {/* Footer — "모든 알림 보기" */}

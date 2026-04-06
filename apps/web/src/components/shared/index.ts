@@ -6,3 +6,4 @@ export { ChartCard } from "./chart-card";
 export { DataTable } from "./data-table";
 export { InsightCard } from "./insight-card";
 export { DemoBanner } from "./demo-banner";
+export { ErrorBoundary } from "./error-boundary";

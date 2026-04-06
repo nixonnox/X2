@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, Search, Bell } from "lucide-react";
+import { Menu, Bell } from "lucide-react";
 
 type HeaderProps = {
   onMenuClick: () => void;
@@ -17,17 +17,8 @@ export function Header({ onMenuClick }: HeaderProps) {
         <Menu className="h-5 w-5" />
       </button>
 
-      {/* 검색 */}
-      <div className="flex flex-1 items-center">
-        <div className="relative w-full max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="채널, 콘텐츠, 키워드 검색..."
-            className="h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--secondary)] pl-9 pr-4 text-sm placeholder:text-gray-400 focus:border-[var(--primary)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
-          />
-        </div>
-      </div>
+      {/* Spacer */}
+      <div className="flex-1" />
 
       {/* 우측 액션 */}
       <div className="flex items-center gap-2">

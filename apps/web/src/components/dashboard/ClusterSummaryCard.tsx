@@ -25,7 +25,7 @@ export function ClusterSummaryCard({
 
   return (
     <Link href="/cluster-finder" className="group block">
-      <div className="card p-4 transition-colors group-hover:border-[var(--foreground)]/20">
+      <div className="card group-hover:border-[var(--foreground)]/20 p-4 transition-colors">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -70,7 +70,7 @@ export function ClusterSummaryCard({
             {clusters!.map((cluster, i) => (
               <li
                 key={i}
-                className="rounded-md bg-[var(--secondary)]/50 px-2.5 py-2 space-y-1.5"
+                className="bg-[var(--secondary)]/50 space-y-1.5 rounded-md px-2.5 py-2"
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[12px] font-medium text-[var(--foreground)]">
@@ -78,7 +78,7 @@ export function ClusterSummaryCard({
                   </span>
                   <div className="flex items-center gap-1.5">
                     {cluster.dominantIntent && (
-                      <span className="badge bg-amber-100 text-amber-700 text-[10px]">
+                      <span className="badge bg-amber-100 text-[10px] text-amber-700">
                         {cluster.dominantIntent}
                       </span>
                     )}
@@ -91,14 +91,22 @@ export function ClusterSummaryCard({
                 </div>
                 {cluster.topKeywords && cluster.topKeywords.length > 0 && (
                   <div className="flex flex-wrap gap-1">
-                    {cluster.topKeywords.slice(0, 3).map((kw, j) => (
-                      <span
-                        key={j}
-                        className="rounded bg-[var(--background)] px-1.5 py-0.5 text-[10px] text-[var(--muted-foreground)]"
-                      >
-                        {kw}
-                      </span>
-                    ))}
+                    {cluster.topKeywords.slice(0, 3).map((rawKw, j) => {
+                      const kwLabel =
+                        typeof rawKw === "string"
+                          ? rawKw
+                          : ((rawKw as any)?.keyword ??
+                            (rawKw as any)?.label ??
+                            String(rawKw));
+                      return (
+                        <span
+                          key={j}
+                          className="rounded bg-[var(--background)] px-1.5 py-0.5 text-[10px] text-[var(--muted-foreground)]"
+                        >
+                          {kwLabel}
+                        </span>
+                      );
+                    })}
                   </div>
                 )}
               </li>
@@ -106,7 +114,7 @@ export function ClusterSummaryCard({
           </ul>
         ) : (
           <div className="mt-4 flex flex-col items-center py-6 text-center">
-            <Layers className="h-6 w-6 text-[var(--muted-foreground)]/40" />
+            <Layers className="text-[var(--muted-foreground)]/40 h-6 w-6" />
             <p className="mt-2 text-[12px] leading-relaxed text-[var(--muted-foreground)]">
               클러스터 분석 후
               <br />

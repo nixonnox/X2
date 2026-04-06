@@ -31,16 +31,19 @@ import {
   X,
   LogOut,
   ChevronDown,
+  ChevronRight,
   Shield,
   Search,
   GitBranch,
   Network,
   Route,
+  Bell,
 } from "lucide-react";
 import { useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import {
   APP_NAME,
+  NAV_HOME,
   NAV_SECTIONS,
   NAV_ACCOUNT,
   NAV_ADMIN,
@@ -75,6 +78,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   GitBranch,
   Network,
   Route,
+  Bell,
 };
 
 function resolveLabel(key: string, t: (k: string) => string): string {
@@ -91,12 +95,38 @@ export function Sidebar({ open, onClose }: SidebarProps) {
   const t = useTranslations();
   const [adminOpen, setAdminOpen] = useState(false);
   const { data: session } = useSession();
-  const userName = session?.user?.name || "User";
+  const userName = session?.user?.name || "사용자";
   const userInitial = userName.charAt(0).toUpperCase();
+
+  // Track which hub sections are expanded (all open by default)
+  const [expandedSections, setExpandedSections] = useState<
+    Record<string, boolean>
+  >(
+    NAV_SECTIONS.reduce(
+      (acc, section) => {
+        acc[section.titleKey] = true;
+        return acc;
+      },
+      {} as Record<string, boolean>,
+    ),
+  );
+
+  const toggleSection = (titleKey: string) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [titleKey]: !prev[titleKey],
+    }));
+  };
 
   const isActive = (href: string) =>
     pathname === href ||
     (href !== "/dashboard" && pathname.startsWith(href + "/"));
+
+  // Check if any item in a section is active (to highlight section header)
+  const isSectionActive = (items: { href: string }[]) =>
+    items.some((item) => isActive(item.href));
+
+  const HomeIcon = ICON_MAP[NAV_HOME.icon];
 
   return (
     <>
@@ -145,37 +175,79 @@ export function Sidebar({ open, onClose }: SidebarProps) {
 
         {/* Main Navigation */}
         <nav className="flex-1 overflow-y-auto px-3">
-          {NAV_SECTIONS.map((section, idx) => (
-            <div key={section.titleKey} className={idx > 0 ? "mt-4" : ""}>
-              <p className="mb-1 px-2.5 text-[11px] font-medium uppercase tracking-wider text-[var(--sidebar-section)]">
-                {resolveLabel(section.titleKey, t)}
-              </p>
-              <ul className="space-y-0.5">
-                {section.items.map((item) => {
-                  const Icon = ICON_MAP[item.icon];
-                  const active = isActive(item.href);
-                  return (
-                    <li key={item.href}>
-                      <Link
-                        href={item.href}
-                        onClick={onClose}
-                        className={`sidebar-item ${
-                          active
-                            ? "bg-[var(--sidebar-active-bg)] text-[var(--sidebar-active-text)]"
-                            : "text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-active-text)]"
-                        }`}
-                      >
-                        {Icon && <Icon className="h-4 w-4 flex-shrink-0" />}
-                        <span>{resolveLabel(item.labelKey, t)}</span>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ))}
+          {/* Home (standalone) */}
+          <ul className="mb-1 space-y-0.5">
+            <li>
+              <Link
+                href={NAV_HOME.href}
+                onClick={onClose}
+                className={`sidebar-item ${
+                  isActive(NAV_HOME.href)
+                    ? "bg-[var(--sidebar-active-bg)] text-[var(--sidebar-active-text)]"
+                    : "text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-active-text)]"
+                }`}
+              >
+                {HomeIcon && <HomeIcon className="h-4 w-4 flex-shrink-0" />}
+                <span>{resolveLabel(NAV_HOME.labelKey, t)}</span>
+              </Link>
+            </li>
+          </ul>
 
-          {/* Account section */}
+          {/* Hub sections (collapsible) */}
+          {NAV_SECTIONS.map((section) => {
+            const SectionIcon = ICON_MAP[section.icon];
+            const isExpanded = expandedSections[section.titleKey] ?? true;
+            const sectionActive = isSectionActive(section.items);
+
+            return (
+              <div key={section.titleKey} className="mt-2">
+                <button
+                  onClick={() => toggleSection(section.titleKey)}
+                  className={`flex w-full items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[12px] font-semibold transition-colors ${
+                    sectionActive
+                      ? "text-[var(--foreground)]"
+                      : "text-[var(--sidebar-section)] hover:text-[var(--foreground)]"
+                  }`}
+                >
+                  {SectionIcon && (
+                    <SectionIcon className="h-3.5 w-3.5 flex-shrink-0" />
+                  )}
+                  <span className="flex-1 text-left">
+                    {resolveLabel(section.titleKey, t)}
+                  </span>
+                  <ChevronRight
+                    className={`h-3 w-3 transition-transform ${isExpanded ? "rotate-90" : ""}`}
+                  />
+                </button>
+                {isExpanded && (
+                  <ul className="mt-0.5 space-y-0.5 pl-2">
+                    {section.items.map((item) => {
+                      const Icon = ICON_MAP[item.icon];
+                      const active = isActive(item.href);
+                      return (
+                        <li key={item.href}>
+                          <Link
+                            href={item.href}
+                            onClick={onClose}
+                            className={`sidebar-item ${
+                              active
+                                ? "bg-[var(--sidebar-active-bg)] text-[var(--sidebar-active-text)]"
+                                : "text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-hover)] hover:text-[var(--sidebar-active-text)]"
+                            }`}
+                          >
+                            {Icon && <Icon className="h-4 w-4 flex-shrink-0" />}
+                            <span>{resolveLabel(item.labelKey, t)}</span>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Settings section */}
           <div className="mt-4">
             <p className="mb-1 px-2.5 text-[11px] font-medium uppercase tracking-wider text-[var(--sidebar-section)]">
               {t("nav.settings")}

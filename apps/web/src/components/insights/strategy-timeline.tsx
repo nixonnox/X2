@@ -77,11 +77,11 @@ function StrategyCard({ strategy }: { strategy: Strategy }) {
       {/* Impact / Effort */}
       <div className="flex items-center gap-4 text-[12px]">
         <div className="flex items-center gap-1.5">
-          <span className="text-[var(--muted-foreground)]">Impact:</span>
+          <span className="text-[var(--muted-foreground)]">영향도:</span>
           <span className={`font-medium ${impact.color}`}>{impact.label}</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="text-[var(--muted-foreground)]">Effort:</span>
+          <span className="text-[var(--muted-foreground)]">난이도:</span>
           <span className={`font-medium ${effort.color}`}>{effort.label}</span>
         </div>
       </div>
@@ -89,7 +89,7 @@ function StrategyCard({ strategy }: { strategy: Strategy }) {
       {/* Actions */}
       <div className="space-y-1">
         <p className="text-[11px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]">
-          Actions
+          실행 항목
         </p>
         <ul className="space-y-1">
           {strategy.actions.map((action, i) => (
@@ -108,7 +108,7 @@ function StrategyCard({ strategy }: { strategy: Strategy }) {
       <div className="rounded-md bg-[var(--secondary)] px-3 py-2">
         <p className="text-[12px] text-[var(--muted-foreground)]">
           <span className="font-medium text-[var(--foreground)]">
-            Expected:{" "}
+            기대 효과:{" "}
           </span>
           {strategy.expectedOutcome}
         </p>
