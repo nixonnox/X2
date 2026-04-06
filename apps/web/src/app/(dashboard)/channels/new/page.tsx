@@ -179,7 +179,22 @@ export default function NewChannelPage() {
       if (result.channelIdentifier) {
         setForm((prev) => {
           if (!prev.name) {
-            return { ...prev, name: result.channelIdentifier! };
+            // custom URL이면 hostname 말고 path의 마지막 세그먼트 사용
+            let name = result.channelIdentifier!;
+            if (result.detectedPlatformCode === "custom") {
+              try {
+                const u = new URL(result.normalizedUrl || "");
+                const seg = u.pathname
+                  .replace(/\/$/, "")
+                  .split("/")
+                  .filter(Boolean)
+                  .pop();
+                if (seg) name = seg;
+              } catch {
+                // keep original
+              }
+            }
+            return { ...prev, name };
           }
           return prev;
         });
@@ -289,7 +304,10 @@ export default function NewChannelPage() {
     : "";
 
   const isUrlValid =
-    urlValidation?.isValid && urlValidation?.shouldAllowProceed;
+    urlValidation?.isValid &&
+    urlValidation?.shouldAllowProceed &&
+    urlValidation?.detectedPlatformCode !== null &&
+    urlValidation?.detectedPlatformCode !== "custom";
 
   return (
     <div className="space-y-5">
@@ -409,12 +427,24 @@ export default function NewChannelPage() {
                 <Sparkles className="h-4 w-4 text-emerald-600" />
                 <p className="text-[13px] text-emerald-700">
                   <span className="font-medium">
-                    {getPlatformLabel(form.platformCode)}
+                    {getPlatformLabel(urlValidation!.detectedPlatformCode!)}
                   </span>{" "}
                   채널이 자동 감지되었습니다
                 </p>
               </div>
             )}
+            {/* Custom URL 허용 안내 */}
+            {!isUrlValid &&
+              urlValidation?.isValid &&
+              urlValidation?.shouldAllowProceed &&
+              urlValidation?.detectedPlatformCode === "custom" && (
+                <div className="flex items-center gap-2 rounded-md bg-blue-50 px-3 py-2">
+                  <Info className="h-4 w-4 text-blue-600" />
+                  <p className="text-[13px] text-blue-700">
+                    커스텀 URL로 등록됩니다. 수동 분석 모드로 시작해요.
+                  </p>
+                </div>
+              )}
           </div>
 
           {/* Step 2: Display Name — simple, auto-filled */}
