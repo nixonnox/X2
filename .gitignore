@@ -45,3 +45,4 @@ packages/db/src/generated/
 *.log
 .vercel
 .backup/
+.claude/
