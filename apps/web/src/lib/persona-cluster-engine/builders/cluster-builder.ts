@@ -22,7 +22,10 @@ import type {
   SubIntent,
 } from "../../intent-engine/types";
 import type { RoadStageType } from "../../journey-engine/types";
-import { INTENT_TO_STAGE, SUBINTENT_TO_STAGE } from "../../journey-engine/types";
+import {
+  INTENT_TO_STAGE,
+  SUBINTENT_TO_STAGE,
+} from "../../journey-engine/types";
 import type {
   IntentCluster,
   ClusterMembership,
@@ -115,8 +118,14 @@ function buildSingleCluster(
   index: number,
 ): IntentCluster {
   // 분포 계산
-  const intentDist = countDistribution(memberNodes, (n) => n.intentCategory) as Record<IntentCategory, number>;
-  const phaseDist = countDistribution(memberNodes, (n) => n.temporalPhase) as Record<TemporalPhase, number>;
+  const intentDist = countDistribution(
+    memberNodes,
+    (n) => n.intentCategory,
+  ) as Record<IntentCategory, number>;
+  const phaseDist = countDistribution(
+    memberNodes,
+    (n) => n.temporalPhase,
+  ) as Record<TemporalPhase, number>;
 
   // dominant 값 계산
   const dominantIntent = getMaxKey(intentDist) as IntentCategory;
@@ -124,15 +133,17 @@ function buildSingleCluster(
   const dominantStage = inferDominantStage(memberNodes);
 
   // 카테고리 추론
-  const category = inferClusterCategory(dominantIntent, dominantPhase, memberNodes);
+  const category = inferClusterCategory(
+    dominantIntent,
+    dominantPhase,
+    memberNodes,
+  );
 
   // 대표 키워드 (검색량 상위)
   const sortedByVolume = [...memberNodes].sort(
     (a, b) => b.searchVolume - a.searchVolume,
   );
-  const representativeKeywords = sortedByVolume
-    .slice(0, 10)
-    .map((n) => n.name);
+  const representativeKeywords = sortedByVolume.slice(0, 10).map((n) => n.name);
 
   // 대표 질문 추출
   const representativeQuestions = memberNodes
@@ -144,7 +155,8 @@ function buildSingleCluster(
   // 메트릭
   const avgGapScore =
     Math.round(
-      (memberNodes.reduce((s, n) => s + n.gapScore, 0) / memberNodes.length) * 100,
+      (memberNodes.reduce((s, n) => s + n.gapScore, 0) / memberNodes.length) *
+        100,
     ) / 100;
   const avgSearchVolume = Math.round(
     memberNodes.reduce((s, n) => s + n.searchVolume, 0) / memberNodes.length,
@@ -169,12 +181,14 @@ function buildSingleCluster(
   // 테마 추출
   const themes = extractThemes(memberNodes, seedKeyword);
 
-  // 클러스터 점수 계산
+  // 클러스터 점수 계산 (다양성 평가를 위해 키워드 목록 전달)
+  const allKeywordNames = memberNodes.map((n) => n.name);
   const score = calculateClusterScore(
     memberNodes.length,
     avgGapScore,
     avgSearchVolume,
     risingCount,
+    allKeywordNames,
   );
 
   // 스테이지 분포
@@ -185,12 +199,20 @@ function buildSingleCluster(
   }
 
   // 라벨 생성
-  const label = generateClusterLabel(category, rawCluster.centroid, dominantIntent);
+  const label = generateClusterLabel(
+    category,
+    rawCluster.centroid,
+    dominantIntent,
+  );
 
   return {
     id: `ic-${index}`,
     label,
-    description: generateClusterDescription(category, representativeKeywords, seedKeyword),
+    description: generateClusterDescription(
+      category,
+      representativeKeywords,
+      seedKeyword,
+    ),
     category,
     dominantIntent,
     dominantPhase,
@@ -224,15 +246,25 @@ function buildQuestionCluster(
   seedKeyword: string,
   index: number,
 ): IntentCluster {
-  const intentDist = countDistribution(questionNodes, (n) => n.intentCategory) as Record<IntentCategory, number>;
-  const phaseDist = countDistribution(questionNodes, (n) => n.temporalPhase) as Record<TemporalPhase, number>;
+  const intentDist = countDistribution(
+    questionNodes,
+    (n) => n.intentCategory,
+  ) as Record<IntentCategory, number>;
+  const phaseDist = countDistribution(
+    questionNodes,
+    (n) => n.temporalPhase,
+  ) as Record<TemporalPhase, number>;
   const dominantIntent = getMaxKey(intentDist) as IntentCategory;
   const dominantPhase = getMaxKey(phaseDist) as TemporalPhase;
 
-  const sorted = [...questionNodes].sort((a, b) => b.searchVolume - a.searchVolume);
+  const sorted = [...questionNodes].sort(
+    (a, b) => b.searchVolume - a.searchVolume,
+  );
   const avgGapScore =
     Math.round(
-      (questionNodes.reduce((s, n) => s + n.gapScore, 0) / questionNodes.length) * 100,
+      (questionNodes.reduce((s, n) => s + n.gapScore, 0) /
+        questionNodes.length) *
+        100,
     ) / 100;
 
   return {
@@ -250,15 +282,18 @@ function buildQuestionCluster(
     centroid: sorted[0]?.name ?? seedKeyword,
     avgGapScore,
     avgSearchVolume: Math.round(
-      questionNodes.reduce((s, n) => s + n.searchVolume, 0) / questionNodes.length,
+      questionNodes.reduce((s, n) => s + n.searchVolume, 0) /
+        questionNodes.length,
     ),
     avgDifficultyScore: 0,
     risingCount: questionNodes.filter((n) => n.isRising).length,
     score: calculateClusterScore(
       questionNodes.length,
       avgGapScore,
-      questionNodes.reduce((s, n) => s + n.searchVolume, 0) / questionNodes.length,
+      questionNodes.reduce((s, n) => s + n.searchVolume, 0) /
+        questionNodes.length,
       questionNodes.filter((n) => n.isRising).length,
+      questionNodes.map((n) => n.name),
     ),
     clusterMethod: "question",
     themes: ["FAQ", "사용자 궁금증", "핵심 질문"],
@@ -291,7 +326,10 @@ function buildMemberships(
       itemLabel: node.name,
       itemType,
       clusterId,
-      membershipScore: Math.round((node.centrality + node.searchVolume / maxVolume) / 2 * 1000) / 1000,
+      membershipScore:
+        Math.round(
+          ((node.centrality + node.searchVolume / maxVolume) / 2) * 1000,
+        ) / 1000,
       intent: node.intentCategory,
       phase: node.temporalPhase,
       searchVolume: node.searchVolume,
@@ -385,15 +423,35 @@ function calculateClusterScore(
   avgGapScore: number,
   avgSearchVolume: number,
   risingCount: number,
+  allKeywords?: string[],
 ): number {
-  // 가중 합산: 규모(25%) + 갭(30%) + 볼륨(25%) + 트렌드(20%)
+  // 기본 점수 컴포넌트
   const sizeScore = Math.min(100, memberCount * 5);
   const gapScore = avgGapScore;
-  const volumeScore = Math.min(100, Math.log2(Math.max(1, avgSearchVolume)) * 8);
+  const volumeScore = Math.min(
+    100,
+    Math.log2(Math.max(1, avgSearchVolume)) * 8,
+  );
   const trendScore = Math.min(100, risingCount * 20);
 
+  // 다양성 점수: 클러스터 내 키워드들이 얼마나 다양한 단어를 포함하는지
+  // 유사 키워드가 많으면 점수가 낮아짐
+  let diversityScore = 100;
+  if (allKeywords && allKeywords.length > 0) {
+    const uniqueTerms = new Set(allKeywords.flatMap((kw) => kw.split(/\s+/)));
+    diversityScore = Math.min(
+      100,
+      (uniqueTerms.size / allKeywords.length) * 100,
+    );
+  }
+
+  // 가중 합산: 규모(20%) + 갭(25%) + 볼륨(20%) + 트렌드(15%) + 다양성(20%)
   return Math.round(
-    sizeScore * 0.25 + gapScore * 0.30 + volumeScore * 0.25 + trendScore * 0.20,
+    sizeScore * 0.2 +
+      gapScore * 0.25 +
+      volumeScore * 0.2 +
+      trendScore * 0.15 +
+      diversityScore * 0.2,
   );
 }
 

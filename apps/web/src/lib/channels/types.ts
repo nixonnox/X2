@@ -65,13 +65,13 @@ export type Channel = {
 export type ChannelSnapshot = {
   channelId: string;
   snapshotDate: string;
-  audienceCount: number;
+  audienceCount: number | null;
   audienceLabel: string;
-  totalContents: number;
-  totalViewsOrReach: number;
-  engagementRate: number;
-  growthRate30d: number;
-  uploads30d: number;
+  totalContents: number | null;
+  totalViewsOrReach: number | null;
+  engagementRate: number | null;
+  growthRate30d: number | null;
+  uploads30d: number | null;
 };
 
 // ---- Content ----

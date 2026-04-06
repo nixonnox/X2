@@ -48,15 +48,12 @@ export async function analyzePersonaView(
 
   // 2. PersonaProfile 추론
   const maxPersonas = request.maxPersonas ?? 6;
-  const {
-    personas,
-    personaClusterLinks,
-    personaJourneyLinks,
-  } = buildPersonaProfiles(
-    clusterResult.clusters,
-    request.seedKeyword,
-    maxPersonas,
-  );
+  const { personas, personaClusterLinks, personaJourneyLinks } =
+    buildPersonaProfiles(
+      clusterResult.clusters,
+      request.seedKeyword,
+      maxPersonas,
+    );
 
   // 3. (선택) LLM으로 summary 강화
   if (request.useLLM && personas.length > 0) {
@@ -64,11 +61,7 @@ export async function analyzePersonaView(
   }
 
   // 4. 요약 생성
-  const summary = buildPersonaSummary(
-    personas,
-    clusterResult,
-    startTime,
-  );
+  const summary = buildPersonaSummary(personas, clusterResult, startTime);
 
   // 5. Trace 생성
   const trace = buildTrace(clusterResult, personas, startTime);
@@ -132,7 +125,11 @@ async function enhanceWithLLM(
     if (!content) return;
 
     const result = JSON.parse(content) as {
-      summaries: { archetype: string; summary: string; messagingAngle: string }[];
+      summaries: {
+        archetype: string;
+        summary: string;
+        messagingAngle: string;
+      }[];
     };
 
     // 결과 적용
@@ -166,7 +163,11 @@ const PERSONA_SUMMARY_SYSTEM_PROMPT = `당신은 검색 의도 기반 소비자 
 - 한국어 사용
 - 마케팅/콘텐츠 전략 관점
 - 구체적이고 실행 가능한 인사이트
-- 각 페르소나별 차별화된 메시지`;
+- 각 페르소나별 차별화된 메시지
+- 각 페르소나의 요약에 시드 키워드와 관련된 구체적 행동/상황을 포함하세요
+- "정보를 찾는 사용자" 같은 일반적 설명 대신, "더크림유니언 제품 구매 전 실사용 후기를 비교하는 30대 여성" 같은 구체적 설명을 작성하세요
+- 메시지 전략도 "교육 콘텐츠" 같은 일반론이 아닌, 구체적 콘텐츠 제안을 포함하세요
+- 예: "사용 1주일 차 변화 일기 콘텐츠로 초기 구매 불안을 해소"`;
 
 // ─── Summary ──────────────────────────────────────────────────
 
@@ -190,9 +191,11 @@ function buildPersonaSummary(
   }
 
   // Dominant archetype
-  const dominantArchetype = personas.length > 0
-    ? personas.reduce((a, b) => (b.percentage > a.percentage ? b : a)).archetype
-    : "information_seeker" as PersonaArchetype;
+  const dominantArchetype =
+    personas.length > 0
+      ? personas.reduce((a, b) => (b.percentage > a.percentage ? b : a))
+          .archetype
+      : ("information_seeker" as PersonaArchetype);
 
   return {
     totalPersonas: personas.length,

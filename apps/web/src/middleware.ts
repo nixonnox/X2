@@ -25,6 +25,8 @@ const PUBLIC_PATHS = [
   "/api/intent",
   "/api/sync",
   "/api/demo",
+  "/api/dev-login",
+  "/api/debug-session",
   "/reports/shared",
   "/terms",
   "/privacy",

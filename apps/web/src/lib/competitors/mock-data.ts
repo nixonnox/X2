@@ -266,7 +266,12 @@ function generateSeries(
   ];
   return months.map((date, i) => {
     const progress = (i + 1) / months.length;
-    const jitter = 0.95 + Math.random() * 0.1;
+    // TODO: 실데이터 연결 - tRPC competitor.compare에서 시계열 데이터 사용
+    const jitter = 1.0; // Math.random() 제거 — 결정적 계산
+    if (i === 0)
+      console.warn(
+        "[MOCK] competitor series generated - no real data connected",
+      );
     return {
       channelId,
       date,

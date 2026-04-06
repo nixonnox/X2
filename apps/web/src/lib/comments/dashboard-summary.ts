@@ -42,12 +42,12 @@ export function buildDashboardSummary(
     highRiskCount: highRisk,
     unansweredCount: unanswered,
     faqCount: faq,
-    // Mock previous period values
-    prevTotalComments: Math.round(total * 0.88),
-    prevPositiveRatio: total > 0 ? Math.round((positive / total) * 100) - 3 : 0,
-    prevNegativeRatio: total > 0 ? Math.round((negative / total) * 100) + 2 : 0,
-    prevHighRiskCount: Math.max(highRisk - 1, 0),
-    prevUnansweredCount: Math.round(unanswered * 1.2),
+    // No historical data yet — use current values (no fake deltas)
+    prevTotalComments: total,
+    prevPositiveRatio: total > 0 ? Math.round((positive / total) * 100) : 0,
+    prevNegativeRatio: total > 0 ? Math.round((negative / total) * 100) : 0,
+    prevHighRiskCount: highRisk,
+    prevUnansweredCount: unanswered,
   };
 }
 
@@ -99,16 +99,12 @@ export function buildTopicDistribution(
     .sort((a, b) => b.count - a.count);
 }
 
+// TODO: 실데이터 연결 - tRPC comment.listByProject에서 날짜별 집계 사용
 export function buildCommentVolumeSeries(): CommentVolumeSeries[] {
-  // Mock time series for last 7 days
-  const days = ["Mar 1", "Mar 2", "Mar 3", "Mar 4", "Mar 5", "Mar 6", "Mar 7"];
-  return days.map((date) => {
-    const total = Math.round(15 + Math.random() * 25);
-    const positive = Math.round(total * (0.35 + Math.random() * 0.2));
-    const negative = Math.round(total * (0.1 + Math.random() * 0.15));
-    const neutral = total - positive - negative;
-    return { date, total, positive, negative, neutral };
-  });
+  console.warn(
+    "[MOCK] buildCommentVolumeSeries called - no real time-series data connected",
+  );
+  return [];
 }
 
 export { extractFaqs };

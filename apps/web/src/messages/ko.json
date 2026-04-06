@@ -73,7 +73,11 @@
     "campaigns": "캠페인",
     "mentions": "멘션 분석",
     "usage": "사용량",
-    "alertSettings": "알림 설정"
+    "alertSettings": "알림 설정",
+    "channelContent": "채널 & 콘텐츠",
+    "searchIntentJourney": "검색 의도 & 여정",
+    "aiVisibility": "AI 가시성",
+    "executeReport": "실행 & 리포트"
   },
   "admin": {
     "title": "관리자",
@@ -100,28 +104,28 @@
   "dashboard": {
     "title": "대시보드",
     "description": "모든 채널의 성과와 핵심 지표를 한눈에 확인하세요.",
-    "guide": "각 지표 카드에 마우스를 올리면 상세한 설명을 볼 수 있습니다.",
+    "guide": "각 지표 카드에 마우스를 올리면 상세한 설명을 볼 수 있어요.",
     "channelPerformance": "채널 성과 추이",
-    "channelPerformanceDesc": "최근 6개월간 조회수, 참여율, 팔로워 증감 추이를 확인합니다.",
+    "channelPerformanceDesc": "최근 6개월간 조회수, 참여율, 팔로워 증감 추이를 확인해요.",
     "contentTypeDist": "콘텐츠 유형 분포",
-    "contentTypeDistDesc": "콘텐츠 형식별 조회수 비교입니다.",
+    "contentTypeDistDesc": "콘텐츠 형식별 조회수를 비교해요.",
     "countryPerformance": "국가별 성과",
-    "countryPerformanceDesc": "주요 국가별 조회수와 참여율을 비교합니다.",
+    "countryPerformanceDesc": "주요 국가별 조회수와 참여율을 비교해요.",
     "recentContent": "최근 인기 콘텐츠",
-    "recentContentDesc": "조회수 기준 최근 인기 콘텐츠 목록입니다.",
+    "recentContentDesc": "조회수 기준 최근 인기 콘텐츠 목록이에요.",
     "aiInsights": "AI 인사이트",
-    "aiInsightsDesc": "AI가 분석한 채널 성과 요약과 전략 제안입니다."
+    "aiInsightsDesc": "AI가 분석한 채널 성과 요약과 전략 제안이에요."
   },
   "channels": {
     "title": "채널 분석",
-    "description": "등록된 소셜 채널의 성과와 성장 추이를 분석합니다.",
-    "guide": "채널을 추가하면 구독자, 조회수, 참여율 등 핵심 지표를 추적할 수 있습니다.",
+    "description": "등록된 소셜 채널의 성과와 성장 추이를 분석해요.",
+    "guide": "채널을 추가하면 구독자, 조회수, 참여율 등 핵심 지표를 추적할 수 있어요.",
     "addChannel": "채널 추가",
-    "emptyTitle": "아직 등록된 채널이 없습니다",
-    "emptyDescription": "첫 번째 채널을 등록하면\n소셜 미디어 성과 분석을 시작할 수 있습니다.\nYouTube, Instagram, TikTok 등 다양한 플랫폼을 지원합니다.",
+    "emptyTitle": "아직 등록된 채널이 없어요",
+    "emptyDescription": "첫 번째 채널을 등록하면\n소셜 미디어 성과 분석을 시작할 수 있어요.\nYouTube, Instagram, TikTok 등 다양한 플랫폼을 지원해요.",
     "emptyAction": "첫 채널 등록하기",
     "filterPlatform": "플랫폼",
-    "filterMode": "분석 모드",
+    "filterMode": "분석 방식",
     "filterStatus": "상태",
     "filterType": "채널 유형",
     "searchPlaceholder": "채널 이름, URL, 태그 검색..."
@@ -130,7 +134,7 @@
     "contentPerformance": "콘텐츠 성과",
     "contentPerformanceDesc": "최근 게시된 콘텐츠의 성과를 비교하고 개선 포인트를 찾아보세요.",
     "channelInsights": "채널 인사이트",
-    "channelInsightsDesc": "AI가 분석한 채널 현황과 전략적 제안사항입니다.",
+    "channelInsightsDesc": "AI가 분석한 채널 현황과 전략적 제안이에요.",
     "risksAndActions": "위험 신호 & 추천 액션",
     "risksAndActionsDesc": "즉시 대응이 필요한 위험 신호와 실행 가능한 액션을 확인하세요.",
     "commentAnalysisCta": "댓글 분석",
@@ -139,15 +143,15 @@
   },
   "channelNew": {
     "title": "채널 추가",
-    "description": "분석할 소셜 미디어 채널을 등록합니다.",
-    "guide": "채널 URL을 입력하면 플랫폼을 자동으로 감지하고,\n프로필 정보를 확인한 뒤 분석을 시작합니다."
+    "description": "분석할 소셜 미디어 채널을 등록해요.",
+    "guide": "채널 URL을 입력하면 플랫폼을 자동으로 감지하고,\n프로필 정보를 확인한 뒤 분석을 시작해요."
   },
   "comments": {
     "title": "댓글 분석",
-    "description": "모든 채널의 댓글을 통합 분석합니다. 감성, 위험도, 주제별로 대응 우선순위를 파악하세요.",
-    "guide": "고위험 댓글은 빨간색으로 표시됩니다. 댓글을 클릭하면 상세 분석과 추천 답변을 확인할 수 있습니다.",
-    "emptyTitle": "분석할 댓글이 없습니다",
-    "emptyDescription": "채널을 등록하면 댓글이 자동으로 수집되어\n감성 분석, 토픽 분류, 위험도 평가가 시작됩니다.",
+    "description": "모든 채널의 댓글을 통합 분석해요. 감성, 위험도, 주제별로 대응 우선순위를 파악하세요.",
+    "guide": "고위험 댓글은 빨간색으로 표시돼요. 댓글을 클릭하면 상세 분석과 추천 답변을 확인할 수 있어요.",
+    "emptyTitle": "분석할 댓글이 없어요",
+    "emptyDescription": "채널을 등록하면 댓글이 자동으로 수집되어\n감성 분석, 토픽 분류, 위험도 평가가 시작돼요.",
     "totalComments": "전체 댓글",
     "positive": "긍정",
     "negative": "부정",
@@ -158,14 +162,14 @@
   "competitors": {
     "title": "경쟁 분석",
     "description": "경쟁 채널과의 성과를 비교하고 차별화 포인트를 찾아보세요.",
-    "guide": "경쟁 채널을 추가하면 구독자 성장률, 참여율, 콘텐츠 전략을 비교 분석합니다.",
-    "emptyTitle": "아직 경쟁 채널이 등록되지 않았습니다",
-    "emptyDescription": "경쟁 채널을 추가하면\n성과 비교와 차별화 전략 인사이트를 제공합니다."
+    "guide": "경쟁 채널을 추가하면 구독자 성장률, 참여율, 콘텐츠 전략을 비교 분석해요.",
+    "emptyTitle": "아직 경쟁 채널이 등록되지 않았어요",
+    "emptyDescription": "경쟁 채널을 추가하면\n성과 비교와 차별화 전략 인사이트를 제공해요."
   },
   "contents": {
     "title": "콘텐츠 관리",
-    "description": "모든 채널의 콘텐츠 성과를 한곳에서 관리하세요.",
-    "guide": "콘텐츠별 조회수, 참여율, 댓글 수를 비교하여 최적의 콘텐츠 전략을 수립하세요.",
+    "description": "모든 채널의 콘텐츠 성과를 한곳에서 관리해요.",
+    "guide": "콘텐츠별 조회수, 참여율, 댓글 수를 비교해서 최적의 콘텐츠 전략을 세워 보세요.",
     "colTitle": "제목",
     "colPlatform": "플랫폼",
     "colChannel": "채널",
@@ -177,53 +181,53 @@
     "searchPlaceholder": "콘텐츠 검색...",
     "filterPlatform": "플랫폼",
     "allPlatforms": "전체 플랫폼",
-    "emptyTitle": "콘텐츠가 없습니다",
-    "emptyDescription": "등록된 채널의 콘텐츠가 없습니다. 채널을 등록하고 데이터를 수집해주세요."
+    "emptyTitle": "콘텐츠가 없어요",
+    "emptyDescription": "등록된 채널의 콘텐츠가 없어요. 채널을 등록하고 데이터를 수집해 주세요."
   },
   "keywords": {
     "title": "키워드 & 트렌드",
-    "description": "브랜드와 관련된 키워드의 검색량과 트렌드를 추적합니다.",
-    "guide": "키워드를 등록하면 검색 트렌드, 경쟁 강도, 관련 키워드를 분석합니다.",
-    "emptyTitle": "아직 등록된 키워드가 없습니다",
-    "emptyDescription": "추적할 키워드를 등록하면\n실시간 트렌드와 경쟁 현황을 모니터링할 수 있습니다."
+    "description": "브랜드와 관련된 키워드의 검색량과 트렌드를 추적해요.",
+    "guide": "키워드를 등록하면 검색 트렌드, 경쟁 강도, 관련 키워드를 분석해요.",
+    "emptyTitle": "아직 등록된 키워드가 없어요",
+    "emptyDescription": "추적할 키워드를 등록하면\n실시간 트렌드와 경쟁 현황을 모니터링할 수 있어요."
   },
   "insights": {
     "title": "인사이트 & 리포트",
     "description": "AI가 분석한 전략적 인사이트와 실행 가능한 제안을 확인하세요.",
-    "guide": "데이터가 쌓일수록 더 정확한 인사이트를 제공합니다."
+    "guide": "데이터가 쌓일수록 더 정확한 인사이트를 제공해요."
   },
   "billing": {
     "title": "요금제",
-    "description": "현재 구독 플랜과 결제 내역을 관리합니다.",
-    "guide": "요금제를 변경하면 다음 결제일부터 적용됩니다."
+    "description": "현재 구독 플랜과 결제 내역을 관리해요.",
+    "guide": "요금제를 변경하면 다음 결제일부터 적용돼요."
   },
   "settings": {
     "title": "설정",
-    "description": "계정, 워크스페이스, 알림 등 환경 설정을 관리합니다.",
-    "guide": "설정 변경은 즉시 반영됩니다."
+    "description": "계정, 워크스페이스, 알림 등 환경 설정을 관리해요.",
+    "guide": "설정 변경은 즉시 반영돼요."
   },
   "onboarding": {
     "title": "시작 가이드",
     "subtitle": "X2와 함께 소셜 미디어 분석을 시작해 보세요",
     "step1": "채널 추가",
-    "step1Desc": "분석할 소셜 미디어 채널의 URL을 등록하세요. YouTube, Instagram, TikTok, X 등 다양한 플랫폼을 지원합니다.",
+    "step1Desc": "분석할 소셜 미디어 채널의 URL을 등록하세요. YouTube, Instagram, TikTok, X 등 다양한 플랫폼을 지원해요.",
     "step2": "키워드 등록",
-    "step2Desc": "브랜드와 관련된 키워드를 등록하면 실시간 트렌드와 언급 현황을 추적합니다.",
+    "step2Desc": "브랜드와 관련된 키워드를 등록하면 실시간 트렌드와 언급 현황을 추적해요.",
     "step3": "경쟁 채널 추가",
-    "step3Desc": "경쟁사의 채널을 추가하면 성과를 비교하고 차별화 전략을 수립할 수 있습니다.",
+    "step3Desc": "경쟁사의 채널을 추가하면 성과를 비교하고 차별화 전략을 세울 수 있어요.",
     "step4": "대시보드 확인",
-    "step4Desc": "모든 데이터가 대시보드에 종합되어 핵심 인사이트를 한눈에 확인할 수 있습니다."
+    "step4Desc": "모든 데이터가 대시보드에 종합되어 핵심 인사이트를 한눈에 확인할 수 있어요."
   },
   "tooltips": {
-    "subscribers": "해당 채널의 전체 구독자 수입니다. 직전 기간 대비 증감률도 함께 표시됩니다.",
-    "followers": "해당 채널의 전체 팔로워 수입니다.",
-    "totalViews": "채널의 모든 콘텐츠에 대한 누적 조회수입니다.",
-    "engagementRate": "좋아요, 댓글, 공유 등 반응 수를 조회수로 나눈 비율입니다. 높을수록 시청자의 관심이 높다는 뜻입니다.",
-    "growthRate": "최근 30일간 구독자(또는 팔로워) 증감률입니다. 채널의 성장 속도를 보여줍니다.",
-    "uploads30d": "최근 30일간 업로드한 콘텐츠 수입니다. 꾸준한 업로드는 알고리즘 노출에 유리합니다.",
-    "sentiment": "댓글의 감성을 긍정, 중립, 부정으로 분류한 결과입니다. AI가 댓글 내용을 분석하여 자동으로 판별합니다.",
-    "riskLevel": "댓글의 위험도를 나타냅니다. 부정적 표현, 불만, 공격적 언어 등이 포함된 경우 높게 평가됩니다.",
-    "topicLabel": "댓글의 주제를 자동으로 분류한 결과입니다. 가격, 품질, 일정, 문의 등의 카테고리로 나뉩니다."
+    "subscribers": "해당 채널의 전체 구독자 수예요. 직전 기간 대비 증감률도 함께 표시돼요.",
+    "followers": "해당 채널의 전체 팔로워 수예요.",
+    "totalViews": "채널의 모든 콘텐츠에 대한 누적 조회수예요.",
+    "engagementRate": "좋아요, 댓글, 공유 등 반응 수를 조회수로 나눈 비율이에요. 높을수록 시청자의 관심이 높다는 뜻이에요.",
+    "growthRate": "최근 30일간 구독자(또는 팔로워) 증감률이에요. 채널의 성장 속도를 보여줘요.",
+    "uploads30d": "최근 30일간 업로드한 콘텐츠 수예요. 꾸준한 업로드는 알고리즘 노출에 유리해요.",
+    "sentiment": "댓글의 감성을 긍정, 중립, 부정으로 분류한 결과예요. AI가 댓글 내용을 분석해서 자동으로 판별해요.",
+    "riskLevel": "댓글의 위험도를 나타내요. 부정적 표현, 불만, 공격적 언어 등이 포함된 경우 높게 평가돼요.",
+    "topicLabel": "댓글의 주제를 자동으로 분류한 결과예요. 가격, 품질, 일정, 문의 등의 카테고리로 나뉘어요."
   },
   "language": {
     "label": "언어",

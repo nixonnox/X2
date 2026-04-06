@@ -270,10 +270,10 @@ export async function syncChannel(channelId: string): Promise<SyncResult> {
 
     // 이전 스냅샷과 비교하여 성장률 계산
     const prevSnapshot = channelService.getSnapshot(channelId);
-    if (prevSnapshot && prevSnapshot.audienceCount > 0) {
+    if (prevSnapshot && (prevSnapshot.audienceCount ?? 0) > 0) {
       snapshot.growthRate30d = +(
-        ((snapshot.audienceCount - prevSnapshot.audienceCount) /
-          prevSnapshot.audienceCount) *
+        (((snapshot.audienceCount ?? 0) - (prevSnapshot.audienceCount ?? 0)) /
+          (prevSnapshot.audienceCount ?? 1)) *
         100
       ).toFixed(1);
     }
@@ -285,9 +285,9 @@ export async function syncChannel(channelId: string): Promise<SyncResult> {
     const monthLabel = new Date().toLocaleDateString("en", { month: "short" });
     channelService.addSnapshotSeries(channelId, {
       date: monthLabel,
-      audienceCount: snapshot.audienceCount,
+      audienceCount: snapshot.audienceCount ?? 0,
       totalViewsOrReach: totalViews,
-      engagementRate: snapshot.engagementRate,
+      engagementRate: snapshot.engagementRate ?? 0,
     });
 
     // 11. 상태 복원

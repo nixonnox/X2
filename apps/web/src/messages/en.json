@@ -74,7 +74,11 @@
     "campaigns": "Campaigns",
     "mentions": "Mention Analysis",
     "usage": "Usage",
-    "alertSettings": "Alert Settings"
+    "alertSettings": "Alert Settings",
+    "channelContent": "Channel & Content",
+    "searchIntentJourney": "Search Intent & Journey",
+    "aiVisibility": "AI Visibility",
+    "executeReport": "Execute & Report"
   },
   "admin": {
     "title": "Admin",

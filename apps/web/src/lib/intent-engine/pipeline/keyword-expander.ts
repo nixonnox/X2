@@ -331,8 +331,9 @@ export function estimateSearchVolume(keyword: string, depth: number): number {
     lengthWeight = 0.2;
   }
 
-  // 약간의 랜덤 변동 추가 (+-20%)
-  const noise = 0.8 + Math.random() * 0.4;
+  // TODO: 실데이터 연결 - DataForSEO 또는 Naver Datalab API에서 실제 검색량 사용
+  // Math.random() 제거 — 결정적 추정값 사용
+  const noise = 1.0;
 
   return Math.round(baseVolume * lengthWeight * noise);
 }
@@ -502,6 +503,39 @@ function generateSeasonalKeywords(seed: string): QueueItem[] {
 }
 
 // ---------------------------------------------------------------------------
+// 저품질 확장 필터
+// ---------------------------------------------------------------------------
+
+/**
+ * 저품질 키워드 확장인지 판별한다.
+ * - 시드와 완전 동일
+ * - 일반적인 접미사만 추가 (e.g., "추천 추천", "추천 외")
+ * - 동일 단어 반복
+ * - 너무 짧은 키워드 (공백 제외 2자 미만)
+ */
+function isLowQualityExpansion(seed: string, expanded: string): boolean {
+  const seedNorm = seed.trim().toLowerCase();
+  const expandedNorm = expanded.trim().toLowerCase();
+
+  // 완전 동일
+  if (seedNorm === expandedNorm) return true;
+
+  // 너무 짧은 키워드
+  if (expandedNorm.replace(/\s/g, "").length < 2) return true;
+
+  // 동일 단어 반복 (e.g., "추천 추천")
+  const words = expandedNorm.split(/\s+/);
+  if (new Set(words).size < words.length) return true;
+
+  // 시드에 일반적 접미사만 추가한 경우
+  const genericSuffixes = ["추천", "외", "심화", "기타", "등", "관련", "종류"];
+  const diff = expandedNorm.replace(seedNorm, "").trim();
+  if (diff && genericSuffixes.includes(diff)) return true;
+
+  return false;
+}
+
+// ---------------------------------------------------------------------------
 // 메인 확장 함수
 // ---------------------------------------------------------------------------
 
@@ -579,8 +613,9 @@ export async function expandKeywords(
     initialCandidates.push(...generateSeasonalKeywords(seedKeyword));
   }
 
-  // depth를 1로 설정하여 큐에 추가
+  // depth를 1로 설정하여 큐에 추가 (저품질 확장 필터링)
   for (const candidate of initialCandidates) {
+    if (isLowQualityExpansion(seedKeyword, candidate.keyword)) continue;
     candidate.depth = 1;
     candidate.parentKeyword = seedKeyword;
     queue.push(candidate);
@@ -644,6 +679,9 @@ export async function expandKeywords(
       }
 
       for (const candidate of nextCandidates) {
+        // 시드 및 현재 키워드 모두에 대해 저품질 확장 필터링
+        if (isLowQualityExpansion(seedKeyword, candidate.keyword)) continue;
+        if (isLowQualityExpansion(item.keyword, candidate.keyword)) continue;
         candidate.depth = nextDepth;
         candidate.parentKeyword = item.keyword;
         queue.push(candidate);

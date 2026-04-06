@@ -8,13 +8,20 @@ import { trpc } from "@/lib/trpc";
  */
 export function useCurrentProject() {
   const { data: workspaces, isLoading: wsLoading } =
-    trpc.workspace.list.useQuery();
+    trpc.workspace.list.useQuery(undefined, {
+      staleTime: 60_000,
+      retry: 2,
+    });
 
   const firstWorkspace = workspaces?.[0];
 
   const { data: projects, isLoading: projLoading } = trpc.project.list.useQuery(
     { workspaceId: firstWorkspace?.id ?? "" },
-    { enabled: !!firstWorkspace?.id },
+    {
+      enabled: !!firstWorkspace?.id,
+      staleTime: 60_000,
+      retry: 2,
+    },
   );
 
   const firstProject = projects?.[0];
@@ -24,7 +31,7 @@ export function useCurrentProject() {
     workspaceId: firstWorkspace?.id ?? null,
     project: firstProject ?? null,
     projectId: firstProject?.id ?? null,
-    isLoading: wsLoading || projLoading,
+    isLoading: wsLoading || (!!firstWorkspace?.id && projLoading),
     hasData: !!firstProject,
   };
 }

@@ -175,18 +175,15 @@ function generateSeries(base: {
   engagement: number;
 }): ChannelSnapshotSeries[] {
   const months = ["Oct", "Nov", "Dec", "Jan", "Feb", "Mar"];
+  // TODO: 실데이터 연결 - tRPC channel.get({ id }).snapshots 사용
+  console.warn(
+    "[MOCK] generateSeries called - no real snapshot data connected",
+  );
   return months.map((date, i) => ({
     date,
-    audienceCount: Math.round(
-      base.audience * (0.7 + i * 0.06) + Math.random() * base.audience * 0.05,
-    ),
-    totalViewsOrReach: Math.round(
-      base.views * (0.6 + i * 0.08) + Math.random() * base.views * 0.1,
-    ),
-    engagementRate: +(
-      base.engagement * (0.85 + i * 0.03) +
-      Math.random() * 0.5
-    ).toFixed(1),
+    audienceCount: Math.round(base.audience * (0.7 + i * 0.06)),
+    totalViewsOrReach: Math.round(base.views * (0.6 + i * 0.08)),
+    engagementRate: +(base.engagement * (0.85 + i * 0.03)).toFixed(1),
   }));
 }
 

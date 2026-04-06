@@ -268,10 +268,14 @@ function defaultInsights(): BasicChannelInsight[] {
 
 // ---- Utilities ----
 
-function randomBetween(min: number, max: number): number {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+// TODO: 실데이터 연결 - tRPC channel.getStats() 또는 YouTube/Instagram API 사용
+function randomBetween(_min: number, _max: number): number {
+  console.warn("[MOCK] randomBetween called - no real data connected");
+  return 0;
 }
 
-function randomFloat(min: number, max: number): number {
-  return Math.round((Math.random() * (max - min) + min) * 100) / 100;
+// TODO: 실데이터 연결 - tRPC channel.getStats() 또는 YouTube/Instagram API 사용
+function randomFloat(_min: number, _max: number): number {
+  console.warn("[MOCK] randomFloat called - no real data connected");
+  return 0;
 }

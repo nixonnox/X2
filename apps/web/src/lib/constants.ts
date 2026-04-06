@@ -1,5 +1,5 @@
 export const APP_NAME = "X2";
-export const APP_DESCRIPTION = "Social Media Analytics & Listening Platform";
+export const APP_DESCRIPTION = "소셜 미디어 분석 및 리스닝 플랫폼";
 
 export type NavItem = {
   labelKey: string;
@@ -9,28 +9,24 @@ export type NavItem = {
 
 export type NavSection = {
   titleKey: string;
+  icon: string;
   items: NavItem[];
+};
+
+// ---- 4-Hub + Utility Structure ----
+
+export const NAV_HOME: NavItem = {
+  labelKey: "nav.home",
+  href: "/dashboard",
+  icon: "Home",
 };
 
 export const NAV_SECTIONS: NavSection[] = [
   {
-    titleKey: "nav.start",
-    items: [
-      { labelKey: "nav.home", href: "/dashboard", icon: "Home" },
-      { labelKey: "nav.startHub", href: "/start", icon: "Compass" },
-    ],
-  },
-  {
-    titleKey: "nav.discover",
+    titleKey: "nav.channelContent",
+    icon: "Tv",
     items: [
       { labelKey: "nav.channels", href: "/channels", icon: "Tv" },
-      { labelKey: "nav.keywords", href: "/keywords", icon: "TrendingUp" },
-      { labelKey: "nav.mentions", href: "/keywords/mentions", icon: "AtSign" },
-    ],
-  },
-  {
-    titleKey: "nav.analyze",
-    items: [
       {
         labelKey: "nav.commentAnalysis",
         href: "/comments",
@@ -45,13 +41,10 @@ export const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    titleKey: "nav.listeningMind",
+    titleKey: "nav.searchIntentJourney",
+    icon: "Search",
     items: [
-      {
-        labelKey: "nav.listeningHub",
-        href: "/listening-hub",
-        icon: "Radio",
-      },
+      { labelKey: "nav.listeningHub", href: "/listening-hub", icon: "Compass" },
       { labelKey: "nav.intentFinder", href: "/intent", icon: "Search" },
       { labelKey: "nav.pathfinder", href: "/pathfinder", icon: "GitBranch" },
       { labelKey: "nav.personaView", href: "/persona", icon: "Users" },
@@ -61,88 +54,37 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: "Network",
       },
       { labelKey: "nav.roadView", href: "/road-view", icon: "Route" },
-      { labelKey: "nav.faqIssues", href: "/comments/faq", icon: "HelpCircle" },
-      {
-        labelKey: "nav.categoryEntry",
-        href: "/category-entry",
-        icon: "Layers",
-      },
-      {
-        labelKey: "nav.demographic",
-        href: "/demographic",
-        icon: "PieChart",
-      },
     ],
   },
   {
-    titleKey: "nav.geoAeo",
+    titleKey: "nav.aiVisibility",
+    icon: "Globe",
     items: [
       { labelKey: "nav.citationTracker", href: "/geo-aeo", icon: "Globe" },
     ],
   },
   {
-    titleKey: "nav.insightAction",
+    titleKey: "nav.executeReport",
+    icon: "FileText",
     items: [
       { labelKey: "nav.insights", href: "/insights", icon: "Sparkles" },
       { labelKey: "nav.actions", href: "/insights/actions", icon: "Zap" },
-      {
-        labelKey: "nav.evidence",
-        href: "/insights/evidence",
-        icon: "FileCheck",
-      },
-    ],
-  },
-  {
-    titleKey: "nav.intelligence",
-    items: [
-      {
-        labelKey: "nav.intelligenceHub",
-        href: "/intelligence",
-        icon: "Brain",
-      },
-      {
-        labelKey: "nav.intelligenceCompare",
-        href: "/intelligence/compare",
-        icon: "GitCompareArrows",
-      },
-      {
-        labelKey: "nav.verticalPreview",
-        href: "/vertical-preview",
-        icon: "GitBranch",
-      },
-    ],
-  },
-  {
-    titleKey: "nav.reportAutomation",
-    items: [
       { labelKey: "nav.reports", href: "/insights/reports", icon: "FileText" },
-      {
-        labelKey: "nav.createReport",
-        href: "/insights/reports/new",
-        icon: "FilePlus",
-      },
-    ],
-  },
-  {
-    titleKey: "nav.execute",
-    items: [
-      { labelKey: "nav.campaigns", href: "/campaigns", icon: "Rocket" },
-      { labelKey: "nav.contents", href: "/contents", icon: "PlaySquare" },
+      { labelKey: "nav.notifications", href: "/notifications", icon: "Bell" },
     ],
   },
 ];
 
 export const NAV_ACCOUNT: NavItem[] = [
-  { labelKey: "nav.notifications", href: "/notifications", icon: "Bell" },
-  { labelKey: "nav.alertSettings", href: "/settings/notifications", icon: "BellRing" },
+  { labelKey: "nav.settings", href: "/settings", icon: "Settings" },
   { labelKey: "nav.billing", href: "/billing", icon: "CreditCard" },
   { labelKey: "nav.usage", href: "/settings/usage", icon: "BarChart3" },
-  { labelKey: "nav.settings", href: "/settings", icon: "Settings" },
 ];
 
 export const NAV_ADMIN: NavSection[] = [
   {
     titleKey: "admin.title",
+    icon: "Shield",
     items: [
       { labelKey: "admin.userManagement", href: "/admin/users", icon: "Users" },
       {
