@@ -127,7 +127,7 @@ function HeroWithDualDemo() {
                 <SearchIntentIcon className="h-4 w-4" />
                 인텐트 분석
                 <span className="rounded bg-violet-100 px-1.5 py-0.5 text-[10px] font-bold text-violet-600">
-                  Beta
+                  베타
                 </span>
               </button>
             </div>
