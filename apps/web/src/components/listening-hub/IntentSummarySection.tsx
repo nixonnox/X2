@@ -1,6 +1,12 @@
 "use client";
 
-import { ArrowRight, Search, BarChart3, MessageCircleQuestion, TrendingUp } from "lucide-react";
+import {
+  ArrowRight,
+  Search,
+  BarChart3,
+  MessageCircleQuestion,
+  TrendingUp,
+} from "lucide-react";
 import Link from "next/link";
 import type { SearchIntelligenceResult } from "@/services/search-intelligence";
 
@@ -23,6 +29,8 @@ export function IntentSummarySection({ result }: IntentSummarySectionProps) {
   }
 
   const { seedKeyword, payloadSummary, trace, durationMs } = result;
+  const confidence = trace?.confidence ?? 0;
+  const freshness = trace?.freshness;
 
   return (
     <section id="section-overview" className="space-y-3">
@@ -39,14 +47,15 @@ export function IntentSummarySection({ result }: IntentSummarySectionProps) {
       </div>
 
       {/* Low confidence warning */}
-      {trace.confidence < 0.3 && (
+      {confidence < 0.3 && (
         <div className="rounded-md bg-orange-50 px-3 py-2 text-[12px] text-orange-700">
-          신뢰도가 낮습니다 ({Math.round(trace.confidence * 100)}%). 데이터가 충분하지 않을 수 있습니다.
+          신뢰도가 낮습니다 ({Math.round(confidence * 100)}%). 데이터가 충분하지
+          않을 수 있습니다.
         </div>
       )}
 
       {/* Stale data warning */}
-      {trace.freshness === "stale" && (
+      {freshness === "stale" && (
         <div className="rounded-md bg-amber-50 px-3 py-2 text-[12px] text-amber-700">
           데이터가 오래되었습니다. 최신 분석을 다시 실행하세요.
         </div>
@@ -54,58 +63,66 @@ export function IntentSummarySection({ result }: IntentSummarySectionProps) {
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <div className="card p-3">
-          <p className="text-[11px] text-[var(--muted-foreground)]">시드 키워드</p>
-          <p className="mt-0.5 truncate text-[14px] font-semibold">{seedKeyword}</p>
+          <p className="text-[11px] text-[var(--muted-foreground)]">
+            시드 키워드
+          </p>
+          <p className="mt-0.5 truncate text-[14px] font-semibold">
+            {seedKeyword}
+          </p>
         </div>
         <div className="card p-3">
           <div className="flex items-center gap-1.5">
             <Search className="h-3 w-3 text-[var(--muted-foreground)]" />
-            <p className="text-[11px] text-[var(--muted-foreground)]">관련 키워드</p>
+            <p className="text-[11px] text-[var(--muted-foreground)]">
+              관련 키워드
+            </p>
           </div>
           <p className="mt-0.5 text-[14px] font-semibold">
-            {payloadSummary.totalRelatedKeywords}개
+            {payloadSummary?.totalRelatedKeywords ?? 0}개
           </p>
         </div>
         <div className="card p-3">
           <div className="flex items-center gap-1.5">
             <BarChart3 className="h-3 w-3 text-[var(--muted-foreground)]" />
-            <p className="text-[11px] text-[var(--muted-foreground)]">SERP 데이터</p>
+            <p className="text-[11px] text-[var(--muted-foreground)]">
+              SERP 데이터
+            </p>
           </div>
           <p className="mt-0.5 text-[14px] font-semibold">
-            {payloadSummary.hasSerpData ? "수집됨" : "없음"}
+            {payloadSummary?.hasSerpData ? "수집됨" : "없음"}
           </p>
         </div>
         <div className="card p-3">
           <div className="flex items-center gap-1.5">
             <TrendingUp className="h-3 w-3 text-[var(--muted-foreground)]" />
-            <p className="text-[11px] text-[var(--muted-foreground)]">트렌드 데이터</p>
+            <p className="text-[11px] text-[var(--muted-foreground)]">
+              트렌드 데이터
+            </p>
           </div>
           <p className="mt-0.5 text-[14px] font-semibold">
-            {payloadSummary.hasTrendData ? "수집됨" : "없음"}
+            {payloadSummary?.hasTrendData ? "수집됨" : "없음"}
           </p>
         </div>
         <div className="card p-3">
           <div className="flex items-center gap-1.5">
             <MessageCircleQuestion className="h-3 w-3 text-[var(--muted-foreground)]" />
-            <p className="text-[11px] text-[var(--muted-foreground)]">질문 데이터</p>
+            <p className="text-[11px] text-[var(--muted-foreground)]">
+              질문 데이터
+            </p>
           </div>
           <p className="mt-0.5 text-[14px] font-semibold">
-            {payloadSummary.hasQuestionData ? "수집됨" : "없음"}
+            {payloadSummary?.hasQuestionData ? "수집됨" : "없음"}
           </p>
         </div>
       </div>
 
       {/* Sources & timing */}
       <div className="flex flex-wrap items-center gap-3 text-[11px] text-[var(--muted-foreground)]">
-        <span>
-          소스: {payloadSummary.sourcesUsed.join(", ") || "없음"}
-        </span>
+        <span>소스: {payloadSummary?.sourcesUsed?.join(", ") || "없음"}</span>
         <span className="h-3 w-px bg-[var(--border)]" />
-        <span>분석 소요: {(durationMs / 1000).toFixed(1)}초</span>
+        <span>분석 소요: {((durationMs ?? 0) / 1000).toFixed(1)}초</span>
         <span className="h-3 w-px bg-[var(--border)]" />
-        <span>
-          신뢰도: {Math.round(trace.confidence * 100)}%
-        </span>
+        <span>신뢰도: {Math.round(confidence * 100)}%</span>
       </div>
     </section>
   );

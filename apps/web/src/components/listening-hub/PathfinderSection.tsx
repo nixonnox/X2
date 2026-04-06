@@ -6,7 +6,7 @@ import type { EngineExecutionResult } from "@/services/search-intelligence";
 
 type PathfinderData = {
   nodes?: { id?: string; name?: string; label?: string; hubScore?: number }[];
-  paths?: { steps?: string[]; keywords?: string[] }[];
+  paths?: { steps?: unknown[]; keywords?: unknown[] }[];
   totalNodes?: number;
   totalPaths?: number;
 };
@@ -15,7 +15,9 @@ type PathfinderSectionProps = {
   pathfinderResult: EngineExecutionResult<unknown> | undefined;
 };
 
-export function PathfinderSection({ pathfinderResult }: PathfinderSectionProps) {
+export function PathfinderSection({
+  pathfinderResult,
+}: PathfinderSectionProps) {
   if (!pathfinderResult) {
     return (
       <section id="section-pathfinder">
@@ -78,7 +80,10 @@ export function PathfinderSection({ pathfinderResult }: PathfinderSectionProps) 
 
       {!pathfinderResult.success && (
         <div className="rounded-md bg-red-50 px-3 py-2 text-[12px] text-red-700">
-          경로 탐색 실패: {pathfinderResult.error ?? "알 수 없는 오류"}
+          경로 탐색 실패:{" "}
+          {typeof pathfinderResult.error === "string"
+            ? pathfinderResult.error
+            : "알 수 없는 오류"}
         </div>
       )}
 
@@ -87,16 +92,24 @@ export function PathfinderSection({ pathfinderResult }: PathfinderSectionProps) 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-3">
             <div className="card p-3">
-              <p className="text-[11px] text-[var(--muted-foreground)]">노드 수</p>
+              <p className="text-[11px] text-[var(--muted-foreground)]">
+                노드 수
+              </p>
               <p className="mt-0.5 text-[14px] font-semibold">{nodeCount}</p>
             </div>
             <div className="card p-3">
-              <p className="text-[11px] text-[var(--muted-foreground)]">경로 수</p>
+              <p className="text-[11px] text-[var(--muted-foreground)]">
+                경로 수
+              </p>
               <p className="mt-0.5 text-[14px] font-semibold">{pathCount}</p>
             </div>
             <div className="card p-3">
-              <p className="text-[11px] text-[var(--muted-foreground)]">허브 키워드</p>
-              <p className="mt-0.5 text-[14px] font-semibold">{topHubs.length}</p>
+              <p className="text-[11px] text-[var(--muted-foreground)]">
+                허브 키워드
+              </p>
+              <p className="mt-0.5 text-[14px] font-semibold">
+                {topHubs.length}
+              </p>
             </div>
           </div>
 
@@ -127,13 +140,22 @@ export function PathfinderSection({ pathfinderResult }: PathfinderSectionProps) 
               </h3>
               <div className="space-y-2">
                 {topPaths.map((path, i) => {
-                  const steps = path.steps ?? path.keywords ?? [];
+                  const rawSteps = path.steps ?? path.keywords ?? [];
+                  // steps may be strings or objects — normalize to string[]
+                  const steps = rawSteps.map((s: unknown) =>
+                    typeof s === "string"
+                      ? s
+                      : ((s as any)?.keyword ??
+                        (s as any)?.label ??
+                        (s as any)?.name ??
+                        JSON.stringify(s)),
+                  );
                   return (
                     <div
                       key={i}
                       className="flex flex-wrap items-center gap-1 rounded-md bg-[var(--secondary)] px-3 py-2"
                     >
-                      {steps.map((step, j) => (
+                      {steps.map((step: string, j: number) => (
                         <span key={j} className="flex items-center gap-1">
                           <span className="text-[12px] font-medium text-[var(--foreground)]">
                             {step}

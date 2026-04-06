@@ -108,7 +108,10 @@ export function RoadViewSection({ roadviewResult }: RoadViewSectionProps) {
 
       {!roadviewResult.success && (
         <div className="rounded-md bg-red-50 px-3 py-2 text-[12px] text-red-700">
-          여정 분석 실패: {roadviewResult.error ?? "알 수 없는 오류"}
+          여정 분석 실패:{" "}
+          {typeof roadviewResult.error === "string"
+            ? roadviewResult.error
+            : "알 수 없는 오류"}
         </div>
       )}
 
@@ -124,7 +127,10 @@ export function RoadViewSection({ roadviewResult }: RoadViewSectionProps) {
         <>
           {/* Horizontal stage flow */}
           <div className="overflow-x-auto">
-            <div className="flex gap-2 pb-2" style={{ minWidth: "max-content" }}>
+            <div
+              className="flex gap-2 pb-2"
+              style={{ minWidth: "max-content" }}
+            >
               {sortedStages.map((stage, i) => {
                 const isWeak = weakStages.includes(stage.stage);
                 const colorClass =
@@ -140,7 +146,9 @@ export function RoadViewSection({ roadviewResult }: RoadViewSectionProps) {
                       style={{ minWidth: 120 }}
                     >
                       <p className="text-[12px] font-semibold">
-                        {stage.label ?? STAGE_LABELS[stage.stage] ?? stage.stage}
+                        {stage.label ??
+                          STAGE_LABELS[stage.stage] ??
+                          stage.stage}
                       </p>
                       <p className="mt-1 text-[18px] font-bold">
                         {stage.keywordCount ?? 0}

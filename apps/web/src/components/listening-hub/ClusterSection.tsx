@@ -72,7 +72,10 @@ export function ClusterSection({ clusterResult }: ClusterSectionProps) {
 
       {!clusterResult.success && (
         <div className="rounded-md bg-red-50 px-3 py-2 text-[12px] text-red-700">
-          클러스터 분석 실패: {clusterResult.error ?? "알 수 없는 오류"}
+          클러스터 분석 실패:{" "}
+          {typeof clusterResult.error === "string"
+            ? clusterResult.error
+            : "알 수 없는 오류"}
         </div>
       )}
 
@@ -88,7 +91,8 @@ export function ClusterSection({ clusterResult }: ClusterSectionProps) {
         <>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {clusters.map((cluster, i) => {
-              const topKws = cluster.topKeywords ?? cluster.keywords?.slice(0, 5) ?? [];
+              const topKws =
+                cluster.topKeywords ?? cluster.keywords?.slice(0, 5) ?? [];
               return (
                 <Link
                   key={cluster.id ?? i}
@@ -105,14 +109,22 @@ export function ClusterSection({ clusterResult }: ClusterSectionProps) {
                   </div>
                   {topKws.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1">
-                      {topKws.map((kw) => (
-                        <span
-                          key={kw}
-                          className="rounded bg-[var(--secondary)] px-1.5 py-0.5 text-[10px] text-[var(--muted-foreground)]"
-                        >
-                          {kw}
-                        </span>
-                      ))}
+                      {topKws.map((rawKw, ki) => {
+                        const kwLabel =
+                          typeof rawKw === "string"
+                            ? rawKw
+                            : ((rawKw as any)?.keyword ??
+                              (rawKw as any)?.label ??
+                              String(rawKw));
+                        return (
+                          <span
+                            key={ki}
+                            className="rounded bg-[var(--secondary)] px-1.5 py-0.5 text-[10px] text-[var(--muted-foreground)]"
+                          >
+                            {kwLabel}
+                          </span>
+                        );
+                      })}
                     </div>
                   )}
                 </Link>

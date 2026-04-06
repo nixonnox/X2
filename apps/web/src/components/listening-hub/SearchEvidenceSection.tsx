@@ -74,7 +74,10 @@ export function SearchEvidenceSection({
         <div className="flex items-start gap-2 rounded-md bg-red-50 px-3 py-2">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-red-400" />
           <p className="text-[12px] text-red-700">
-            근거 자료 수집 실패: {evidenceResult.error ?? "알 수 없는 오류"}
+            근거 자료 수집 실패:{" "}
+            {typeof evidenceResult.error === "string"
+              ? evidenceResult.error
+              : "알 수 없는 오류"}
           </p>
         </div>
       )}
@@ -102,7 +105,7 @@ export function SearchEvidenceSection({
                       {item.label}
                     </h3>
                     {item.summary && (
-                      <p className="mt-0.5 text-[11px] text-[var(--muted-foreground)] line-clamp-2">
+                      <p className="mt-0.5 line-clamp-2 text-[11px] text-[var(--muted-foreground)]">
                         {item.summary}
                       </p>
                     )}

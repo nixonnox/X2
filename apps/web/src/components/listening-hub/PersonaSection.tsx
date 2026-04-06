@@ -22,8 +22,14 @@ type PersonaData = {
 };
 
 const PERSONA_COLORS = [
-  "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899",
-  "#06b6d4", "#84cc16",
+  "#3b82f6",
+  "#10b981",
+  "#f59e0b",
+  "#ef4444",
+  "#8b5cf6",
+  "#ec4899",
+  "#06b6d4",
+  "#84cc16",
 ];
 
 type PersonaSectionProps = {
@@ -82,7 +88,10 @@ export function PersonaSection({ personaResult }: PersonaSectionProps) {
 
       {!personaResult.success && (
         <div className="rounded-md bg-red-50 px-3 py-2 text-[12px] text-red-700">
-          페르소나 분석 실패: {personaResult.error ?? "알 수 없는 오류"}
+          페르소나 분석 실패:{" "}
+          {typeof personaResult.error === "string"
+            ? personaResult.error
+            : "알 수 없는 오류"}
         </div>
       )}
 
@@ -139,14 +148,15 @@ export function PersonaSection({ personaResult }: PersonaSectionProps) {
                         {persona.archetypeLabel ?? persona.archetype}
                       </span>
                     )}
-                    {persona.relatedClusterCount != null && persona.relatedClusterCount > 0 && (
-                      <Link
-                        href="/cluster-finder"
-                        className="rounded-full bg-[var(--secondary)] px-2 py-0.5 text-[10px] font-medium text-[var(--muted-foreground)] hover:underline"
-                      >
-                        클러스터 {persona.relatedClusterCount}개
-                      </Link>
-                    )}
+                    {persona.relatedClusterCount != null &&
+                      persona.relatedClusterCount > 0 && (
+                        <Link
+                          href="/cluster-finder"
+                          className="rounded-full bg-[var(--secondary)] px-2 py-0.5 text-[10px] font-medium text-[var(--muted-foreground)] hover:underline"
+                        >
+                          클러스터 {persona.relatedClusterCount}개
+                        </Link>
+                      )}
                   </div>
                 </div>
               );

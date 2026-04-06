@@ -33,7 +33,9 @@ const PRIORITY_LABELS: Record<string, string> = {
   low: "낮음",
 };
 
-export function SearchActionSection({ actionResult }: SearchActionSectionProps) {
+export function SearchActionSection({
+  actionResult,
+}: SearchActionSectionProps) {
   if (!actionResult) {
     return (
       <section id="section-action">
@@ -68,7 +70,10 @@ export function SearchActionSection({ actionResult }: SearchActionSectionProps) 
         <div className="flex items-start gap-2 rounded-md bg-red-50 px-3 py-2">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-red-400" />
           <p className="text-[12px] text-red-700">
-            액션 생성 실패: {actionResult.error ?? "알 수 없는 오류"}
+            액션 생성 실패:{" "}
+            {typeof actionResult.error === "string"
+              ? actionResult.error
+              : "알 수 없는 오류"}
           </p>
         </div>
       )}
@@ -85,11 +90,9 @@ export function SearchActionSection({ actionResult }: SearchActionSectionProps) 
         <div className="space-y-2">
           {actions.map((action, i) => {
             const priorityStyle =
-              PRIORITY_STYLES[action.priority ?? "low"] ??
-              PRIORITY_STYLES.low;
+              PRIORITY_STYLES[action.priority ?? "low"] ?? PRIORITY_STYLES.low;
             const priorityLabel =
-              PRIORITY_LABELS[action.priority ?? "low"] ??
-              PRIORITY_LABELS.low;
+              PRIORITY_LABELS[action.priority ?? "low"] ?? PRIORITY_LABELS.low;
 
             return (
               <div
