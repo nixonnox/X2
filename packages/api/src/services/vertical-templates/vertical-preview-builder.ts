@@ -460,6 +460,22 @@ export class VerticalPreviewBuilder {
         ACTION: "BODY_PAGE",
         EVIDENCE: "APPENDIX_PAGE",
       },
+      CSV: {
+        SUMMARY: "ROW",
+        BODY: "ROW",
+        FAQ: "ROW",
+        COMPARISON: "ROW",
+        ACTION: "ROW",
+        EVIDENCE: "ROW",
+      },
+      XLSX: {
+        SUMMARY: "SHEET",
+        BODY: "SHEET",
+        FAQ: "SHEET",
+        COMPARISON: "SHEET",
+        ACTION: "SHEET",
+        EVIDENCE: "SHEET",
+      },
     };
 
     return template.blockConfigs
@@ -488,6 +504,15 @@ export class VerticalPreviewBuilder {
         { type: "MOCK_DATA", placement: "WATERMARK" },
         { type: "STALE_DATA", placement: "FOOTER" },
         { type: "REGULATORY", placement: "FOOTER" },
+      ],
+      CSV: [
+        { type: "MOCK_DATA", placement: "HEADER_ROW" },
+        { type: "STALE_DATA", placement: "HEADER_ROW" },
+      ],
+      XLSX: [
+        { type: "MOCK_DATA", placement: "HEADER_ROW" },
+        { type: "STALE_DATA", placement: "HEADER_ROW" },
+        { type: "REGULATORY", placement: "SEPARATE_SHEET" },
       ],
     };
     return map[format];
@@ -541,6 +566,8 @@ export class VerticalPreviewBuilder {
       WORD: `${label} × Word: 편집/공유 목적. 문단+표+불릿 혼합 구조. 부록에 근거 표.`,
       PPT: `${label} × PPT: 발표/설득 목적. 슬라이드당 하나의 메시지, 시각화 힌트 포함.`,
       PDF: `${label} × PDF: 배포/보관 목적. 고정 레이아웃, 표지 신뢰도 뱃지, 유의사항 페이지.`,
+      CSV: `${label} × CSV: 데이터 활용 목적. 헤더+행 구조의 순수 데이터.`,
+      XLSX: `${label} × XLSX: 데이터 분석 목적. 시트별 분류, 필터/피벗 활용 가능.`,
     };
     return summaries[format];
   }

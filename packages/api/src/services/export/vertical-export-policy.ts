@@ -65,6 +65,18 @@ const VERTICAL_EXPORT_POLICIES: Record<
         "화장품 광고 시 의약품 표현 사용 금지 (화장품법 준수)",
       ],
     },
+    CSV: {
+      emphasizedBlocks: [],
+      hiddenBlocks: [],
+      appendixBlocks: [],
+      additionalWarnings: [],
+    },
+    XLSX: {
+      emphasizedBlocks: [],
+      hiddenBlocks: [],
+      appendixBlocks: [],
+      additionalWarnings: [],
+    },
   },
   FNB: {
     WORD: {
@@ -85,6 +97,18 @@ const VERTICAL_EXPORT_POLICIES: Record<
       hiddenBlocks: [],
       appendixBlocks: ["EVIDENCE"],
       additionalWarnings: ["가격 정보는 변동 가능 — 최신 확인 필요"],
+    },
+    CSV: {
+      emphasizedBlocks: [],
+      hiddenBlocks: [],
+      appendixBlocks: [],
+      additionalWarnings: [],
+    },
+    XLSX: {
+      emphasizedBlocks: [],
+      hiddenBlocks: [],
+      appendixBlocks: [],
+      additionalWarnings: [],
     },
   },
   FINANCE: {
@@ -117,6 +141,18 @@ const VERTICAL_EXPORT_POLICIES: Record<
         "원금 손실 가능 상품은 반드시 별도 위험 고지를 확인하시기 바랍니다",
       ],
     },
+    CSV: {
+      emphasizedBlocks: [],
+      hiddenBlocks: [],
+      appendixBlocks: [],
+      additionalWarnings: [],
+    },
+    XLSX: {
+      emphasizedBlocks: [],
+      hiddenBlocks: [],
+      appendixBlocks: [],
+      additionalWarnings: [],
+    },
   },
   ENTERTAINMENT: {
     WORD: {
@@ -137,6 +173,18 @@ const VERTICAL_EXPORT_POLICIES: Record<
       hiddenBlocks: [],
       appendixBlocks: ["EVIDENCE"],
       additionalWarnings: ["미확인 일정/루머 기반 정보는 별도 표시됨"],
+    },
+    CSV: {
+      emphasizedBlocks: [],
+      hiddenBlocks: [],
+      appendixBlocks: [],
+      additionalWarnings: [],
+    },
+    XLSX: {
+      emphasizedBlocks: [],
+      hiddenBlocks: [],
+      appendixBlocks: [],
+      additionalWarnings: [],
     },
   },
 };

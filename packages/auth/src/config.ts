@@ -74,53 +74,50 @@ if (process.env.AUTH_KAKAO_ID && process.env.AUTH_KAKAO_SECRET) {
   });
 }
 
-// 개발 모드: Credentials provider로 즉시 로그인 가능
-// CRITICAL: 프로덕션 환경에서는 절대 활성화되지 않도록 NODE_ENV 가드 필수
-if (
-  process.env.AUTH_DEV_LOGIN === "true" &&
-  process.env.NODE_ENV !== "production"
-) {
-  providers.push(
-    Credentials({
-      name: "Dev Login",
-      credentials: {
-        email: { label: "Email", type: "email", placeholder: "dev@x2.local" },
-      },
-      async authorize(credentials) {
-        const email = credentials?.email as string;
-        if (!email) return null;
+// 개발 모드: Credentials provider (항상 등록, authorize 내부에서 환경변수 체크)
+providers.push(
+  Credentials({
+    name: "Dev Login",
+    credentials: {
+      email: { label: "Email", type: "email", placeholder: "dev@x2.local" },
+    },
+    async authorize(credentials) {
+      // 환경변수 체크를 런타임에 수행
+      if (process.env.AUTH_DEV_LOGIN !== "true") return null;
 
-        try {
-          // DB에서 사용자 찾기 또는 생성
-          let user = await db.user.findUnique({ where: { email } });
-          if (!user) {
-            user = await db.user.create({
-              data: {
-                email,
-                name: email.split("@")[0],
-                emailVerified: new Date(),
-              },
-            });
-          }
-          return {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            image: user.image,
-          };
-        } catch {
-          // DB 미연결 시 임시 사용자 반환 (개발 전용)
-          return {
-            id: "dev-user",
-            email,
-            name: email.split("@")[0],
-            image: null,
-          };
+      const email = credentials?.email as string;
+      if (!email) return null;
+
+      try {
+        // DB에서 사용자 찾기 또는 생성
+        let user = await db.user.findUnique({ where: { email } });
+        if (!user) {
+          user = await db.user.create({
+            data: {
+              email,
+              name: email.split("@")[0],
+              emailVerified: new Date(),
+            },
+          });
         }
-      },
-    }),
-  );
-}
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+        };
+      } catch {
+        // DB 미연결 시 임시 사용자 반환 (개발 전용)
+        return {
+          id: "dev-user",
+          email,
+          name: email.split("@")[0],
+          image: null,
+        };
+      }
+    },
+  }),
+);
 
 // OAuth 사용 시에만 어댑터 활성화 (계정 연동에 필요)
 const hasOAuth =
@@ -131,6 +128,7 @@ const hasOAuth =
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...(hasOAuth ? { adapter: PrismaAdapter(db) as any } : {}),
   providers,
+  trustHost: true,
 
   session: {
     strategy: "jwt",

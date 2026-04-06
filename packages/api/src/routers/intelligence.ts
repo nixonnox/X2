@@ -2079,7 +2079,7 @@ export const intelligenceRouter = router({
         });
         headers = ["날짜", "전체점수"];
         rows = snapshots.map((s: any) => [
-          new Date(s.date).toISOString().split("T")[0],
+          new Date(s.date).toISOString().split("T")[0] ?? "",
           String(s.overallScore),
         ]);
         filename = `${input.keyword}_기준비교추이_${input.days}일`;
@@ -2206,10 +2206,12 @@ export const intelligenceRouter = router({
           spikeThreshold: Math.round(spikeThreshold * 10) / 10,
           totalMentions: mentions.length,
           peakHour:
-            dataPoints.reduce(
-              (max, d) => (d.count > max.count ? d : max),
-              dataPoints[0],
-            )?.hour ?? null,
+            dataPoints.length > 0
+              ? dataPoints.reduce(
+                  (max, d) => (d.count > max.count ? d : max),
+                  dataPoints[0]!,
+                ).hour
+              : null,
         },
         warnings: [],
       };
@@ -2600,28 +2602,56 @@ export const intelligenceRouter = router({
           else status = "declining";
         }
 
-        results.push({ keyword: topic, currentCount: count, previousCount: prev, changeRate, status });
+        results.push({
+          keyword: topic,
+          currentCount: count,
+          previousCount: prev,
+          changeRate,
+          status,
+        });
       }
 
       // Check gone topics
       for (const [topic, count] of previousTopics) {
         if (!currentTopics.has(topic)) {
-          results.push({ keyword: topic, currentCount: 0, previousCount: count, changeRate: -100, status: "gone" });
+          results.push({
+            keyword: topic,
+            currentCount: 0,
+            previousCount: count,
+            changeRate: -100,
+            status: "gone",
+          });
         }
       }
 
       // Sort: new/surging first, then by change rate
-      const statusOrder = { new: 0, surging: 1, rising: 2, stable: 3, declining: 4, gone: 5 };
-      results.sort((a, b) => statusOrder[a.status] - statusOrder[b.status] || b.changeRate - a.changeRate);
+      const statusOrder = {
+        new: 0,
+        surging: 1,
+        rising: 2,
+        stable: 3,
+        declining: 4,
+        gone: 5,
+      };
+      results.sort(
+        (a, b) =>
+          statusOrder[a.status] - statusOrder[b.status] ||
+          b.changeRate - a.changeRate,
+      );
 
       const newKeywords = results.filter((r) => r.status === "new");
       const surgingKeywords = results.filter((r) => r.status === "surging");
       const risingKeywords = results.filter((r) => r.status === "rising");
-      const decliningKeywords = results.filter((r) => r.status === "declining" || r.status === "gone");
+      const decliningKeywords = results.filter(
+        (r) => r.status === "declining" || r.status === "gone",
+      );
 
       return {
         keyword: input.keyword,
-        period: { currentDays: input.currentDays, previousDays: input.previousDays },
+        period: {
+          currentDays: input.currentDays,
+          previousDays: input.previousDays,
+        },
         hasData: currentMentions.length > 0 || previousMentions.length > 0,
         summary: {
           totalCurrent: currentTopics.size,

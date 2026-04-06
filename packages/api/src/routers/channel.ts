@@ -6,31 +6,6 @@ import { YouTubeProvider } from "@x2/social";
 
 const youtube = new YouTubeProvider();
 
-// URL에서 platformChannelId 추출
-function extractChannelId(url: string): string {
-  try {
-    const u = new URL(url.startsWith("http") ? url : `https://${url}`);
-    const path = u.pathname.replace(/\/$/, "");
-    const segments = path.split("/").filter(Boolean);
-    const last = segments[segments.length - 1] ?? "";
-    return last || u.hostname;
-  } catch {
-    return url;
-  }
-}
-
-// 플랫폼 문자열 → DB enum 매핑
-function toPlatformEnum(code: string): string {
-  const map: Record<string, string> = {
-    youtube: "YOUTUBE",
-    instagram: "INSTAGRAM",
-    tiktok: "TIKTOK",
-    x: "X",
-    naver_blog: "NAVER_BLOG",
-  };
-  return map[code] ?? "YOUTUBE";
-}
-
 export const channelRouter = router({
   /** 프로젝트의 채널 목록 조회 */
   list: protectedProcedure
@@ -67,72 +42,7 @@ export const channelRouter = router({
       return channel;
     }),
 
-  /** 모든 플랫폼 채널 등록 (DB 직접 저장) */
-  register: protectedProcedure
-    .input(
-      z.object({
-        projectId: z.string(),
-        url: z.string(),
-        name: z.string().min(1),
-        platformCode: z.string(),
-        channelType: z
-          .enum(["owned", "competitor", "monitoring"])
-          .default("owned"),
-        country: z.string().default("KR"),
-        category: z.string().default("기타"),
-        tags: z.array(z.string()).default([]),
-        analysisMode: z.string().default("url_basic"),
-        customPlatformName: z.string().optional(),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      await verifyProjectAccess(ctx.db, ctx.userId, input.projectId);
-
-      const normalizedUrl = input.url.startsWith("http")
-        ? input.url
-        : `https://${input.url}`;
-
-      const platform = toPlatformEnum(input.platformCode) as any;
-      const platformChannelId = extractChannelId(normalizedUrl);
-
-      // 중복 확인
-      const existing = await ctx.db.channel.findFirst({
-        where: {
-          projectId: input.projectId,
-          url: normalizedUrl,
-          deletedAt: null,
-        },
-      });
-      if (existing) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "이미 등록된 채널 URL입니다.",
-        });
-      }
-
-      const channelTypeMap: Record<string, any> = {
-        owned: "OWNED",
-        competitor: "COMPETITOR",
-        monitoring: "MONITORING",
-      };
-
-      const channel = await ctx.db.channel.create({
-        data: {
-          projectId: input.projectId,
-          platform,
-          platformChannelId,
-          name: input.name,
-          url: normalizedUrl,
-          channelType: channelTypeMap[input.channelType] ?? "OWNED",
-          connectionType: "BASIC",
-          status: "ACTIVE",
-        },
-      });
-
-      return { success: true, channel };
-    }),
-
-  /** YouTube 채널 API 연동 등록 */
+  /** 채널 URL로 채널 추가 (플랫폼 자동 감지) */
   add: protectedProcedure
     .input(
       z.object({
@@ -144,26 +54,83 @@ export const channelRouter = router({
       await verifyProjectAccess(ctx.db, ctx.userId, input.projectId);
 
       const url = new URL(input.url);
-      let channelId: string | null = null;
-      if (url.pathname.startsWith("/channel/")) {
-        channelId = url.pathname.split("/channel/")[1]?.split("/")[0] ?? null;
-      } else if (url.pathname.startsWith("/@")) {
-        channelId = url.pathname.split("/")[1] ?? null;
+      const hostname = url.hostname.replace("www.", "");
+
+      // 플랫폼 자동 감지
+      let platform: "YOUTUBE" | "INSTAGRAM" | "TIKTOK" | "X" | "NAVER_BLOG" =
+        "NAVER_BLOG";
+      let platformChannelId =
+        url.pathname.replace(/^\//, "").replace(/\/$/, "") || hostname;
+      let channelName = platformChannelId;
+
+      if (hostname.includes("youtube.com") || hostname.includes("youtu.be")) {
+        platform = "YOUTUBE";
+        if (url.pathname.startsWith("/channel/")) {
+          platformChannelId =
+            url.pathname.split("/channel/")[1]?.split("/")[0] ?? "";
+        } else if (url.pathname.startsWith("/@")) {
+          platformChannelId = url.pathname.split("/")[1] ?? "";
+        }
+        channelName = platformChannelId;
+
+        // YouTube API로 채널 정보 조회 시도
+        try {
+          const info = await youtube.getChannelInfo(platformChannelId);
+          platformChannelId = info.platformChannelId;
+          channelName = info.name;
+
+          return ctx.db.channel.create({
+            data: {
+              projectId: input.projectId,
+              platform: "YOUTUBE",
+              platformChannelId: info.platformChannelId,
+              name: info.name,
+              url: info.url,
+              thumbnailUrl: info.thumbnailUrl,
+              subscriberCount: info.subscriberCount ?? 0,
+              contentCount: info.contentCount ?? 0,
+              lastSyncedAt: new Date(),
+            },
+          });
+        } catch {
+          // API 실패 시 기본 정보로 등록
+        }
+      } else if (hostname.includes("instagram.com")) {
+        platform = "INSTAGRAM";
+        platformChannelId =
+          url.pathname.replace(/^\//, "").replace(/\/$/, "").split("/")[0] ??
+          "";
+        channelName = `@${platformChannelId}`;
+      } else if (hostname.includes("tiktok.com")) {
+        platform = "TIKTOK";
+        platformChannelId =
+          url.pathname.replace(/^\//, "").replace(/\/$/, "").split("/")[0] ??
+          "";
+        channelName = platformChannelId;
+      } else if (
+        hostname.includes("x.com") ||
+        hostname.includes("twitter.com")
+      ) {
+        platform = "X";
+        platformChannelId =
+          url.pathname.replace(/^\//, "").replace(/\/$/, "").split("/")[0] ??
+          "";
+        channelName = `@${platformChannelId}`;
       }
-      if (!channelId) {
+
+      if (!platformChannelId) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "유효한 YouTube 채널 URL이 아닙니다.",
+          message: "채널 ID를 URL에서 추출할 수 없습니다.",
         });
       }
 
-      const info = await youtube.getChannelInfo(channelId);
-
+      // 중복 확인
       const existing = await ctx.db.channel.findFirst({
         where: {
           projectId: input.projectId,
-          platform: "YOUTUBE",
-          platformChannelId: info.platformChannelId,
+          platform,
+          platformChannelId,
         },
       });
       if (existing) {
@@ -176,13 +143,10 @@ export const channelRouter = router({
       return ctx.db.channel.create({
         data: {
           projectId: input.projectId,
-          platform: "YOUTUBE",
-          platformChannelId: info.platformChannelId,
-          name: info.name,
-          url: info.url,
-          thumbnailUrl: info.thumbnailUrl,
-          subscriberCount: info.subscriberCount ?? 0,
-          contentCount: info.contentCount ?? 0,
+          platform,
+          platformChannelId,
+          name: channelName,
+          url: input.url,
           lastSyncedAt: new Date(),
         },
       });

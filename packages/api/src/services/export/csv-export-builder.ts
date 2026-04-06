@@ -66,9 +66,10 @@ export class CsvExportBuilder {
   /**
    * 모든 블록을 [섹션, 제목, 내용, 근거, 신뢰도] 형태로 평탄화
    */
-  private extractFromAllBlocks(
-    bundle: ExportBundle,
-  ): { headers: string[]; rows: string[][] } {
+  private extractFromAllBlocks(bundle: ExportBundle): {
+    headers: string[];
+    rows: string[][];
+  } {
     const headers = ["섹션", "제목", "내용", "근거", "신뢰도"];
     const rows: string[][] = [];
 
@@ -104,9 +105,10 @@ export class CsvExportBuilder {
   /**
    * structuredData가 있는 블록에서 테이블 데이터 추출
    */
-  private extractFromStructuredData(
-    bundle: ExportBundle,
-  ): { headers: string[]; rows: string[][] } {
+  private extractFromStructuredData(bundle: ExportBundle): {
+    headers: string[];
+    rows: string[][];
+  } {
     // TABLE/COMPARISON 역할 블록에서 구조화 데이터 우선 추출
     const tableBlocks = [
       ...bundle.bodyBlocks,
@@ -118,8 +120,9 @@ export class CsvExportBuilder {
         (b.role === "TABLE" || b.role === "COMPARISON" || b.role === "FAQ"),
     );
 
-    if (tableBlocks.length > 0 && tableBlocks[0].structuredData) {
-      const data = tableBlocks[0].structuredData;
+    const firstBlock = tableBlocks[0];
+    if (tableBlocks.length > 0 && firstBlock?.structuredData) {
+      const data = firstBlock.structuredData;
       const hdrs = (data.headers as string[]) ?? [];
       const rws = (data.rows as string[][]) ?? [];
       if (hdrs.length > 0) {
@@ -131,9 +134,7 @@ export class CsvExportBuilder {
     return this.extractFromAllBlocks(bundle);
   }
 
-  private tryExtractTableRows(
-    data: Record<string, unknown>,
-  ): string[][] {
+  private tryExtractTableRows(data: Record<string, unknown>): string[][] {
     const rows = data.rows as string[][] | undefined;
     if (Array.isArray(rows)) {
       return rows;

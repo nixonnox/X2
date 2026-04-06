@@ -82,11 +82,8 @@ export class XlsxExportBuilder {
 
     // 타이틀
     rows.push(["키워드", seedKeyword]);
-    rows.push(["생성일", new Date().toISOString().split("T")[0]]);
-    rows.push([
-      "신뢰도",
-      Math.round(bundle.quality.confidence * 100) + "%",
-    ]);
+    rows.push(["생성일", new Date().toISOString().split("T")[0] ?? ""]);
+    rows.push(["신뢰도", Math.round(bundle.quality.confidence * 100) + "%"]);
     rows.push(["경고 수", bundle.globalWarnings.length]);
     rows.push(["---", "---"]);
 
@@ -109,7 +106,8 @@ export class XlsxExportBuilder {
   private buildDataSheet(bundle: ExportBundle): XlsxSheet {
     // TABLE/COMPARISON 블록에서 구조화 데이터가 있으면 그대로 사용
     const tableBlock = bundle.bodyBlocks.find(
-      (b) => b.structuredData && (b.role === "TABLE" || b.role === "COMPARISON"),
+      (b) =>
+        b.structuredData && (b.role === "TABLE" || b.role === "COMPARISON"),
     );
 
     if (tableBlock?.structuredData) {
@@ -142,7 +140,11 @@ export class XlsxExportBuilder {
 
       // 구조화 데이터 내 행도 추가
       if (block.structuredData?.rows) {
-        const subRows = block.structuredData.rows as (string | number | null)[][];
+        const subRows = block.structuredData.rows as (
+          | string
+          | number
+          | null
+        )[][];
         for (const subRow of subRows) {
           rows.push([null, null, null, ...subRow.map(String)]);
         }

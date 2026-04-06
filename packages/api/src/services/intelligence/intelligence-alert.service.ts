@@ -706,7 +706,7 @@ export class IntelligenceAlertService {
     try {
       const { deliveryRetryQueue } = await import("@x2/queue");
       await deliveryRetryQueue.add(
-        `retry:${params.notificationId}:${params.channel}:${params.attemptCount + 1}`,
+        `retry:${params.notificationId}:${params.channel}:${params.attemptCount + 1}` as any,
         {
           notificationId: params.notificationId,
           userId: params.userId,
@@ -721,7 +721,7 @@ export class IntelligenceAlertService {
           recipientEmail: params.recipientEmail,
           webhookUrl: params.webhookUrl,
           attemptCount: params.attemptCount + 1,
-        },
+        } as any,
         { delay: delayMs },
       );
     } catch (err) {

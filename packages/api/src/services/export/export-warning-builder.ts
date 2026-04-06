@@ -180,6 +180,8 @@ export class ExportWarningBuilder {
         return "FOOTER";
       case "PDF":
         return "WATERMARK";
+      default:
+        return "HEADER";
     }
   }
 
@@ -191,6 +193,8 @@ export class ExportWarningBuilder {
         return "FOOTER";
       case "PDF":
         return "FOOTER";
+      default:
+        return "FOOTER";
     }
   }
 
@@ -201,6 +205,8 @@ export class ExportWarningBuilder {
       case "PPT":
         return "FOOTER";
       case "PDF":
+        return "FOOTER";
+      default:
         return "FOOTER";
     }
   }
@@ -214,6 +220,8 @@ export class ExportWarningBuilder {
       case "PPT":
         return "FOOTER";
       case "PDF":
+        return "HEADER";
+      default:
         return "HEADER";
     }
   }

@@ -1,5 +1,61 @@
 import { z } from "zod";
+import http from "node:http";
+import https from "node:https";
 import { router, protectedProcedure } from "../trpc";
+
+/** SSL 인증서 검증을 우회하는 HTTP(S) 요청 (불완전한 인증서 체인 대응) */
+async function fetchPage(
+  url: string,
+  opts: { timeout?: number; maxRedirects?: number } = {},
+): Promise<{ ok: boolean; status: number; body: string }> {
+  const { timeout = 15000, maxRedirects = 5 } = opts;
+  return new Promise((resolve, reject) => {
+    const u = new URL(url);
+    const mod = u.protocol === "https:" ? https : http;
+    const req = mod.request(
+      u,
+      {
+        method: "GET",
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (compatible; X2-GeoScorer/1.0; +https://x2.app)",
+          Accept: "text/html,*/*",
+        },
+        rejectUnauthorized: false,
+        timeout,
+      },
+      (res) => {
+        // Follow redirects
+        if (
+          [301, 302, 307, 308].includes(res.statusCode ?? 0) &&
+          res.headers.location &&
+          maxRedirects > 0
+        ) {
+          const next = new URL(res.headers.location, url).href;
+          fetchPage(next, { timeout, maxRedirects: maxRedirects - 1 })
+            .then(resolve)
+            .catch(reject);
+          res.resume(); // drain
+          return;
+        }
+
+        const chunks: Buffer[] = [];
+        res.on("data", (c: Buffer) => chunks.push(c));
+        res.on("end", () => {
+          const body = Buffer.concat(chunks).toString("utf-8");
+          const status = res.statusCode ?? 0;
+          resolve({ ok: status >= 200 && status < 300, status, body });
+        });
+      },
+    );
+    req.on("timeout", () => {
+      req.destroy();
+      reject(new Error("타임아웃"));
+    });
+    req.on("error", reject);
+    req.end();
+  });
+}
 
 const AeoEngineEnum = z.enum([
   "PERPLEXITY",
@@ -108,7 +164,10 @@ export const geoAeoRouter = router({
       });
 
       const byKeyword = keywords.map((kw) => {
-        const engineMap = new Map<string, { current: number; previous: number }>();
+        const engineMap = new Map<
+          string,
+          { current: number; previous: number }
+        >();
         for (const snap of kw.snapshots) {
           const existing = engineMap.get(snap.engine);
           if (!existing) {
@@ -138,11 +197,17 @@ export const geoAeoRouter = router({
         const avg =
           engines.length > 0
             ? Math.round(
-                engines.reduce((s, e) => s + e.currentScore, 0) / engines.length,
+                engines.reduce((s, e) => s + e.currentScore, 0) /
+                  engines.length,
               )
             : 0;
 
-        return { keyword: kw.keyword, keywordId: kw.id, engines, averageScore: avg };
+        return {
+          keyword: kw.keyword,
+          keywordId: kw.id,
+          engines,
+          averageScore: avg,
+        };
       });
 
       const allScores = byKeyword.map((k) => k.averageScore);
@@ -183,7 +248,8 @@ export const geoAeoRouter = router({
     .query(async ({ ctx, input }) => {
       const where: any = { projectId: input.projectId };
       if (input.sourceType) where.sourceType = input.sourceType;
-      if (input.geoOptimized !== undefined) where.geoOptimized = input.geoOptimized;
+      if (input.geoOptimized !== undefined)
+        where.geoOptimized = input.geoOptimized;
 
       const sources = await ctx.db.citationReadyReportSource.findMany({
         where,
@@ -199,7 +265,18 @@ export const geoAeoRouter = router({
         projectId: z.string(),
         sourceUrl: z.string().url(),
         title: z.string().min(1),
-        sourceType: z.string().default("BLOG_POST"),
+        sourceType: z
+          .enum([
+            "BLOG_POST",
+            "LANDING_PAGE",
+            "PRODUCT_PAGE",
+            "FAQ_PAGE",
+            "VIDEO",
+            "RESEARCH_REPORT",
+            "PRESS_RELEASE",
+            "SOCIAL_POST",
+          ])
+          .default("BLOG_POST"),
         primaryTopic: z.string().optional(),
         targetKeywords: z.array(z.string()).default([]),
         geoOptimized: z.boolean().default(false),
@@ -254,7 +331,14 @@ export const geoAeoRouter = router({
           reason: !s.geoOptimized ? "GEO 미최적화" : "인용 0건",
         }));
 
-      return { total, cited, uncited, citationRate, mostCited, needsOptimization };
+      return {
+        total,
+        cited,
+        uncited,
+        citationRate,
+        mostCited,
+        needsOptimization,
+      };
     }),
 
   // ─── Scoring ───────────────────────────────────────────────
@@ -264,19 +348,11 @@ export const geoAeoRouter = router({
     .input(z.object({ url: z.string().url() }))
     .mutation(async ({ input }) => {
       try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 10000);
-        const res = await fetch(input.url, {
-          signal: controller.signal,
-          headers: { "User-Agent": "X2-GeoScorer/1.0" },
-        });
-        clearTimeout(timeout);
+        const { ok, status, body: html } = await fetchPage(input.url);
 
-        if (!res.ok) {
-          return { error: `HTTP ${res.status}`, scores: null };
+        if (!ok) {
+          return { error: `HTTP ${status}`, scores: null };
         }
-
-        const html = await res.text();
 
         // Rule-based scoring
         const hasHeadings = (html.match(/<h[1-6][^>]*>/gi) || []).length;
@@ -340,12 +416,28 @@ export const geoAeoRouter = router({
             answerability,
             trust,
             citationReadiness,
-            details: { hasHeadings, hasFaq, hasSchema, hasList: hasList > 0, hasTable: hasTable > 0, wordCount, hasDate, hasAuthor, hasCitation },
+            details: {
+              hasHeadings,
+              hasFaq,
+              hasSchema,
+              hasList: hasList > 0,
+              hasTable: hasTable > 0,
+              wordCount,
+              hasDate,
+              hasAuthor,
+              hasCitation,
+            },
           },
         };
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Unknown";
-        return { error: msg.includes("abort") ? "타임아웃 (10초)" : msg, scores: null };
+        if (msg.includes("타임아웃"))
+          return { error: "타임아웃 (15초)", scores: null };
+        if (msg.includes("ENOTFOUND"))
+          return { error: "도메인을 찾을 수 없습니다", scores: null };
+        if (msg.includes("ECONNREFUSED"))
+          return { error: "서버 연결이 거부되었습니다", scores: null };
+        return { error: `페이지 요청 실패: ${msg}`, scores: null };
       }
     }),
 
@@ -363,21 +455,30 @@ export const geoAeoRouter = router({
       const keyword = await ctx.db.aeoKeyword.findUnique({
         where: { id: input.keywordId },
       });
-      if (!keyword) return { error: "키워드를 찾을 수 없습니다", snapshot: null };
+      if (!keyword)
+        return { error: "키워드를 찾을 수 없습니다", snapshot: null };
 
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
       // Check for existing snapshot today
       const existing = await ctx.db.aeoSnapshot.findFirst({
-        where: { keywordId: input.keywordId, engine: input.engine, date: today },
+        where: {
+          keywordId: input.keywordId,
+          engine: input.engine,
+          date: today,
+        },
       });
       if (existing) {
         return { error: null, snapshot: existing, cached: true };
       }
 
       // Query AI engine
-      const result = await queryAiEngine(keyword.keyword, input.engine, keyword.targetBrand);
+      const result = await queryAiEngine(
+        keyword.keyword,
+        input.engine,
+        keyword.targetBrand,
+      );
 
       const snapshot = await ctx.db.aeoSnapshot.create({
         data: {
