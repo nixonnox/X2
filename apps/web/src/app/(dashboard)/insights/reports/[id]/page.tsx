@@ -2,8 +2,8 @@
 
 import { use } from "react";
 import Link from "next/link";
-import { ArrowLeft, Mail, Download, Printer } from "lucide-react";
-import { MOCK_REPORTS, REPORT_TYPE_LABELS } from "@/lib/reports";
+import { ArrowLeft, Mail, Download, Printer, Loader2 } from "lucide-react";
+import { trpc } from "@/lib/trpc";
 import {
   ReportStatusBadge,
   ReportKpiGrid,
@@ -11,18 +11,38 @@ import {
   ShareLinkCard,
 } from "@/components/reports";
 
+const REPORT_TYPE_LABELS: Record<string, { label: string }> = {
+  WEEKLY: { label: "주간" },
+  MONTHLY: { label: "월간" },
+  QUARTERLY: { label: "분기" },
+  CUSTOM: { label: "커스텀" },
+};
+
 export default function ReportDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const report = MOCK_REPORTS.find((r) => r.id === id);
-  if (!report) {
+
+  const { data: report, isLoading, error } = trpc.report.get.useQuery(
+    { id },
+    { retry: false },
+  );
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-6 w-6 animate-spin text-[var(--muted-foreground)]" />
+      </div>
+    );
+  }
+
+  if (error || !report) {
     return (
       <div className="p-10 text-center">
         <p className="text-[14px] text-[var(--muted-foreground)]">
-          리포트를 찾을 수 없습니다.
+          {error?.message ?? "리포트를 찾을 수 없습니다."}
         </p>
         <Link
           href="/insights/reports"
@@ -34,7 +54,13 @@ export default function ReportDetailPage({
     );
   }
 
-  const typeInfo = REPORT_TYPE_LABELS[report.type];
+  const typeInfo = REPORT_TYPE_LABELS[report.type] ?? { label: report.type };
+  const kpiSummary = (report.content as any)?.kpiSummary ?? null;
+  const insights: Array<{ id: string; title: string; description: string; category?: string; impact?: string; source?: string }> =
+    (report.content as any)?.insights ?? [];
+  const shareLink = report.shareToken
+    ? { token: report.shareToken, enabled: true }
+    : null;
 
   return (
     <div className="space-y-6">
@@ -59,9 +85,9 @@ export default function ReportDetailPage({
                 {typeInfo.label}
               </span>
               <span>
-                {report.periodStart} ~ {report.periodEnd}
+                {report.period}
               </span>
-              <span>{report.projectName}</span>
+              {report.project?.name && <span>{report.project.name}</span>}
             </div>
           </div>
         </div>
@@ -94,108 +120,118 @@ export default function ReportDetailPage({
       </div>
 
       {/* KPI Grid */}
-      <ReportKpiGrid summary={report.kpiSummary} />
+      {kpiSummary && <ReportKpiGrid summary={kpiSummary} />}
 
       {/* Insights Summary */}
-      <div className="card p-5">
-        <h2 className="mb-3 text-[14px] font-semibold text-[var(--foreground)]">
-          핵심 인사이트
-        </h2>
-        <div className="space-y-2">
-          {report.insights.map((insight) => {
-            const catColors: Record<string, string> = {
-              positive: "bg-emerald-500",
-              caution: "bg-amber-500",
-              opportunity: "bg-blue-500",
-              risk: "bg-red-500",
-            };
-            return (
-              <div
-                key={insight.id}
-                className="flex items-start gap-3 rounded-md bg-[var(--secondary)] p-3"
-              >
-                <span
-                  className={`mt-1 h-2 w-2 shrink-0 rounded-full ${catColors[insight.category] ?? "bg-gray-400"}`}
-                />
-                <div>
-                  <p className="text-[12px] font-medium text-[var(--foreground)]">
-                    {insight.title}
-                  </p>
-                  <p className="mt-0.5 text-[11px] text-[var(--muted-foreground)]">
-                    {insight.description}
-                  </p>
-                  <div className="mt-1 flex items-center gap-2">
-                    <span className="badge bg-[var(--background)] text-[9px] text-[var(--muted-foreground)]">
-                      {insight.impact} impact
-                    </span>
-                    <span className="text-[10px] text-[var(--muted-foreground)]">
-                      {insight.source}
-                    </span>
+      {insights.length > 0 && (
+        <div className="card p-5">
+          <h2 className="mb-3 text-[14px] font-semibold text-[var(--foreground)]">
+            핵심 인사이트
+          </h2>
+          <div className="space-y-2">
+            {insights.map((insight) => {
+              const catColors: Record<string, string> = {
+                positive: "bg-emerald-500",
+                caution: "bg-amber-500",
+                opportunity: "bg-blue-500",
+                risk: "bg-red-500",
+              };
+              return (
+                <div
+                  key={insight.id}
+                  className="flex items-start gap-3 rounded-md bg-[var(--secondary)] p-3"
+                >
+                  <span
+                    className={`mt-1 h-2 w-2 shrink-0 rounded-full ${catColors[insight.category ?? ""] ?? "bg-gray-400"}`}
+                  />
+                  <div>
+                    <p className="text-[12px] font-medium text-[var(--foreground)]">
+                      {insight.title}
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-[var(--muted-foreground)]">
+                      {insight.description}
+                    </p>
+                    {(insight.impact || insight.source) && (
+                      <div className="mt-1 flex items-center gap-2">
+                        {insight.impact && (
+                          <span className="badge bg-[var(--background)] text-[9px] text-[var(--muted-foreground)]">
+                            {insight.impact} impact
+                          </span>
+                        )}
+                        {insight.source && (
+                          <span className="text-[10px] text-[var(--muted-foreground)]">
+                            {insight.source}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Action Recommendations */}
-      <div className="card p-5">
-        <h2 className="mb-3 text-[14px] font-semibold text-[var(--foreground)]">
-          추천 액션
-        </h2>
-        <div className="space-y-2">
-          {report.actions.map((action) => {
-            const prioColors: Record<string, string> = {
-              critical: "text-red-600 bg-red-50",
-              high: "text-orange-600 bg-orange-50",
-              medium: "text-blue-600 bg-blue-50",
-              low: "text-gray-600 bg-gray-50",
-            };
-            return (
-              <div
-                key={action.id}
-                className="flex items-start justify-between rounded-md border border-[var(--border-subtle)] p-3"
-              >
-                <div className="flex-1">
-                  <p className="text-[12px] font-medium text-[var(--foreground)]">
-                    {action.action}
-                  </p>
-                  <p className="mt-0.5 text-[11px] text-[var(--muted-foreground)]">
-                    {action.reason}
-                  </p>
-                  <p className="mt-1 text-[11px] text-emerald-600">
-                    {action.expectedImpact}
-                  </p>
+      {report.actions && report.actions.length > 0 && (
+        <div className="card p-5">
+          <h2 className="mb-3 text-[14px] font-semibold text-[var(--foreground)]">
+            추천 액션
+          </h2>
+          <div className="space-y-2">
+            {report.actions.map((action: any) => {
+              const prioColors: Record<string, string> = {
+                critical: "text-red-600 bg-red-50",
+                high: "text-orange-600 bg-orange-50",
+                medium: "text-blue-600 bg-blue-50",
+                low: "text-gray-600 bg-gray-50",
+              };
+              return (
+                <div
+                  key={action.id}
+                  className="flex items-start justify-between rounded-md border border-[var(--border-subtle)] p-3"
+                >
+                  <div className="flex-1">
+                    <p className="text-[12px] font-medium text-[var(--foreground)]">
+                      {action.title ?? action.action}
+                    </p>
+                    {action.description && (
+                      <p className="mt-0.5 text-[11px] text-[var(--muted-foreground)]">
+                        {action.description}
+                      </p>
+                    )}
+                  </div>
+                  {action.priority && (
+                    <div className="ml-3 flex shrink-0 items-center gap-2">
+                      <span
+                        className={`badge text-[9px] ${prioColors[action.priority] ?? ""}`}
+                      >
+                        {action.priority}
+                      </span>
+                    </div>
+                  )}
                 </div>
-                <div className="ml-3 flex shrink-0 items-center gap-2">
-                  <span
-                    className={`badge text-[9px] ${prioColors[action.priority] ?? ""}`}
-                  >
-                    {action.priority}
-                  </span>
-                  <span className="text-[10px] text-[var(--muted-foreground)]">
-                    {action.deadline}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Sections */}
-      <div className="space-y-3">
-        <h2 className="text-[14px] font-semibold text-[var(--foreground)]">
-          상세 섹션
-        </h2>
-        {report.sections.map((section) => (
-          <ReportSectionCard key={section.id} section={section} />
-        ))}
-      </div>
+      {report.sections && report.sections.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-[14px] font-semibold text-[var(--foreground)]">
+            상세 섹션
+          </h2>
+          {report.sections.map((section: any) => (
+            <ReportSectionCard key={section.id} section={section} />
+          ))}
+        </div>
+      )}
 
       {/* Share Link */}
-      <ShareLinkCard shareLink={report.shareLink} />
+      <ShareLinkCard shareLink={shareLink as any} />
 
       {/* Email Dialog — 이메일 발송 연동 완료 후 활성화 */}
     </div>
