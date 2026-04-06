@@ -196,7 +196,7 @@ export default function VerticalPreviewPage() {
       (item: any) => item.analysis?.sentiment === "NEGATIVE",
     );
     const topNegativeTopics: string[] = [
-      ...new Set(
+      ...new Set<string>(
         negativeItems.flatMap(
           (item: any) => (item.analysis?.topics ?? []) as string[],
         ),
@@ -207,7 +207,7 @@ export default function VerticalPreviewPage() {
       (item: any) => item.analysis?.sentiment === "POSITIVE",
     );
     const topPositiveTopics: string[] = [
-      ...new Set(
+      ...new Set<string>(
         positiveItems.flatMap(
           (item: any) => (item.analysis?.topics ?? []) as string[],
         ),

@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 import { db } from "@x2/db";
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const IORedis = require("ioredis") as typeof import("ioredis").default;
 
 export async function GET() {
   const today = new Date();
@@ -24,14 +22,12 @@ export async function GET() {
   let redisConnected = false;
   let redisVersion = "unknown";
   try {
-    const redis = new IORedis(
-      process.env.REDIS_URL ?? "redis://localhost:6379",
-      {
-        maxRetriesPerRequest: 1,
-        connectTimeout: 3000,
-        lazyConnect: true,
-      },
-    );
+    const { default: Redis } = await import("ioredis");
+    const redis = new Redis(process.env.REDIS_URL ?? "redis://localhost:6379", {
+      maxRetriesPerRequest: 1,
+      connectTimeout: 3000,
+      lazyConnect: true,
+    });
     await redis.connect();
     const info = await redis.info("server");
     const vMatch = info.match(/redis_version:(\S+)/);

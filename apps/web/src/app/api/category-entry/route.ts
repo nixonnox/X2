@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { CategoryEntryEngine } from "@x2/api/services/engines/category-entry-engine.ts";
+// CategoryEntryEngine은 패키지 경로 대신 직접 참조
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type CategoryEntryEngineType = any;
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,6 +12,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "seedKeyword 필요" }, { status: 400 });
     }
 
+    const { CategoryEntryEngine } =
+      (await import("@x2/api/services/engines/category-entry-engine")) as {
+        CategoryEntryEngine: CategoryEntryEngineType;
+      };
     const engine = new CategoryEntryEngine();
     const result = engine.analyze(seedKeyword, keywords);
 

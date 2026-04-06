@@ -188,7 +188,6 @@ class RedisCacheStore implements ICacheStore {
   /** Redis 클라이언트 초기화 (ioredis 동적 임포트) */
   private async initialize(): Promise<boolean> {
     try {
-      // @ts-expect-error -- ioredis is an optional dependency (graceful degradation)
       const Redis = (await import("ioredis")).default;
       this.client = new Redis(this.redisUrl, {
         maxRetriesPerRequest: 3,
