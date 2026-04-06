@@ -21,12 +21,12 @@ type Props = {
 };
 
 const COUNTRY_LABELS: Record<string, string> = {
-  KR: "Korea",
-  US: "United States",
-  JP: "Japan",
-  VN: "Vietnam",
-  TH: "Thailand",
-  OTHER: "Other",
+  KR: "한국",
+  US: "미국",
+  JP: "일본",
+  VN: "베트남",
+  TH: "태국",
+  OTHER: "기타",
 };
 
 export function ChannelHeader({ channel }: Props) {
@@ -37,7 +37,7 @@ export function ChannelHeader({ channel }: Props) {
         className="inline-flex items-center gap-1 text-[13px] text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)]"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
-        Channels
+        채널 목록
       </Link>
 
       <div className="card p-5">
@@ -73,21 +73,21 @@ export function ChannelHeader({ channel }: Props) {
           <div className="flex flex-shrink-0 items-center gap-1">
             <button
               className="btn-secondary h-7 gap-1 px-2.5 text-[12px]"
-              title="Edit"
+              title="수정"
             >
               <Pencil className="h-3 w-3" />
-              <span className="hidden sm:inline">Edit</span>
+              <span className="hidden sm:inline">수정</span>
             </button>
             <button
               className="btn-secondary h-7 gap-1 px-2.5 text-[12px]"
-              title="Re-analyze"
+              title="재분석"
             >
               <RefreshCw className="h-3 w-3" />
-              <span className="hidden sm:inline">Re-analyze</span>
+              <span className="hidden sm:inline">재분석</span>
             </button>
             <button
               className="btn-secondary h-7 gap-1 px-2.5 text-[12px] text-[var(--destructive)]"
-              title="Delete"
+              title="삭제"
             >
               <Trash2 className="h-3 w-3" />
             </button>
@@ -104,7 +104,7 @@ export function ChannelHeader({ channel }: Props) {
           <ChannelTypeBadge type={channel.channelType} />
           {channel.isCompetitor && (
             <span className="badge bg-red-50 text-[11px] text-red-700">
-              Competitor
+              경쟁사
             </span>
           )}
         </div>
@@ -120,7 +120,7 @@ export function ChannelHeader({ channel }: Props) {
           <span>·</span>
           <span className="inline-flex items-center gap-1">
             <Calendar className="h-3 w-3" />
-            Updated {formatRelativeDate(channel.updatedAt)}
+            업데이트 {formatRelativeDate(channel.updatedAt)}
           </span>
           {channel.tags.length > 0 && (
             <>

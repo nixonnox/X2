@@ -97,7 +97,7 @@ export function ChannelKpiCard({
             }`}
           >
             {changePercent >= 0 ? "+" : ""}
-            {changePercent.toFixed(1)}% vs prev.
+            {changePercent.toFixed(1)}% 전기 대비
           </span>
         </div>
       )}

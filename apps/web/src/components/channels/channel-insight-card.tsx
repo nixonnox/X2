@@ -20,7 +20,7 @@ export function ChannelInsightCards({ insight }: Props) {
           <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--secondary)]">
             <MessageSquare className="h-4 w-4 text-[var(--muted-foreground)]" />
           </div>
-          <h3 className="text-[14px] font-semibold">Current Status Summary</h3>
+          <h3 className="text-[14px] font-semibold">현재 상태 요약</h3>
         </div>
         <p className="text-[13px] leading-relaxed text-[var(--muted-foreground)]">
           {insight.summary}
@@ -35,7 +35,7 @@ export function ChannelInsightCards({ insight }: Props) {
             <div className="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-50">
               <ThumbsUp className="h-4 w-4 text-emerald-600" />
             </div>
-            <h3 className="text-[14px] font-semibold">Strengths</h3>
+            <h3 className="text-[14px] font-semibold">강점</h3>
           </div>
           <ul className="space-y-2">
             {insight.strengths.map((s, i) => (
@@ -56,9 +56,7 @@ export function ChannelInsightCards({ insight }: Props) {
             <div className="flex h-7 w-7 items-center justify-center rounded-md bg-amber-50">
               <Lightbulb className="h-4 w-4 text-amber-600" />
             </div>
-            <h3 className="text-[14px] font-semibold">
-              Improvement Suggestions
-            </h3>
+            <h3 className="text-[14px] font-semibold">개선 제안</h3>
           </div>
           <ul className="space-y-2">
             {insight.suggestions.map((s, i) => (
@@ -83,9 +81,7 @@ export function ChannelInsightCards({ insight }: Props) {
                 <div className="flex h-7 w-7 items-center justify-center rounded-md bg-violet-50">
                   <Target className="h-4 w-4 text-violet-600" />
                 </div>
-                <h3 className="text-[14px] font-semibold">
-                  Competitive Context
-                </h3>
+                <h3 className="text-[14px] font-semibold">경쟁 환경</h3>
               </div>
               <p className="text-[13px] leading-relaxed text-[var(--muted-foreground)]">
                 {insight.competitorNote}
@@ -100,7 +96,7 @@ export function ChannelInsightCards({ insight }: Props) {
                   <CalendarCheck className="h-4 w-4 text-blue-600" />
                 </div>
                 <h3 className="text-[14px] font-semibold">
-                  Next 2-Week Actions
+                  향후 2주 액션 플랜
                 </h3>
               </div>
               <ul className="space-y-2">

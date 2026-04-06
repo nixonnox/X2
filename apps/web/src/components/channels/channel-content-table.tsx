@@ -25,38 +25,41 @@ function getPerformanceBadge(
 
   if (viewsRatio >= 1.5 && engRatio >= 1.2) {
     return {
-      label: "Top",
+      label: "최고",
       color: "bg-emerald-50 text-emerald-700",
       icon: Star,
     };
   }
   if (viewsRatio >= 1.2 || engRatio >= 1.3) {
     return {
-      label: "Above Avg",
+      label: "평균 이상",
       color: "bg-blue-50 text-blue-700",
       icon: TrendingUp,
     };
   }
   if (viewsRatio < 0.5 || engRatio < 0.5) {
     return {
-      label: "Below Avg",
+      label: "평균 이하",
       color: "bg-red-50 text-red-700",
       icon: TrendingDown,
     };
   }
   return {
-    label: "Average",
+    label: "평균",
     color: "bg-[var(--secondary)] text-[var(--muted-foreground)]",
     icon: Minus,
   };
 }
 
-export function ChannelContentTable({ contents, viewsLabel = "Views" }: Props) {
+export function ChannelContentTable({
+  contents,
+  viewsLabel = "조회수",
+}: Props) {
   if (contents.length === 0) {
     return (
       <div className="card border-dashed p-8 text-center">
         <p className="text-[13px] text-[var(--muted-foreground)]">
-          No content data available.
+          콘텐츠 데이터가 없습니다.
         </p>
       </div>
     );
@@ -80,7 +83,7 @@ export function ChannelContentTable({ contents, viewsLabel = "Views" }: Props) {
           <div className="flex items-center gap-2">
             <Star className="h-3.5 w-3.5 text-emerald-600" />
             <span className="text-[12px] font-semibold text-emerald-700">
-              Top Performer
+              최고 성과
             </span>
           </div>
           <p className="mt-1 text-[13px] font-medium text-[var(--foreground)]">
@@ -91,9 +94,9 @@ export function ChannelContentTable({ contents, viewsLabel = "Views" }: Props) {
               {formatCount(topContent.viewsOrReach)} {viewsLabel.toLowerCase()}
             </span>
             <span>·</span>
-            <span>{topContent.engagementRate}% engagement</span>
+            <span>{topContent.engagementRate}% 참여율</span>
             <span>·</span>
-            <span>{topContent.commentsCount} comments</span>
+            <span>{topContent.commentsCount} 댓글</span>
           </div>
         </div>
       )}
@@ -106,25 +109,25 @@ export function ChannelContentTable({ contents, viewsLabel = "Views" }: Props) {
               <tr className="border-b border-[var(--border)]">
                 <th className="px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]"></th>
                 <th className="px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]">
-                  Title
+                  제목
                 </th>
                 <th className="px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]">
-                  Published
+                  게시일
                 </th>
                 <th className="px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]">
-                  Type
+                  유형
                 </th>
                 <th className="px-4 py-2.5 text-right text-[11px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]">
                   {viewsLabel}
                 </th>
                 <th className="px-4 py-2.5 text-right text-[11px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]">
-                  Engagement
+                  참여율
                 </th>
                 <th className="px-4 py-2.5 text-right text-[11px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]">
-                  Comments
+                  댓글
                 </th>
                 <th className="px-4 py-2.5 text-center text-[11px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]">
-                  Status
+                  상태
                 </th>
               </tr>
             </thead>
@@ -180,20 +183,20 @@ export function ChannelContentTable({ contents, viewsLabel = "Views" }: Props) {
         {/* Summary footer */}
         <div className="flex items-center gap-4 border-t border-[var(--border)] px-4 py-2.5 text-[11px] text-[var(--muted-foreground)]">
           <span>
-            Avg. {viewsLabel.toLowerCase()}:{" "}
+            평균 {viewsLabel.toLowerCase()}:{" "}
             <span className="font-medium text-[var(--foreground)]">
               {formatCount(Math.round(avgViews))}
             </span>
           </span>
           <span>·</span>
           <span>
-            Avg. engagement:{" "}
+            평균 참여율:{" "}
             <span className="font-medium text-[var(--foreground)]">
               {avgEngagement.toFixed(1)}%
             </span>
           </span>
           <span>·</span>
-          <span>{contents.length} items</span>
+          <span>{contents.length}개 항목</span>
         </div>
       </div>
     </div>

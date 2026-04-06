@@ -31,28 +31,28 @@ const PRIORITY_STYLES = {
   high: {
     border: "border-blue-200",
     bg: "bg-blue-50",
-    label: "High Priority",
+    label: "높은 우선순위",
     labelColor: "text-blue-700 bg-blue-100",
   },
   medium: {
     border: "border-[var(--border)]",
     bg: "",
-    label: "Medium",
+    label: "보통",
     labelColor: "text-[var(--muted-foreground)] bg-[var(--secondary)]",
   },
   low: {
     border: "border-[var(--border)]",
     bg: "",
-    label: "Low",
+    label: "낮음",
     labelColor: "text-[var(--muted-foreground)] bg-[var(--secondary)]",
   },
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
-  content: "Content",
-  engagement: "Engagement",
-  growth: "Growth",
-  strategy: "Strategy",
+  content: "콘텐츠",
+  engagement: "참여",
+  growth: "성장",
+  strategy: "전략",
 };
 
 export function ChannelRiskActionCards({ risks, actions }: Props) {
@@ -62,7 +62,7 @@ export function ChannelRiskActionCards({ risks, actions }: Props) {
       <div className="space-y-2">
         <div className="mb-1 flex items-center gap-2">
           <AlertTriangle className="h-4 w-4 text-amber-600" />
-          <h3 className="text-[14px] font-semibold">Risk Signals</h3>
+          <h3 className="text-[14px] font-semibold">위험 신호</h3>
         </div>
         {risks.map((risk) => {
           const style = SEVERITY_STYLES[risk.severity];
@@ -102,7 +102,7 @@ export function ChannelRiskActionCards({ risks, actions }: Props) {
       <div className="space-y-2">
         <div className="mb-1 flex items-center gap-2">
           <Zap className="h-4 w-4 text-blue-600" />
-          <h3 className="text-[14px] font-semibold">Recommended Actions</h3>
+          <h3 className="text-[14px] font-semibold">추천 액션</h3>
         </div>
         {actions.map((action) => {
           const style = PRIORITY_STYLES[action.priority];

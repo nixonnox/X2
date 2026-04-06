@@ -37,7 +37,7 @@ export function PlatformSelector({ value, onChange }: Props) {
   return (
     <div className="space-y-2">
       <label className="text-[13px] font-medium text-[var(--foreground)]">
-        Platform
+        플랫폼
       </label>
 
       {/* Primary platforms */}
