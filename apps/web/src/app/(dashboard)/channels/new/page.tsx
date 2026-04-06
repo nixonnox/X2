@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { trpc } from "@/lib/trpc";
+import { useCurrentProject } from "@/hooks";
 import {
   ArrowLeft,
   Info,
@@ -98,14 +100,18 @@ const SEVERITY_STYLES: Record<
 
 export default function NewChannelPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const initialUrl = searchParams.get("url") ?? "";
+  const { projectId } = useCurrentProject();
+
+  const registerChannel = trpc.channel.register.useMutation();
 
   const [form, setForm] = useState<ChannelFormInput>({
     platformCode: "youtube",
     url: initialUrl,
     name: "",
     country: "KR",
-    category: "기술",
+    category: "기타",
     tags: [],
     channelType: "owned",
     isCompetitor: false,
@@ -254,57 +260,56 @@ export default function NewChannelPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    // URL validation check (client-side quick check)
+    if (!form.name.trim()) {
+      setErrors({ name: "채널 이름을 입력하세요." });
+      return;
+    }
+    if (!form.url.trim()) {
+      setErrors({ url: "채널 URL을 입력하세요." });
+      return;
+    }
     if (urlValidation && !urlValidation.shouldAllowProceed) {
       setErrors({ url: urlValidation.validationMessage });
       return;
     }
+    if (!projectId) {
+      setErrors({
+        url: "프로젝트가 없습니다. 설정에서 프로젝트를 먼저 만들어주세요.",
+      });
+      return;
+    }
 
-    // custom URL이면 platformCode를 "custom"으로 자동 설정
-    const submitForm = {
-      ...form,
-      platformCode:
-        urlValidation?.detectedPlatformCode === "custom" ||
-        (!urlValidation?.detectedPlatformCode &&
-          form.platformCode === "youtube")
-          ? "custom"
-          : form.platformCode,
-      // custom 플랫폼이면 customPlatformName 기본값 채우기
-      customPlatformName:
-        urlValidation?.detectedPlatformCode === "custom" &&
-        !form.customPlatformName
-          ? (urlValidation?.channelIdentifier ?? form.name ?? "커스텀 채널")
-          : form.customPlatformName,
-    };
+    const resolvedPlatform =
+      urlValidation?.detectedPlatformCode &&
+      urlValidation.detectedPlatformCode !== "custom"
+        ? urlValidation.detectedPlatformCode
+        : form.platformCode;
 
     setSubmitting(true);
     setErrors({});
     try {
-      const res = await fetch("/api/channels", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(submitForm),
+      const result = await registerChannel.mutateAsync({
+        projectId,
+        url: form.url,
+        name: form.name,
+        platformCode: resolvedPlatform,
+        channelType: form.channelType as "owned" | "competitor" | "monitoring",
+        country: form.country,
+        category: form.category,
+        tags: form.tags,
+        analysisMode: form.analysisMode,
+        customPlatformName: form.customPlatformName || undefined,
       });
-      const result = await res.json();
-      if (!result.success) {
-        // 서버는 errors(복수) 또는 error(단수) 반환
-        if (result.errors && typeof result.errors === "object") {
-          setErrors(result.errors);
-        } else {
-          setErrors({ url: result.error ?? "등록에 실패했습니다." });
-        }
-        setSubmitting(false);
-        return;
-      }
-      // 성공 메시지 표시 후 이동
+
       setSuccessMsg(
-        `✅ "${submitForm.name}" 채널이 등록되었습니다! 분석을 시작합니다...`,
+        `✅ "${form.name}" 채널이 등록되었습니다! 분석을 시작합니다...`,
       );
       setTimeout(() => {
-        window.location.href = `/channels/${result.channel.id}`;
-      }, 1500);
-    } catch {
-      setErrors({ url: "채널 등록 중 오류가 발생했습니다." });
+        router.push(`/channels/${result.channel.id}`);
+      }, 1200);
+    } catch (err: any) {
+      const msg = err?.message ?? "채널 등록 중 오류가 발생했습니다.";
+      setErrors({ url: msg });
       setSubmitting(false);
     }
   }
