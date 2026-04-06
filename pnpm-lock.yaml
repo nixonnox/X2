@@ -71,9 +71,15 @@ importers:
       '@x2/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      bullmq:
+        specifier: ^5.71.0
+        version: 5.71.0
       html2canvas:
         specifier: ^1.4.1
         version: 1.4.1
+      ioredis:
+        specifier: ^5.10.0
+        version: 5.10.0
       lucide-react:
         specifier: ^0.577.0
         version: 0.577.0(react@19.2.4)
