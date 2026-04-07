@@ -4,8 +4,8 @@ import createNextIntlPlugin from "next-intl/plugin";
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
-  typescript: { ignoreBuildErrors: true },
-  eslint: { ignoreDuringBuilds: true },
+  typescript: { ignoreBuildErrors: false },
+  eslint: { ignoreDuringBuilds: false },
   transpilePackages: ["@x2/ui", "@x2/db", "@x2/auth", "@x2/api"],
   serverExternalPackages: ["bullmq", "ioredis"],
   webpack: (config, { isServer }) => {
