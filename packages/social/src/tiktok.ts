@@ -79,7 +79,17 @@ export class TikTokProvider implements SocialProvider {
 
     this.handleHttpError(res, username);
 
-    const data = await res.json();
+    type TikTokUserResponse = {
+      data?: {
+        user?: {
+          display_name?: string;
+          avatar_url?: string | null;
+          follower_count?: number | null;
+          video_count?: number | null;
+        };
+      };
+    };
+    const data = (await res.json()) as TikTokUserResponse;
     const user = data?.data?.user;
 
     if (!user) {
@@ -140,7 +150,7 @@ export class TikTokProvider implements SocialProvider {
 
     this.handleHttpError(res, username);
 
-    const data = await res.json();
+    const data = (await res.json()) as { data?: { videos?: unknown[] } };
     const videos: unknown[] = data?.data?.videos ?? [];
 
     return videos.map((v: any) => ({
