@@ -44,7 +44,7 @@ export type ProviderConfig = {
   platform: string;
   requiresApiKey: boolean;
   envKeyName: string;
-  authType: "API_KEY" | "OAUTH2" | "BEARER_TOKEN";
+  authType: "API_KEY" | "OAUTH2" | "BEARER_TOKEN" | "NONE";
   rateLimitPerDay?: number;
   documentation: string;
 };
