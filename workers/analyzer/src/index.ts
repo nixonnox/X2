@@ -77,7 +77,7 @@ async function processCollection(job: Job<CollectionJobData>) {
   const mentionCount = await db.rawSocialMention.count({
     where: {
       matchedKeyword: keyword,
-      collectedAt: { gte: todayDate() },
+      createdAt: { gte: todayDate() },
     },
   });
 
@@ -86,7 +86,7 @@ async function processCollection(job: Job<CollectionJobData>) {
     const unanalyzed = await db.rawSocialMention.findMany({
       where: {
         matchedKeyword: keyword,
-        collectedAt: { gte: todayDate() },
+        createdAt: { gte: todayDate() },
         sentiment: null,
       },
       select: { id: true, text: true },
@@ -129,7 +129,7 @@ async function processCollection(job: Job<CollectionJobData>) {
   const mentions = await db.rawSocialMention.findMany({
     where: {
       matchedKeyword: keyword,
-      collectedAt: { gte: todayDate() },
+      createdAt: { gte: todayDate() },
     },
     select: { sentiment: true },
     take: 500,
