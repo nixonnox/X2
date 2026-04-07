@@ -9,9 +9,10 @@
  */
 
 import { Worker, type Job } from "bullmq";
-import IORedis from "ioredis";
 import { db } from "@x2/db";
 import {
+  getRedisConnection,
+  REDIS_URL,
   QUEUE_NAMES,
   type CollectionJobData,
   type SnapshotJobData,
@@ -20,12 +21,10 @@ import {
   type DeliveryRetryJobData,
 } from "@x2/queue";
 
-const REDIS_URL = process.env.REDIS_URL ?? "redis://localhost:6379";
-
-const connection = new IORedis(REDIS_URL, {
-  maxRetriesPerRequest: null,
-  enableReadyCheck: false,
-});
+// 공유 IORedis 인스턴스를 재사용해서 ioredis 클래스 identity 충돌 방지.
+// (P1-3) 이전에는 analyzer가 자체 new IORedis(...)를 만들어서 @x2/queue의
+// 인스턴스와 type 충돌이 났음.
+const connection = getRedisConnection();
 
 // ─── Helpers ──────────────────────────────────────────────────
 
@@ -34,7 +33,11 @@ function todayDate(): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
-function log(level: "info" | "warn" | "error", msg: string, meta?: Record<string, unknown>) {
+function log(
+  level: "info" | "warn" | "error",
+  msg: string,
+  meta?: Record<string, unknown>,
+) {
   const ts = new Date().toISOString();
   const metaStr = meta ? " " + JSON.stringify(meta) : "";
   console[level](`[${ts}] [analyzer] ${msg}${metaStr}`);
@@ -44,7 +47,12 @@ function log(level: "info" | "warn" | "error", msg: string, meta?: Record<string
 
 async function processCollection(job: Job<CollectionJobData>) {
   const { projectId, keyword, triggeredBy } = job.data;
-  log("info", `Collection started`, { projectId, keyword, triggeredBy, jobId: job.id });
+  log("info", `Collection started`, {
+    projectId,
+    keyword,
+    triggeredBy,
+    jobId: job.id,
+  });
 
   // 1. Check for overlap — skip if a snapshot was already created today for this keyword
   const existing = await db.socialMentionSnapshot.findFirst({
@@ -56,7 +64,10 @@ async function processCollection(job: Job<CollectionJobData>) {
   });
 
   if (existing) {
-    log("info", `Snapshot already exists for today, skipping collection`, { projectId, keyword });
+    log("info", `Snapshot already exists for today, skipping collection`, {
+      projectId,
+      keyword,
+    });
     return { status: "skipped", reason: "duplicate_snapshot" };
   }
 
@@ -85,9 +96,15 @@ async function processCollection(job: Job<CollectionJobData>) {
     if (unanalyzed.length > 0) {
       const { getSentimentService } = await import("@x2/ai");
       const sentimentService = getSentimentService();
-      const results = await sentimentService.analyzeBatch(unanalyzed.map((m: any) => m.text));
+      const results = await sentimentService.analyzeBatch(
+        unanalyzed.map((m: any) => m.text),
+      );
 
-      const sentimentMap: Record<string, string> = { POSITIVE: "POSITIVE", NEGATIVE: "NEGATIVE", NEUTRAL: "NEUTRAL" };
+      const sentimentMap: Record<string, string> = {
+        POSITIVE: "POSITIVE",
+        NEGATIVE: "NEGATIVE",
+        NEUTRAL: "NEUTRAL",
+      };
       for (let i = 0; i < unanalyzed.length; i++) {
         const r = results.results[i];
         if (r && sentimentMap[r.sentiment]) {
@@ -97,10 +114,15 @@ async function processCollection(job: Job<CollectionJobData>) {
           });
         }
       }
-      log("info", `Sentiment analyzed ${unanalyzed.length} mentions`, { projectId, keyword });
+      log("info", `Sentiment analyzed ${unanalyzed.length} mentions`, {
+        projectId,
+        keyword,
+      });
     }
   } catch (err) {
-    log("warn", `Sentiment analysis in collection failed`, { error: String(err) });
+    log("warn", `Sentiment analysis in collection failed`, {
+      error: String(err),
+    });
   }
 
   // 3. Count sentiments from today's mentions
@@ -113,7 +135,10 @@ async function processCollection(job: Job<CollectionJobData>) {
     take: 500,
   });
 
-  let positive = 0, neutral = 0, negative = 0, unclassified = 0;
+  let positive = 0,
+    neutral = 0,
+    negative = 0,
+    unclassified = 0;
   for (const m of mentions) {
     const s = (m as any).sentiment;
     if (s === "POSITIVE") positive++;
@@ -123,7 +148,14 @@ async function processCollection(job: Job<CollectionJobData>) {
   }
 
   // 4. Save social mention snapshot
-  const buzzLevel = mentionCount >= 50 ? "HIGH" : mentionCount >= 10 ? "MODERATE" : mentionCount > 0 ? "LOW" : "NONE";
+  const buzzLevel =
+    mentionCount >= 50
+      ? "HIGH"
+      : mentionCount >= 10
+        ? "MODERATE"
+        : mentionCount > 0
+          ? "LOW"
+          : "NONE";
 
   await db.socialMentionSnapshot.upsert({
     where: {
@@ -161,7 +193,10 @@ async function processCollection(job: Job<CollectionJobData>) {
   await updateJobStatus(projectId, "MENTION_COLLECT", keyword, "SUCCESS");
 
   log("info", `Collection completed`, {
-    projectId, keyword, mentionCount, buzzLevel,
+    projectId,
+    keyword,
+    mentionCount,
+    buzzLevel,
   });
 
   return { status: "completed", mentionCount, buzzLevel };
@@ -170,8 +205,15 @@ async function processCollection(job: Job<CollectionJobData>) {
 // ─── Snapshot Worker ──────────────────────────────────────────
 
 async function processSnapshot(job: Job<SnapshotJobData>) {
-  const { projectId, keyword, industryType, runAnalysis, triggeredBy } = job.data;
-  log("info", `Snapshot started`, { projectId, keyword, industryType, triggeredBy, jobId: job.id });
+  const { projectId, keyword, industryType, runAnalysis, triggeredBy } =
+    job.data;
+  log("info", `Snapshot started`, {
+    projectId,
+    keyword,
+    industryType,
+    triggeredBy,
+    jobId: job.id,
+  });
 
   // 1. Check for duplicate — skip if analysis run exists today for this keyword
   const existingRun = await db.intelligenceAnalysisRun.findFirst({
@@ -184,7 +226,10 @@ async function processSnapshot(job: Job<SnapshotJobData>) {
   });
 
   if (existingRun && !runAnalysis) {
-    log("info", `Analysis run already exists for today, skipping`, { projectId, keyword });
+    log("info", `Analysis run already exists for today, skipping`, {
+      projectId,
+      keyword,
+    });
     return { status: "skipped", reason: "duplicate_run" };
   }
 
@@ -199,14 +244,19 @@ async function processSnapshot(job: Job<SnapshotJobData>) {
   });
 
   if (existingBench) {
-    log("info", `Benchmark snapshot already exists for today`, { projectId, keyword });
+    log("info", `Benchmark snapshot already exists for today`, {
+      projectId,
+      keyword,
+    });
   }
 
   // 3. If we have a recent analysis run, create/update benchmark snapshot from it
-  const latestRun = existingRun ?? await db.intelligenceAnalysisRun.findFirst({
-    where: { projectId, seedKeyword: keyword },
-    orderBy: { analyzedAt: "desc" },
-  });
+  const latestRun =
+    existingRun ??
+    (await db.intelligenceAnalysisRun.findFirst({
+      where: { projectId, seedKeyword: keyword },
+      orderBy: { analyzedAt: "desc" },
+    }));
 
   if (latestRun && latestRun.benchmarkComparison) {
     const bench = latestRun.benchmarkComparison as any;
@@ -237,7 +287,11 @@ async function processSnapshot(job: Job<SnapshotJobData>) {
           warnings: bench.warnings ?? [],
         },
       });
-      log("info", `Benchmark snapshot saved`, { projectId, keyword, score: bench.overallScore });
+      log("info", `Benchmark snapshot saved`, {
+        projectId,
+        keyword,
+        score: bench.overallScore,
+      });
     }
   }
 
@@ -276,7 +330,12 @@ async function updateJobStatus(
       });
     }
   } catch (err) {
-    log("warn", `Failed to update job status`, { projectId, jobType, context, error: String(err) });
+    log("warn", `Failed to update job status`, {
+      projectId,
+      jobType,
+      context,
+      error: String(err),
+    });
   }
 }
 
@@ -284,11 +343,15 @@ async function updateJobStatus(
 
 async function processRetention(job: Job<RetentionJobData>) {
   const { retentionDays, dryRun, triggeredBy } = job.data;
-  log("info", `Retention cleanup started`, { retentionDays, dryRun, triggeredBy, jobId: job.id });
+  log("info", `Retention cleanup started`, {
+    retentionDays,
+    dryRun,
+    triggeredBy,
+    jobId: job.id,
+  });
 
-  const { IntelligenceRetentionPolicyService } = await import(
-    "@x2/api/services/intelligence/intelligence-retention.service"
-  );
+  const { IntelligenceRetentionPolicyService } =
+    await import("@x2/api/services/intelligence/intelligence-retention.service");
   const retentionService = new IntelligenceRetentionPolicyService(db);
 
   const result = await retentionService.executeCleanup({
@@ -300,7 +363,12 @@ async function processRetention(job: Job<RetentionJobData>) {
     totalDeleted: result.totalDeleted,
     totalProtected: result.totalProtected,
     durationMs: result.durationMs,
-    targets: result.targets.map((t) => `${t.table}: -${t.toDelete} (protected: ${t.protected})`),
+    // (t: any): @x2/api subpath import이 ambient module로만 선언돼 있어서
+    // 동적 import 결과의 타입이 unknown → any. P1-5/P1-7에서 @x2/api exports map
+    // 정리되면 타입 명시 가능.
+    targets: result.targets.map(
+      (t: any) => `${t.table}: -${t.toDelete} (protected: ${t.protected})`,
+    ),
   });
 
   return result;
@@ -309,12 +377,25 @@ async function processRetention(job: Job<RetentionJobData>) {
 // ─── Backfill Worker ──────────────────────────────────────────
 
 async function processBackfill(job: Job<BackfillJobData>) {
-  const { projectId, keyword, industryType, startDate, endDate, batchIndex, totalBatches, backfillId } = job.data;
-  log("info", `Backfill batch ${batchIndex + 1}/${totalBatches} started`, { projectId, keyword, backfillId, jobId: job.id });
+  const {
+    projectId,
+    keyword,
+    industryType,
+    startDate,
+    endDate,
+    batchIndex,
+    totalBatches,
+    backfillId,
+  } = job.data;
+  log("info", `Backfill batch ${batchIndex + 1}/${totalBatches} started`, {
+    projectId,
+    keyword,
+    backfillId,
+    jobId: job.id,
+  });
 
-  const { IntelligenceBackfillService } = await import(
-    "@x2/api/services/intelligence/intelligence-backfill.service"
-  );
+  const { IntelligenceBackfillService } =
+    await import("@x2/api/services/intelligence/intelligence-backfill.service");
   const backfillService = new IntelligenceBackfillService(db);
 
   const result = await backfillService.executeBatch(
@@ -326,9 +407,16 @@ async function processBackfill(job: Job<BackfillJobData>) {
     backfillId,
   );
 
-  log("info", `Backfill batch ${batchIndex + 1}/${totalBatches} ${result.status}`, {
-    projectId, keyword, snapshotsCreated: result.snapshotsCreated, backfillId,
-  });
+  log(
+    "info",
+    `Backfill batch ${batchIndex + 1}/${totalBatches} ${result.status}`,
+    {
+      projectId,
+      keyword,
+      snapshotsCreated: result.snapshotsCreated,
+      backfillId,
+    },
+  );
 
   return result;
 }
@@ -359,12 +447,18 @@ const snapshotWorker = new Worker<SnapshotJobData>(
 
 async function processDeliveryRetry(job: Job<DeliveryRetryJobData>) {
   const { notificationId, userId, channel, attemptCount, projectId } = job.data;
-  log("info", `Delivery retry ${attemptCount}/3 for ${channel}`, { notificationId, jobId: job.id });
+  log("info", `Delivery retry ${attemptCount}/3 for ${channel}`, {
+    notificationId,
+    jobId: job.id,
+  });
 
-  const { NotificationChannelDispatchService } = await import(
-    "@x2/api/services/notification/channel-dispatch.service"
+  const { NotificationChannelDispatchService } =
+    await import("@x2/api/services/notification/channel-dispatch.service");
+  // TODO(P1-5): @x2/db Prisma 타입 정리되면 'as any' 제거
+  const dispatcher = new NotificationChannelDispatchService(
+    undefined,
+    db as any,
   );
-  const dispatcher = new NotificationChannelDispatchService(undefined, db as any);
   const results = await dispatcher.dispatch({
     notificationId: job.data.notificationId,
     userId: job.data.userId,
@@ -381,12 +475,20 @@ async function processDeliveryRetry(job: Job<DeliveryRetryJobData>) {
 
   for (const r of results) {
     // Log result
-    log(r.status === "SUCCESS" ? "info" : "warn", `Delivery retry result: ${r.status}`, {
-      notificationId, channel: r.channel, attemptCount, error: r.error,
-    });
+    log(
+      r.status === "SUCCESS" ? "info" : "warn",
+      `Delivery retry result: ${r.status}`,
+      {
+        notificationId,
+        channel: r.channel,
+        attemptCount,
+        error: r.error,
+      },
+    );
 
     // Persist to delivery_logs (now possible with nullable executionId)
     try {
+      // TODO(P1-5): @x2/db Prisma 타입 정리되면 'as any' 제거
       await (db as any).deliveryLog.create({
         data: {
           channel: r.channel,
@@ -414,11 +516,20 @@ async function processDeliveryRetry(job: Job<DeliveryRetryJobData>) {
         { ...job.data, attemptCount: attemptCount + 1 },
         { delay: nextDelay },
       );
-      log("info", `Next retry scheduled in ${nextDelay / 60000}min`, { notificationId, channel });
+      log("info", `Next retry scheduled in ${nextDelay / 60000}min`, {
+        notificationId,
+        channel,
+      });
     }
   }
 
-  return { results: results.map((r) => ({ channel: r.channel, status: r.status })) };
+  // (r: any): 동일하게 dispatcher 결과 타입이 any (P1-5/P1-7에서 정리)
+  return {
+    results: results.map((r: any) => ({
+      channel: r.channel,
+      status: r.status,
+    })),
+  };
 }
 
 const deliveryRetryWorker = new Worker<DeliveryRetryJobData>(
@@ -452,7 +563,10 @@ const retentionWorker = new Worker<RetentionJobData>(
 // ─── Event Handlers ───────────────────────────────────────────
 
 collectionWorker.on("completed", (job) => {
-  log("info", `Collection job completed`, { jobId: job.id, keyword: job.data.keyword });
+  log("info", `Collection job completed`, {
+    jobId: job.id,
+    keyword: job.data.keyword,
+  });
 });
 
 collectionWorker.on("failed", (job, err) => {
@@ -465,27 +579,47 @@ collectionWorker.on("failed", (job, err) => {
 });
 
 snapshotWorker.on("completed", (job) => {
-  log("info", `Snapshot job completed`, { jobId: job.id, keyword: job.data.keyword });
+  log("info", `Snapshot job completed`, {
+    jobId: job.id,
+    keyword: job.data.keyword,
+  });
 });
 
 deliveryRetryWorker.on("completed", (job) => {
-  log("info", `Delivery retry completed`, { jobId: job.id, channel: job.data.channel, attempt: job.data.attemptCount });
+  log("info", `Delivery retry completed`, {
+    jobId: job.id,
+    channel: job.data.channel,
+    attempt: job.data.attemptCount,
+  });
 });
 
 deliveryRetryWorker.on("failed", (job, err) => {
-  log("error", `Delivery retry worker failed`, { jobId: job?.id, error: err.message });
+  log("error", `Delivery retry worker failed`, {
+    jobId: job?.id,
+    error: err.message,
+  });
 });
 
 backfillWorker.on("completed", (job) => {
-  log("info", `Backfill job completed`, { jobId: job.id, batch: `${job.data.batchIndex + 1}/${job.data.totalBatches}` });
+  log("info", `Backfill job completed`, {
+    jobId: job.id,
+    batch: `${job.data.batchIndex + 1}/${job.data.totalBatches}`,
+  });
 });
 
 backfillWorker.on("failed", (job, err) => {
-  log("error", `Backfill job failed`, { jobId: job?.id, error: err.message, batch: `${job?.data.batchIndex}` });
+  log("error", `Backfill job failed`, {
+    jobId: job?.id,
+    error: err.message,
+    batch: `${job?.data.batchIndex}`,
+  });
 });
 
 retentionWorker.on("completed", (job) => {
-  log("info", `Retention job completed`, { jobId: job.id, dryRun: job.data.dryRun });
+  log("info", `Retention job completed`, {
+    jobId: job.id,
+    dryRun: job.data.dryRun,
+  });
 });
 
 retentionWorker.on("failed", (job, err) => {
@@ -518,6 +652,9 @@ process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
 
 log("info", "X2 Analyzer Worker started", {
-  queues: [QUEUE_NAMES.INTELLIGENCE_COLLECTION, QUEUE_NAMES.INTELLIGENCE_SNAPSHOT],
+  queues: [
+    QUEUE_NAMES.INTELLIGENCE_COLLECTION,
+    QUEUE_NAMES.INTELLIGENCE_SNAPSHOT,
+  ],
   redis: REDIS_URL.replace(/\/\/.*@/, "//***@"), // mask credentials
 });

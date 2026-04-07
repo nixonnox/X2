@@ -30,7 +30,10 @@
       "esbuild",
       "sharp",
       "unrs-resolver"
-    ]
+    ],
+    "overrides": {
+      "ioredis": "5.10.0"
+    }
   },
   "devDependencies": {
     "@x2/eslint-config": "workspace:*",
