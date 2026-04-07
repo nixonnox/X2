@@ -310,33 +310,17 @@ async function updateJobStatus(
   context: string,
   status: "SUCCESS" | "FAILED",
 ) {
-  try {
-    // Use scheduled_jobs table if a matching job exists
-    const job = await db.scheduledJob.findFirst({
-      where: {
-        projectId,
-        type: jobType as any,
-        status: "ACTIVE",
-      },
-    });
-
-    if (job) {
-      await db.scheduledJob.update({
-        where: { id: job.id },
-        data: {
-          lastRunAt: new Date(),
-          ...(status === "FAILED" ? { status: "FAILED" as any } : {}),
-        },
-      });
-    }
-  } catch (err) {
-    log("warn", `Failed to update job status`, {
-      projectId,
-      jobType,
-      context,
-      error: String(err),
-    });
-  }
+  // No-op. ScheduledJob is workspace-scoped, not project-scoped.
+  // Original implementation tried to query by projectId which doesn't exist
+  // on the model. Function body removed to clear the typecheck error;
+  // the original behavior was best-effort silent-fail anyway (try/catch + warn),
+  // so removing it has zero runtime impact. Signature preserved for callers.
+  // If workspace-scoped tracking is later desired, redesign the call sites
+  // to pass workspaceId and decide which job to update.
+  void projectId;
+  void jobType;
+  void context;
+  void status;
 }
 
 // ─── Retention Worker ─────────────────────────────────────────
