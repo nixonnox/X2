@@ -254,6 +254,9 @@ importers:
         specifier: ^4.21.0
         version: 4.21.0
     devDependencies:
+      '@types/node':
+        specifier: ^20.19.39
+        version: 20.19.39
       '@x2/tsconfig':
         specifier: workspace:*
         version: link:../config/typescript
