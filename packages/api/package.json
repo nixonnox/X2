@@ -4,8 +4,26 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./services/*": "./src/services/*"
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./services/intelligence/intelligence-retention.service": {
+      "types": "./src/services/intelligence/intelligence-retention.service.ts",
+      "default": "./src/services/intelligence/intelligence-retention.service.ts"
+    },
+    "./services/intelligence/intelligence-backfill.service": {
+      "types": "./src/services/intelligence/intelligence-backfill.service.ts",
+      "default": "./src/services/intelligence/intelligence-backfill.service.ts"
+    },
+    "./services/notification/channel-dispatch.service": {
+      "types": "./src/services/notification/channel-dispatch.service.ts",
+      "default": "./src/services/notification/channel-dispatch.service.ts"
+    },
+    "./services/engines/category-entry-engine": {
+      "types": "./src/services/engines/category-entry-engine.ts",
+      "default": "./src/services/engines/category-entry-engine.ts"
+    }
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

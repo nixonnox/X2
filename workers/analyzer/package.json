@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@x2/ai": "workspace:*",
+    "@x2/api": "workspace:*",
     "@x2/db": "workspace:*",
     "@x2/queue": "workspace:*",
     "bullmq": "^5.71.0"

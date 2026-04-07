@@ -332,6 +332,9 @@ importers:
       '@x2/ai':
         specifier: workspace:*
         version: link:../../packages/ai
+      '@x2/api':
+        specifier: workspace:*
+        version: link:../../packages/api
       '@x2/db':
         specifier: workspace:*
         version: link:../../packages/db
