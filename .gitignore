@@ -46,3 +46,7 @@ packages/db/src/generated/
 .vercel
 .backup/
 .claude/
+
+# sandbox/virtiofs 잔재 (FUSE 권한 버그로 채팅 Claude가 삭제 못 한 흔적)
+test_write_root
+docs/HANDOFF/.test_write
