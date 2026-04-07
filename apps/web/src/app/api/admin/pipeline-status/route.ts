@@ -108,7 +108,7 @@ export async function GET() {
         db.intelligenceKeyword.count(),
         db.intelligenceKeyword.count({ where: { isSaved: true } }),
         db.rawSocialMention.count(),
-        db.rawSocialMention.count({ where: { collectedAt: { gte: today } } }),
+        db.rawSocialMention.count({ where: { createdAt: { gte: today } } }),
         db.socialMentionSnapshot.count(),
         db.socialMentionSnapshot.count({ where: { date: { gte: today } } }),
       ]);
