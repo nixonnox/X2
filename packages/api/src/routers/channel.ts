@@ -245,7 +245,18 @@ export const channelRouter = router({
           const fetched = await fetchInstagramPublicProfile(
             initialPlatformChannelId,
           );
-          if (fetched) profile = fetched;
+          if (fetched) {
+            // InstagramPublicProfile은 nullable 필드를 string|null로 두지만
+            // 로컬 profile 타입은 string|undefined만 받음. null → undefined 정규화.
+            profile = {
+              platformChannelId: fetched.platformChannelId,
+              username: fetched.username,
+              fullName: fetched.fullName ?? undefined,
+              profilePicUrl: fetched.profilePicUrl ?? undefined,
+              followersCount: fetched.followersCount,
+              mediaCount: fetched.mediaCount,
+            };
+          }
         } catch (err) {
           console.warn(
             "[channel.register] instagram public fetch failed:",
@@ -256,8 +267,7 @@ export const channelRouter = router({
 
       const finalPlatformChannelId =
         profile?.platformChannelId || initialPlatformChannelId;
-      const finalName =
-        profile?.fullName || profile?.username || input.name;
+      const finalName = profile?.fullName || profile?.username || input.name;
       const finalThumb = profile?.profilePicUrl || null;
       const finalSubs = profile?.followersCount ?? 0;
       const finalContent = profile?.mediaCount ?? 0;
