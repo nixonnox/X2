@@ -84,6 +84,48 @@ const CHANNEL_TYPES: {
   { value: "monitoring", label: "모니터링", description: "관심 채널 모니터링" },
 ];
 
+// P0-7: 브라우저(주거용 IP)에서 Instagram 공개 프로필 fetch.
+// Vercel iad1 IP는 Instagram에서 429로 차단되므로, 대표님 노트북/회사 IP에서
+// 직접 받아서 등록 시 서버로 같이 보낸다. CORS 또는 차단으로 실패해도 무해.
+async function fetchInstagramFromBrowser(username: string): Promise<{
+  platformChannelId: string;
+  username: string;
+  fullName: string;
+  profilePicUrl: string;
+  followersCount: number;
+  mediaCount: number;
+} | null> {
+  const clean = username.replace(/^@/, "").trim();
+  if (!clean) return null;
+  try {
+    const res = await fetch(
+      `https://i.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(clean)}`,
+      {
+        headers: { "X-IG-App-ID": "936619743392459" },
+        credentials: "omit",
+      },
+    );
+    if (!res.ok) {
+      console.warn(`[ig-browser] ${clean} → HTTP ${res.status}`);
+      return null;
+    }
+    const json = await res.json();
+    const user = json?.data?.user;
+    if (!user) return null;
+    return {
+      platformChannelId: String(user.id ?? clean),
+      username: String(user.username ?? clean),
+      fullName: String(user.full_name ?? ""),
+      profilePicUrl: String(user.profile_pic_url ?? ""),
+      followersCount: Number(user.edge_followed_by?.count ?? 0),
+      mediaCount: Number(user.edge_owner_to_timeline_media?.count ?? 0),
+    };
+  } catch (err) {
+    console.warn("[ig-browser] fetch failed:", err);
+    return null;
+  }
+}
+
 const SEVERITY_STYLES: Record<
   ValidationSeverity,
   { icon: typeof CheckCircle2; color: string; bg: string }
@@ -305,6 +347,26 @@ export default function NewChannelPage() {
     setSubmitting(true);
     setErrors({});
     try {
+      // P0-7: Instagram의 경우 브라우저(주거용 IP)에서 먼저 메트릭을 받아 서버로 전달.
+      let metrics: Awaited<
+        ReturnType<typeof fetchInstagramFromBrowser>
+      > = null;
+      if (resolvedPlatform === "instagram") {
+        try {
+          const u = new URL(
+            form.url.startsWith("http") ? form.url : `https://${form.url}`,
+          );
+          const username = u.pathname
+            .replace(/^\//, "")
+            .split("/")[0];
+          if (username) {
+            metrics = await fetchInstagramFromBrowser(username);
+          }
+        } catch {
+          // URL parse 실패는 무시 — 서버사이드 fallback에 맡김
+        }
+      }
+
       const result = await registerChannel.mutateAsync({
         projectId,
         url: form.url,
@@ -316,6 +378,7 @@ export default function NewChannelPage() {
         tags: form.tags,
         analysisMode: form.analysisMode,
         customPlatformName: form.customPlatformName || undefined,
+        ...(metrics ? { metrics } : {}),
       });
 
       setSuccessMsg(

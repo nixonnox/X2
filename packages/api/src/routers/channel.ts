@@ -198,6 +198,18 @@ export const channelRouter = router({
         tags: z.array(z.string()).default([]),
         analysisMode: z.string().default("url_basic"),
         customPlatformName: z.string().optional(),
+        // P0-7: 클라이언트(브라우저, 주거용 IP)에서 미리 fetch한 메트릭.
+        // Vercel iad1 IP가 Instagram에서 429로 차단되는 문제를 우회한다.
+        metrics: z
+          .object({
+            platformChannelId: z.string().optional(),
+            username: z.string().optional(),
+            fullName: z.string().optional(),
+            profilePicUrl: z.string().optional(),
+            followersCount: z.number().int().nonnegative().optional(),
+            mediaCount: z.number().int().nonnegative().optional(),
+          })
+          .optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -208,22 +220,8 @@ export const channelRouter = router({
         : `https://${input.url}`;
 
       const platform = toPlatformEnum(input.platformCode);
-      let platformChannelId = extractChannelId(normalizedUrl);
-
-      // 중복 확인 (URL 기준)
-      const existing = await ctx.db.channel.findFirst({
-        where: {
-          projectId: input.projectId,
-          url: normalizedUrl,
-          deletedAt: null,
-        },
-      });
-      if (existing) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "이미 등록된 채널 URL입니다.",
-        });
-      }
+      const initialPlatformChannelId =
+        input.metrics?.platformChannelId ?? extractChannelId(normalizedUrl);
 
       const channelTypeMap = {
         owned: "OWNED",
@@ -231,39 +229,23 @@ export const channelRouter = router({
         monitoring: "MONITORING",
       } as const;
 
-      // 기본 stub으로 먼저 생성
-      let channel = await ctx.db.channel.create({
-        data: {
-          projectId: input.projectId,
-          platform,
-          platformChannelId,
-          name: input.name,
-          url: normalizedUrl,
-          channelType: channelTypeMap[input.channelType],
-          connectionType: "BASIC",
-          status: "ACTIVE",
-        },
-      });
+      // P0-7: 메트릭은 클라이언트 fetch 우선, 없으면 서버사이드 fallback.
+      // 서버사이드는 Vercel IP 차단으로 자주 실패하지만 무해하게 null 반환.
+      let profile: {
+        platformChannelId?: string;
+        username?: string;
+        fullName?: string;
+        profilePicUrl?: string;
+        followersCount?: number;
+        mediaCount?: number;
+      } | null = input.metrics ?? null;
 
-      // P0-6: Instagram인 경우 공개 프로필 정보를 즉시 한 번 fetch해서 반영
-      // (무인증 web_profile_info 엔드포인트). 실패 시 stub 상태로 남긴다.
-      if (platform === "INSTAGRAM") {
+      if (!profile && platform === "INSTAGRAM") {
         try {
-          const profile = await fetchInstagramPublicProfile(platformChannelId);
-          if (profile) {
-            const updated = await ctx.db.channel.update({
-              where: { id: channel.id },
-              data: {
-                platformChannelId: profile.platformChannelId,
-                name: profile.fullName || profile.username || input.name,
-                thumbnailUrl: profile.profilePicUrl,
-                subscriberCount: profile.followersCount,
-                contentCount: profile.mediaCount,
-                lastSyncedAt: new Date(),
-              },
-            });
-            channel = updated;
-          }
+          const fetched = await fetchInstagramPublicProfile(
+            initialPlatformChannelId,
+          );
+          if (fetched) profile = fetched;
         } catch (err) {
           console.warn(
             "[channel.register] instagram public fetch failed:",
@@ -271,6 +253,83 @@ export const channelRouter = router({
           );
         }
       }
+
+      const finalPlatformChannelId =
+        profile?.platformChannelId || initialPlatformChannelId;
+      const finalName =
+        profile?.fullName || profile?.username || input.name;
+      const finalThumb = profile?.profilePicUrl || null;
+      const finalSubs = profile?.followersCount ?? 0;
+      const finalContent = profile?.mediaCount ?? 0;
+      const hasRealMetrics = Boolean(
+        profile && (profile.followersCount || profile.mediaCount),
+      );
+
+      // P0-7: soft-delete 행 재활성화 지원.
+      // Channel 모델의 @@unique([projectId, platform, platformChannelId]) 는
+      // deletedAt 을 무시하므로, 같은 url 또는 같은 (platform, platformChannelId)
+      // 를 가진 soft-deleted 행이 있으면 P2002 가 터진다. 그 행을 살려서 재사용한다.
+      const existingByUrl = await ctx.db.channel.findFirst({
+        where: { projectId: input.projectId, url: normalizedUrl },
+      });
+      const existingByKey = await ctx.db.channel.findUnique({
+        where: {
+          projectId_platform_platformChannelId: {
+            projectId: input.projectId,
+            platform,
+            platformChannelId: finalPlatformChannelId,
+          },
+        },
+      });
+      const existing = existingByUrl ?? existingByKey;
+
+      if (existing) {
+        if (existing.deletedAt === null) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "이미 등록된 채널입니다.",
+          });
+        }
+        // soft-deleted → 재활성화 + 메트릭 갱신
+        const revived = await ctx.db.channel.update({
+          where: { id: existing.id },
+          data: {
+            deletedAt: null,
+            status: "ACTIVE",
+            name: finalName,
+            url: normalizedUrl,
+            platformChannelId: finalPlatformChannelId,
+            channelType: channelTypeMap[input.channelType],
+            ...(finalThumb ? { thumbnailUrl: finalThumb } : {}),
+            ...(hasRealMetrics
+              ? {
+                  subscriberCount: finalSubs,
+                  contentCount: finalContent,
+                  lastSyncedAt: new Date(),
+                }
+              : {}),
+          },
+        });
+        return { success: true, channel: revived };
+      }
+
+      // 신규 생성
+      const channel = await ctx.db.channel.create({
+        data: {
+          projectId: input.projectId,
+          platform,
+          platformChannelId: finalPlatformChannelId,
+          name: finalName,
+          url: normalizedUrl,
+          thumbnailUrl: finalThumb,
+          subscriberCount: finalSubs,
+          contentCount: finalContent,
+          channelType: channelTypeMap[input.channelType],
+          connectionType: "BASIC",
+          status: "ACTIVE",
+          ...(hasRealMetrics ? { lastSyncedAt: new Date() } : {}),
+        },
+      });
 
       return { success: true, channel };
     }),
