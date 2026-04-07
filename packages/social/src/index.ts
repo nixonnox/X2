@@ -7,6 +7,12 @@ export { InstagramProvider } from "./instagram";
 export { TikTokProvider } from "./tiktok";
 export { XProvider } from "./x";
 
+// Public (no-auth) fetchers
+export {
+  fetchInstagramPublicProfile,
+  type InstagramPublicProfile,
+} from "./instagram-public";
+
 // Errors
 export {
   PlatformApiError,

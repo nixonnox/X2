@@ -2,7 +2,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure } from "../trpc";
 import { verifyProjectAccess, verifyChannelAccess } from "./_helpers";
-import { YouTubeProvider } from "@x2/social";
+import { YouTubeProvider, fetchInstagramPublicProfile } from "@x2/social";
 
 const youtube = new YouTubeProvider();
 
@@ -208,7 +208,7 @@ export const channelRouter = router({
         : `https://${input.url}`;
 
       const platform = toPlatformEnum(input.platformCode);
-      const platformChannelId = extractChannelId(normalizedUrl);
+      let platformChannelId = extractChannelId(normalizedUrl);
 
       // 중복 확인 (URL 기준)
       const existing = await ctx.db.channel.findFirst({
@@ -231,11 +231,8 @@ export const channelRouter = router({
         monitoring: "MONITORING",
       } as const;
 
-      // NOTE: country/category/tags/analysisMode/customPlatformName은
-      // 현재 Channel 모델에 컬럼이 없어 저장하지 않는다. P1-9는 의도적으로
-      // 4/6 (3a268b8) 시점의 동작을 그대로 복원한 것이며, 해당 메타데이터
-      // 컬럼 추가는 별도 마이그레이션 작업(P2)으로 다룬다.
-      const channel = await ctx.db.channel.create({
+      // 기본 stub으로 먼저 생성
+      let channel = await ctx.db.channel.create({
         data: {
           projectId: input.projectId,
           platform,
@@ -247,6 +244,33 @@ export const channelRouter = router({
           status: "ACTIVE",
         },
       });
+
+      // P0-6: Instagram인 경우 공개 프로필 정보를 즉시 한 번 fetch해서 반영
+      // (무인증 web_profile_info 엔드포인트). 실패 시 stub 상태로 남긴다.
+      if (platform === "INSTAGRAM") {
+        try {
+          const profile = await fetchInstagramPublicProfile(platformChannelId);
+          if (profile) {
+            const updated = await ctx.db.channel.update({
+              where: { id: channel.id },
+              data: {
+                platformChannelId: profile.platformChannelId,
+                name: profile.fullName || profile.username || input.name,
+                thumbnailUrl: profile.profilePicUrl,
+                subscriberCount: profile.followersCount,
+                contentCount: profile.mediaCount,
+                lastSyncedAt: new Date(),
+              },
+            });
+            channel = updated;
+          }
+        } catch (err) {
+          console.warn(
+            "[channel.register] instagram public fetch failed:",
+            err instanceof Error ? err.message : err,
+          );
+        }
+      }
 
       return { success: true, channel };
     }),
