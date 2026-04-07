@@ -46,11 +46,3 @@ declare module "bullmq" {
     close(): Promise<void>;
   }
 }
-
-declare module "@x2/api/services/engines/category-entry-engine" {
-  export class CategoryEntryEngine {
-    analyze(seedKeyword: string, keywords?: string[]): unknown;
-  }
-  export const CATEGORY_LABELS: Record<string, string>;
-  export const ENTRY_TYPE_LABELS: Record<string, string>;
-}
