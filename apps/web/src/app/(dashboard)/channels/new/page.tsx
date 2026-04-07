@@ -105,10 +105,7 @@ export default function NewChannelPage() {
   const { projectId } = useCurrentProject();
 
   const utils = trpc.useUtils();
-  // P1-7: channel.register procedure 부재로 임시로 add 호출.
-  // 풍부한 필드(name/category/tags 등)는 P1-9에서 register procedure
-  // 신설 후 복원 예정.
-  const registerChannel = trpc.channel.add.useMutation({
+  const registerChannel = trpc.channel.register.useMutation({
     onSuccess: () => {
       // 채널 목록 캐시 무효화
       utils.channel.list.invalidate();
@@ -308,22 +305,24 @@ export default function NewChannelPage() {
     setSubmitting(true);
     setErrors({});
     try {
-      // P1-7: channel.register procedure 부재로 임시로 add 호출.
-      // 풍부한 필드(name/category/tags 등)는 P1-9에서 register procedure
-      // 신설 후 복원 예정. 현재는 URL 자동감지 기반 add만 사용.
-      // resolvedPlatform/form.* 필드들은 register 복원 시 다시 사용 예정이므로
-      // 코드는 그대로 유지하고 아래 mutateAsync 인자만 축소.
-      void resolvedPlatform;
       const result = await registerChannel.mutateAsync({
         projectId,
         url: form.url,
+        name: form.name,
+        platformCode: resolvedPlatform,
+        channelType: form.channelType as "owned" | "competitor" | "monitoring",
+        country: form.country,
+        category: form.category,
+        tags: form.tags,
+        analysisMode: form.analysisMode,
+        customPlatformName: form.customPlatformName || undefined,
       });
 
       setSuccessMsg(
         `✅ "${form.name}" 채널이 등록되었습니다! 분석을 시작합니다...`,
       );
       setTimeout(() => {
-        router.push(`/channels/${result.id}`);
+        router.push(`/channels/${result.channel.id}`);
       }, 1200);
     } catch (err: any) {
       const msg = err?.message ?? "채널 등록 중 오류가 발생했습니다.";

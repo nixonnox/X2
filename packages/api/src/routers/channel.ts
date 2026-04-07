@@ -6,6 +6,36 @@ import { YouTubeProvider } from "@x2/social";
 
 const youtube = new YouTubeProvider();
 
+// URL에서 platformChannelId 추출 (register용)
+function extractChannelId(url: string): string {
+  try {
+    const u = new URL(url.startsWith("http") ? url : `https://${url}`);
+    const path = u.pathname.replace(/\/$/, "");
+    const segments = path.split("/").filter(Boolean);
+    const last = segments[segments.length - 1] ?? "";
+    return last || u.hostname;
+  } catch {
+    return url;
+  }
+}
+
+// 플랫폼 코드 → DB SocialPlatform enum 매핑
+function toPlatformEnum(
+  code: string,
+): "YOUTUBE" | "INSTAGRAM" | "TIKTOK" | "X" | "NAVER_BLOG" {
+  const map: Record<
+    string,
+    "YOUTUBE" | "INSTAGRAM" | "TIKTOK" | "X" | "NAVER_BLOG"
+  > = {
+    youtube: "YOUTUBE",
+    instagram: "INSTAGRAM",
+    tiktok: "TIKTOK",
+    x: "X",
+    naver_blog: "NAVER_BLOG",
+  };
+  return map[code] ?? "YOUTUBE";
+}
+
 export const channelRouter = router({
   /** 프로젝트의 채널 목록 조회 */
   list: protectedProcedure
@@ -150,6 +180,75 @@ export const channelRouter = router({
           lastSyncedAt: new Date(),
         },
       });
+    }),
+
+  /** 모든 플랫폼 채널 등록 (사용자 입력 신뢰, 풍부한 폼 지원) */
+  register: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.string(),
+        url: z.string(),
+        name: z.string().min(1),
+        platformCode: z.string(),
+        channelType: z
+          .enum(["owned", "competitor", "monitoring"])
+          .default("owned"),
+        country: z.string().default("KR"),
+        category: z.string().default("기타"),
+        tags: z.array(z.string()).default([]),
+        analysisMode: z.string().default("url_basic"),
+        customPlatformName: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await verifyProjectAccess(ctx.db, ctx.userId, input.projectId);
+
+      const normalizedUrl = input.url.startsWith("http")
+        ? input.url
+        : `https://${input.url}`;
+
+      const platform = toPlatformEnum(input.platformCode);
+      const platformChannelId = extractChannelId(normalizedUrl);
+
+      // 중복 확인 (URL 기준)
+      const existing = await ctx.db.channel.findFirst({
+        where: {
+          projectId: input.projectId,
+          url: normalizedUrl,
+          deletedAt: null,
+        },
+      });
+      if (existing) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "이미 등록된 채널 URL입니다.",
+        });
+      }
+
+      const channelTypeMap = {
+        owned: "OWNED",
+        competitor: "COMPETITOR",
+        monitoring: "MONITORING",
+      } as const;
+
+      // NOTE: country/category/tags/analysisMode/customPlatformName은
+      // 현재 Channel 모델에 컬럼이 없어 저장하지 않는다. P1-9는 의도적으로
+      // 4/6 (3a268b8) 시점의 동작을 그대로 복원한 것이며, 해당 메타데이터
+      // 컬럼 추가는 별도 마이그레이션 작업(P2)으로 다룬다.
+      const channel = await ctx.db.channel.create({
+        data: {
+          projectId: input.projectId,
+          platform,
+          platformChannelId,
+          name: input.name,
+          url: normalizedUrl,
+          channelType: channelTypeMap[input.channelType],
+          connectionType: "BASIC",
+          status: "ACTIVE",
+        },
+      });
+
+      return { success: true, channel };
     }),
 
   /** 채널 삭제 (soft delete) */
